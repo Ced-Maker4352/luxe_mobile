@@ -934,8 +934,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          child: Container(
-            padding: const EdgeInsets.all(24),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [

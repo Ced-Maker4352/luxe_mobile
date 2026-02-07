@@ -79,8 +79,8 @@ class GeminiService {
     final body = {
       'contents': contents,
       'generationConfig': {
-        'responseModalities': ['IMAGE', 'TEXT'],
-        'imageMimeType': 'image/png',
+        'response_mime_type': 'image/png',
+        'response_modalities': ['IMAGE'],
       },
     };
 
@@ -97,10 +97,22 @@ class GeminiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+
+        // Log safety ratings if present
+        if (data is Map && data.containsKey('promptFeedback')) {
+          debugPrint('Gemini Prompt Feedback: ${data['promptFeedback']}');
+        }
+
         if (data is Map && data.containsKey('candidates')) {
           final candidates = data['candidates'] as List;
           if (candidates.isNotEmpty) {
             final candidate = candidates[0];
+
+            // Log finish reason
+            if (candidate is Map && candidate.containsKey('finishReason')) {
+              debugPrint('Gemini Finish Reason: ${candidate['finishReason']}');
+            }
+
             if (candidate is Map && candidate.containsKey('content')) {
               final content = candidate['content'];
               if (content is Map && content.containsKey('parts')) {
@@ -130,16 +142,16 @@ class GeminiService {
           }
         }
         debugPrint('GeminiService: No image found in response from $model');
-        return '';
+        return 'Error: No image in response. Safety filter or modality issue?';
       } else {
         debugPrint(
           'Gemini Image API Error: ${response.statusCode} - ${response.body}',
         );
-        return 'Error: Gemini API returned ${response.statusCode}';
+        return 'Error: Gemini API returned ${response.statusCode} - ${response.body}';
       }
     } catch (e) {
       debugPrint('Gemini Network Error: $e');
-      return 'Error: Network request failed';
+      return 'Error: Network request failed - $e';
     }
   }
 
@@ -179,12 +191,25 @@ class GeminiService {
         'parts': [
           {
             'text':
-                'You are a world-class photography director. Transform this raw user idea into a professional image generation prompt. Add specific details about lighting (e.g., volumetric, rim, chiaroscuro), camera angle, lens type (e.g., 85mm), and texture. Keep it concise but elite. \n\nUser Idea: "$draftPrompt"\n\nProfessional Prompt:',
+                '''You are a master of visual descriptive language for elite portrait photography. 
+Transform the user's brief idea into a rich, expansive technical prompt for an AI image generator.
+DO NOT use generic phrases like "cinematic lighting" or "84k detail" without accompanying specifics.
+
+ENHANCEMENT RULES:
+1. ATMOSPHERE: Define the mood (e.g., ethereal, brooding, vibrant, clinical).
+2. LIGHTING: Be precise (e.g., "warm golden hour backlight hitting the hair rim," "moody Rembrandt lighting with high-contrast shadows," "soft diffused studio light from a large octabank").
+3. CAMERA/OPTICS: Specify lens and aperture (e.g., "85mm f/1.4 lens," "shallow depth of field with creamy bokeh," "tactile sharp focus on eyes").
+4. TEXTURE: Describe specific textures (e.g., "fine skin pores and micro-vellus hair visible," "the rough weave of heavy linen clothing," "tangible dew drops on skin").
+5. COMPOSITION: Describe the framing and angle.
+
+Output ONLY the enhanced prompt. No introductions. No quotes.
+
+User Idea: "$draftPrompt"''',
           },
         ],
       },
     ];
-    return _generateTextContent('gemini-1.5-flash', contents);
+    return _generateTextContent('gemini-2.0-flash', contents);
   }
 
   Future<String> generatePortrait({
@@ -222,34 +247,16 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
       {'parts': parts},
     ];
 
-    // Try primary model: gemini-3-pro-image-preview
-    debugPrint(
-      'GeminiService: Attempting primary model gemini-3-pro-image-preview...',
-    );
-    var result = await _generateImageContent('gemini-1.5-flash', contents);
+    // Try primary model: gemini-2.0-flash
+    debugPrint('GeminiService: Attempting primary model gemini-2.0-flash...');
+    var result = await _generateImageContent('gemini-2.0-flash', contents);
     if (result.isNotEmpty && result.startsWith('data:image')) {
       debugPrint('GeminiService: Primary model success!');
       return result;
     }
-    debugPrint(
-      'GeminiService: Primary model failed with result: ${result.substring(0, result.length > 100 ? 100 : result.length)}',
-    );
-
-    // Fallback to gemini-2.5-flash-image
-    debugPrint(
-      'GeminiService: Trying fallback model gemini-2.5-flash-image...',
-    );
-    result = await _generateImageContent('gemini-1.5-flash', contents);
-    if (result.isNotEmpty && result.startsWith('data:image')) {
-      debugPrint('GeminiService: Fallback model success!');
-      return result;
-    }
-    debugPrint(
-      'GeminiService: Fallback model failed with result: ${result.substring(0, result.length > 100 ? 100 : result.length)}',
-    );
 
     // Both failed
-    return '';
+    return result; // Return the error message from the last attempt
   }
 
   Future<String> generateStylingChange({
@@ -288,13 +295,12 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
       {'parts': parts},
     ];
 
-    // Try primary, then fallback
-    var result = await _generateImageContent('gemini-1.5-flash', contents);
+    // Try gemini-2.0-flash
+    var result = await _generateImageContent('gemini-2.0-flash', contents);
     if (result.isNotEmpty && result.startsWith('data:image')) {
       return result;
     }
-    result = await _generateImageContent('gemini-1.5-flash', contents);
-    return result.isNotEmpty && result.startsWith('data:image') ? result : '';
+    return result;
   }
 
   Future<String> applySkinTexture(
@@ -319,12 +325,11 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
       },
     ];
 
-    var result = await _generateImageContent('gemini-1.5-flash', contents);
+    var result = await _generateImageContent('gemini-2.0-flash', contents);
     if (result.isNotEmpty && result.startsWith('data:image')) {
       return result;
     }
-    result = await _generateImageContent('gemini-1.5-flash', contents);
-    return result.isNotEmpty && result.startsWith('data:image') ? result : '';
+    return result;
   }
 
   Future<String> upscaleTo4K(String currentImageBase64) async {
@@ -342,13 +347,12 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
       },
     ];
 
-    // Use pro model for upscaling
-    var result = await _generateImageContent('gemini-1.5-flash', contents);
+    // Use gemini-2.0-flash for upscaling
+    var result = await _generateImageContent('gemini-2.0-flash', contents);
     if (result.isNotEmpty && result.startsWith('data:image')) {
       return result;
     }
-    result = await _generateImageContent('gemini-1.5-flash', contents);
-    return result.isNotEmpty && result.startsWith('data:image') ? result : '';
+    return result;
   }
 
   Future<String> removeBackground(String currentImageBase64) async {
@@ -366,11 +370,10 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
       },
     ];
 
-    var result = await _generateImageContent('gemini-1.5-flash', contents);
+    var result = await _generateImageContent('gemini-2.0-flash', contents);
     if (result.isNotEmpty && result.startsWith('data:image')) {
       return result;
     }
-    result = await _generateImageContent('gemini-1.5-flash', contents);
-    return result.isNotEmpty && result.startsWith('data:image') ? result : '';
+    return result;
   }
 }
