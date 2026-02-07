@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../shared/constants.dart';
 import '../models/types.dart';
+import '../services/stripe_service.dart';
+import '../providers/session_provider.dart';
+import 'package:provider/provider.dart';
 
 class BoutiqueScreen extends StatefulWidget {
   const BoutiqueScreen({super.key});
@@ -11,6 +14,119 @@ class BoutiqueScreen extends StatefulWidget {
 
 class _BoutiqueScreenState extends State<BoutiqueScreen> {
   String _selectedCategory = 'premium';
+  bool _isProcessing = false;
+
+  Future<void> _handlePackageSelection(PackageDetails pkg) async {
+    // Show promo code dialog
+    final promoController = TextEditingController();
+    final emailController = TextEditingController();
+
+    final result = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF141414),
+        title: const Text(
+          'Enter Your Details',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: emailController,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                labelStyle: TextStyle(color: Colors.white54),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white24),
+                ),
+              ),
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: promoController,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'Promo Code (Optional)',
+                labelStyle: TextStyle(color: Colors.white54),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white24),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.white54),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, {
+              'email': emailController.text,
+              'promo': promoController.text,
+            }),
+            child: const Text(
+              'Continue',
+              style: TextStyle(color: Color(0xFFD4AF37)),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (result == null || result['email']?.isEmpty == true) return;
+
+    final email = result['email']!;
+    final promo = result['promo']?.toUpperCase() ?? '';
+
+    // Check for bypass codes
+    if (promo == 'LUXEFREE' || promo == 'CCDN_APPS') {
+      if (!mounted) return;
+      final session = Provider.of<SessionProvider>(context, listen: false);
+      session.selectPackage(pkg);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✨ VIP Access Granted!'),
+          backgroundColor: Color(0xFFD4AF37),
+        ),
+      );
+      Navigator.pushNamed(context, '/studio');
+      return;
+    }
+
+    // Proceed with Stripe Payment
+    setState(() => _isProcessing = true);
+    try {
+      final success = await StripeService.handlePayment(
+        pkg.id.name, // Convert enum to string like 'INDEPENDENT_ARTIST'
+        email,
+      );
+      if (success && mounted) {
+        final session = Provider.of<SessionProvider>(context, listen: false);
+        session.selectPackage(pkg);
+        Navigator.pushNamed(context, '/studio');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Payment failed: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -199,9 +315,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      // Handle selection
-                    },
+                    onPressed: () => _handlePackageSelection(pkg),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,
                       foregroundColor: Colors.white,
