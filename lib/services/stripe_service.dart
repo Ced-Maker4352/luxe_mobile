@@ -13,7 +13,7 @@ class StripeService {
         debugPrint('Stripe: Skipping native initialization on web platform');
         return;
       }
-
+      
       // Note: You should have STRIPE_PUBLISHABLE_KEY in your .env
       Stripe.publishableKey =
           dotenv.env['STRIPE_PUBLISHABLE_KEY'] ?? 'pk_live_...';
@@ -32,9 +32,7 @@ class StripeService {
     try {
       // On web, use payment links instead of native PaymentSheet
       if (kIsWeb) {
-        debugPrint(
-          'Stripe: Web platform detected, use getPaymentLink() instead',
-        );
+        debugPrint('Stripe: Web platform detected, use getPaymentLink() instead');
         return false;
       }
 

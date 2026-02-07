@@ -3,6 +3,7 @@ import '../shared/constants.dart';
 import '../models/types.dart';
 import '../services/stripe_service.dart';
 import '../providers/session_provider.dart';
+import 'access_granted_screen.dart';
 import 'package:provider/provider.dart';
 
 class BoutiqueScreen extends StatefulWidget {
@@ -90,13 +91,16 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
       if (!mounted) return;
       final session = Provider.of<SessionProvider>(context, listen: false);
       session.selectPackage(pkg);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✨ VIP Access Granted!'),
-          backgroundColor: Color(0xFFD4AF37),
+      // Navigate to confirmation screen, then to upload page
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AccessGrantedScreen(
+            package: pkg,
+            isPromoCode: true,
+          ),
         ),
       );
-      Navigator.pushNamed(context, '/studio');
       return;
     }
 
@@ -110,7 +114,16 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
       if (success && mounted) {
         final session = Provider.of<SessionProvider>(context, listen: false);
         session.selectPackage(pkg);
-        Navigator.pushNamed(context, '/studio');
+        // Navigate to confirmation screen, then to upload page
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AccessGrantedScreen(
+              package: pkg,
+              isPromoCode: false,
+            ),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
