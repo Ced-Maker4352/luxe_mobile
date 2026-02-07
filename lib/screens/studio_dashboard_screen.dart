@@ -39,6 +39,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         session.selectRig(cameraRigs.first);
       }
 
+      // Auto-select first available package if none selected (Fix for missing generation)
+      if (session.selectedPackage == null && packages.isNotEmpty) {
+        session.selectPackage(packages.first);
+      }
+
       if (session.results.isEmpty && !session.isGenerating) {
         _generatePortrait(session);
       }
@@ -54,7 +59,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
   Future<void> _generatePortrait(SessionProvider session) async {
     if (!session.hasUploadedImage || session.selectedPackage == null) {
-      debugPrint('Studio: Missing image bytes or package');
+      if (!session.hasUploadedImage) debugPrint('Studio: Missing image bytes');
+      if (session.selectedPackage == null)
+        debugPrint('Studio: Missing package');
       return;
     }
 
