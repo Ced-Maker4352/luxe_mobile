@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/types.dart';
-import '../services/gemini_service.dart';
 
 class AssetEditorScreen extends StatefulWidget {
   final GenerationResult result;
