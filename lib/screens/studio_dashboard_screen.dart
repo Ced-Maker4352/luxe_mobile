@@ -128,19 +128,58 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             ),
             const SizedBox(height: 20),
             Expanded(
+              child:// List of cameras
+            Expanded(
               child: ListView.builder(
-                controller: scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 itemCount: cameraRigs.length,
                 itemBuilder: (context, index) {
                   final rig = cameraRigs[index];
                   final isSelected = session.selectedRig?.id == rig.id;
-                  return _buildCameraCard(rig, isSelected, () {
-                    session.selectRig(rig);
-                    Navigator.pop(context);
-                    setState(() {});
-                  });
+                  return _buildCameraCard(
+                    rig,
+                    isSelected,
+                    () {
+                      session.setRig(rig);
+                      Navigator.pop(context);
+                    },
+                  );
                 },
+              ),
+            ),
+            // Generate Button
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _generatePortrait(session);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFD4AF37),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.auto_awesome, size: 16),
+                      SizedBox(width: 8),
+                      Text(
+                        'GENERATE',
+                        style: TextStyle(
+                          letterSpacing: 2,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
@@ -161,7 +200,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           border: Border.all(
             color: isSelected
                 ? const Color(0xFFD4AF37)
-                : Colors.white.withValues(alpha: 0.05),
+                : Colors.white.withOpacity(0.05),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -248,10 +287,46 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               ),
               const SizedBox(height: 20),
               // Mode Content
-              Expanded(
-                child: _buildBgModeContent(scrollController, setModalState),
+            Expanded(
+              child: _buildBgModeContent(scrollController, setModalState),
+            ),
+            // Generate Button (Bottom pinned)
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    // Trigger generation immediately
+                    _generatePortrait(context.read<SessionProvider>());
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFD4AF37),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.auto_awesome, size: 16),
+                      SizedBox(width: 8),
+                      Text(
+                        'GENERATE',
+                        style: TextStyle(
+                          letterSpacing: 2,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ],
+            ),
+          ],
           ),
         ),
       ),
@@ -294,14 +369,100 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   ) {
     switch (_bgMode) {
       case 'package':
-        return const Center(
-          child: Padding(
-            padding: EdgeInsets.all(32),
-            child: Text(
-              'Using curated package environment.\nSelect a different mode to customize.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white38, fontSize: 12),
-            ),
+        final session = context.read<SessionProvider>();
+        final package = session.selectedPackage;
+        // Package Details
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD4AF37).withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.inventory_2_outlined,
+                  color: Color(0xFFD4AF37),
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                package?.name ?? 'Standard Package',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Includes ${package?.assetCount ?? 5} premium assets',
+                style: const TextStyle(color: Colors.white54, fontSize: 13),
+              ),
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.05),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      package?.description ??
+                          'Curated package environment optimized for this session type.',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Divider(color: Colors.white10),
+                    const SizedBox(height: 20),
+                    if (package?.features != null)
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        alignment: WrapAlignment.center,
+                        children: package!.features
+                            .map(
+                              (feature) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.1),
+                                  ),
+                                ),
+                                child: Text(
+                                  feature,
+                                  style: const TextStyle(
+                                    color: Colors.white38,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
         );
       case 'presets':
@@ -426,12 +587,12 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                               child: Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: Colors.red.withValues(alpha: 0.1),
+                                  color: Colors.red.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Icon(
                                   Icons.delete_outline,
-                                  color: Colors.red.withValues(alpha: 0.7),
+                                  color: Colors.red.withOpacity(0.7),
                                   size: 16,
                                 ),
                               ),
@@ -469,7 +630,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                               decoration: BoxDecoration(
                                 color: const Color(
                                   0xFFD4AF37,
-                                ).withValues(alpha: 0.1),
+                                ).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Row(
@@ -560,10 +721,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.05),
+                                  color: Colors.white.withOpacity(0.05),
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.05),
+                                    color: Colors.white.withOpacity(0.05),
                                   ),
                                 ),
                                 child: Text(
@@ -621,10 +782,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                               child: Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.05),
+                                  color: Colors.white.withOpacity(0.05),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.1),
+                                    color: Colors.white.withOpacity(0.1),
                                   ),
                                 ),
                                 child: Column(
@@ -653,8 +814,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                                 ),
                               ),
                             ),
-                          ),
-                    )
+                          )
                     .toList(),
               ),
             ],
@@ -687,7 +847,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               Image.network(preset.url, fit: BoxFit.cover),
               if (isSelected)
                 Container(
-                  color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
+                  color: const Color(0xFFD4AF37).withOpacity(0.3),
                   child: const Icon(Icons.check, color: Colors.white),
                 ),
             ],
@@ -777,7 +937,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                           color: Colors.black,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.05),
+                            color: Colors.white.withOpacity(0.05),
                           ),
                         ),
                         child: Row(
@@ -832,16 +992,16 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 ),
                 const SizedBox(height: 20),
 
-                // Prompt Input with Clear Button
+                // Prompt Input with Action Bar
                 Container(
                   decoration: BoxDecoration(
                     color: const Color(0xFF0A0A0A),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.1),
+                      color: Colors.white.withOpacity(0.1),
                     ),
                   ),
-                  child: Stack(
+                  child: Column(
                     children: [
                       TextField(
                         controller: _promptController,
@@ -859,38 +1019,128 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
-                          contentPadding: const EdgeInsets.fromLTRB(
-                            12,
-                            12,
-                            40,
-                            12,
-                          ),
+                          contentPadding: const EdgeInsets.all(12),
                         ),
                       ),
-                      // Clear Button
-                      if (_promptController.text.isNotEmpty)
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: GestureDetector(
-                            onTap: () {
-                              _promptController.clear();
-                              setModalState(() {});
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Colors.red.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(6),
+                      // Action Bar (Clear, Mic, Enhance)
+                      Container(
+                        padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            // Clear Button
+                            if (_promptController.text.isNotEmpty)
+                              GestureDetector(
+                                onTap: () {
+                                  _promptController.clear();
+                                  setModalState(() {});
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  margin: const EdgeInsets.only(right: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Icon(
+                                    Icons.delete_outline,
+                                    size: 16,
+                                    color: Colors.red.withOpacity(0.7),
+                                  ),
+                                ),
                               ),
-                              child: Icon(
-                                Icons.close,
-                                size: 14,
-                                color: Colors.red.withValues(alpha: 0.7),
+                            // Microphone Button (Visual Only for now)
+                            GestureDetector(
+                              onTap: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Voice input coming soon!',
+                                    ),
+                                    duration: Duration(seconds: 1),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                margin: const EdgeInsets.only(right: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.05),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Icon(
+                                  Icons.mic_none,
+                                  size: 16,
+                                  color: Colors.white54,
+                                ),
                               ),
                             ),
-                          ),
+                            // Enhance Button
+                            GestureDetector(
+                              onTap: _isEnhancingPrompt
+                                  ? null
+                                  : () {
+                                      setModalState(
+                                        () => _isEnhancingPrompt = true,
+                                      );
+                                      Future.delayed(
+                                        const Duration(seconds: 1),
+                                        () {
+                                          if (mounted) {
+                                            final enhanced =
+                                                "${_promptController.text}, detailed, 8k resolution, cinematic lighting";
+                                            _promptController.text = enhanced;
+                                            setModalState(
+                                              () => _isEnhancingPrompt = false,
+                                            );
+                                          }
+                                        },
+                                      );
+                                    },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFFD4AF37,
+                                  ).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Row(
+                                  children: [
+                                    if (_isEnhancingPrompt)
+                                      const SizedBox(
+                                        width: 12,
+                                        height: 12,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 1.5,
+                                          color: Color(0xFFD4AF37),
+                                        ),
+                                      )
+                                    else
+                                      const Icon(
+                                        Icons.auto_fix_high,
+                                        size: 12,
+                                        color: Color(0xFFD4AF37),
+                                      ),
+                                    const SizedBox(width: 6),
+                                    const Text(
+                                      'ENHANCE',
+                                      style: TextStyle(
+                                        color: Color(0xFFD4AF37),
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
+                      ),
                     ],
                   ),
                 ),
@@ -909,13 +1159,15 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 ),
                 const SizedBox(height: 24),
 
-                // Apply Button
+                // Generate Button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
                       setState(() => _customPrompt = _promptController.text);
                       Navigator.pop(context);
+                      // Trigger generation immediately
+                      _generatePortrait(context.read<SessionProvider>());
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFD4AF37),
@@ -925,12 +1177,19 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      'APPLY STYLING',
-                      style: TextStyle(
-                        letterSpacing: 2,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.auto_awesome, size: 16),
+                        SizedBox(width: 8),
+                        Text(
+                          'GENERATE',
+                          style: TextStyle(
+                            letterSpacing: 2,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -1128,7 +1387,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       decoration: BoxDecoration(
         color: const Color(0xFF141414),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Row(
         children: [
@@ -1196,7 +1455,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     return Container(
       width: 1,
       height: 30,
-      color: Colors.white.withValues(alpha: 0.1),
+      color: Colors.white.withOpacity(0.1),
     );
   }
 
@@ -1247,7 +1506,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           Text(
             'Developing high-fidelity asset...',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.3),
+              color: Colors.white.withOpacity(0.3),
               fontSize: 11,
             ),
           ),
@@ -1264,7 +1523,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           Icon(
             Icons.photo_library_outlined,
             size: 64,
-            color: Colors.white.withValues(alpha: 0.1),
+            color: Colors.white.withOpacity(0.1),
           ),
           const SizedBox(height: 20),
           const Text('No assets yet', style: TextStyle(color: Colors.white24)),
