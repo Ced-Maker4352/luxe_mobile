@@ -68,6 +68,61 @@ const List<SkinTexture> skinTextures = [
   ),
 ];
 
+// === FILTER PRESETS (From Web AssetEditor) ===
+class FilterPreset {
+  final String id;
+  final String name;
+  final double brightness;
+  final double contrast;
+  final double saturation;
+  final double grayscale;
+  final double sepia;
+
+  const FilterPreset({
+    required this.id,
+    required this.name,
+    this.brightness = 100,
+    this.contrast = 100,
+    this.saturation = 100,
+    this.grayscale = 0,
+    this.sepia = 0,
+  });
+}
+
+const List<FilterPreset> filterPresets = [
+  FilterPreset(id: 'none', name: 'Studio'),
+  FilterPreset(
+    id: 'noir',
+    name: 'Noir',
+    grayscale: 100,
+    contrast: 120,
+    brightness: 110,
+  ),
+  FilterPreset(id: 'vivid', name: 'Vivid', saturation: 140, contrast: 110),
+  FilterPreset(
+    id: 'warm',
+    name: 'Warm',
+    sepia: 30,
+    brightness: 105,
+    saturation: 110,
+  ),
+  FilterPreset(id: 'cool', name: 'Cool', brightness: 105, contrast: 105),
+  FilterPreset(
+    id: 'matte',
+    name: 'Matte',
+    contrast: 90,
+    brightness: 110,
+    saturation: 90,
+  ),
+  FilterPreset(
+    id: 'drama',
+    name: 'Drama',
+    contrast: 130,
+    saturation: 80,
+    brightness: 90,
+  ),
+];
+
 // === PROMPT CATEGORIES (From Web) ===
 const Map<String, List<String>> promptCategories = {
   'Lighting & Atmosphere': [

@@ -29,6 +29,16 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   final TextEditingController _bgPromptController = TextEditingController();
   bool _isEnhancingPrompt = false;
 
+  // Wardrobe/Clothing state
+  String _wardrobeGender = 'Female';
+  String? _expandedWardrobeCategory;
+
+  // Adjustment sliders state
+  double _brightness = 100;
+  double _contrast = 100;
+  double _saturation = 100;
+  String _selectedFilter = 'none';
+
   @override
   void initState() {
     super.initState();
@@ -77,7 +87,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
     session.setGenerating(true);
     try {
-      debugPrint('Studio: Starting generation with Gemini...');
+      debugPrint(
+        '!!!!! Studio: Starting generation with Gemini (DEBUG V2) !!!!!',
+      );
       final service = GeminiService();
 
       // Combine package prompt with user custom prompt
@@ -1127,23 +1139,44 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                             GestureDetector(
                               onTap: _isEnhancingPrompt
                                   ? null
-                                  : () {
+                                  : () async {
+                                      if (_promptController.text
+                                          .trim()
+                                          .isEmpty) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Enter a prompt to enhance',
+                                            ),
+                                            duration: Duration(seconds: 1),
+                                          ),
+                                        );
+                                        return;
+                                      }
                                       setModalState(
                                         () => _isEnhancingPrompt = true,
                                       );
-                                      Future.delayed(
-                                        const Duration(seconds: 1),
-                                        () {
-                                          if (mounted) {
-                                            final enhanced =
-                                                "${_promptController.text}, detailed, 8k resolution, cinematic lighting";
-                                            _promptController.text = enhanced;
-                                            setModalState(
-                                              () => _isEnhancingPrompt = false,
+                                      try {
+                                        final enhanced = await GeminiService()
+                                            .enhancePrompt(
+                                              _promptController.text,
                                             );
-                                          }
-                                        },
-                                      );
+                                        if (mounted &&
+                                            enhanced.isNotEmpty &&
+                                            !enhanced.startsWith('Error')) {
+                                          _promptController.text = enhanced;
+                                        }
+                                      } catch (e) {
+                                        debugPrint('Enhance error: $e');
+                                      } finally {
+                                        if (mounted) {
+                                          setModalState(
+                                            () => _isEnhancingPrompt = false,
+                                          );
+                                        }
+                                      }
                                     },
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
@@ -1194,7 +1227,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 ),
                 const SizedBox(height: 16),
 
-                // Quick Presets
+                // Quick Presets Row
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -1204,6 +1237,288 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     _buildQuickPreset('Dramatic Noir', setModalState),
                     _buildQuickPreset('Golden Hour', setModalState),
                   ],
+                ),
+                const SizedBox(height: 20),
+
+                // WARDROBE SECTION
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F0F0F),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header with Gender Toggle
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(
+                                Icons.checkroom,
+                                size: 14,
+                                color: Color(0xFFD4AF37),
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'WARDROBE',
+                                style: TextStyle(
+                                  color: Colors.white54,
+                                  fontSize: 10,
+                                  letterSpacing: 1.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          // Gender Toggle
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: ['Female', 'Male'].map((g) {
+                                final isActive = _wardrobeGender == g;
+                                return GestureDetector(
+                                  onTap: () =>
+                                      setModalState(() => _wardrobeGender = g),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isActive
+                                          ? const Color(0xFFD4AF37)
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      g,
+                                      style: TextStyle(
+                                        color: isActive
+                                            ? Colors.black
+                                            : Colors.white38,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      // Category Accordions
+                      ...wardrobePresets[_wardrobeGender]!.keys.map((category) {
+                        final isExpanded =
+                            _expandedWardrobeCategory == category;
+                        final items =
+                            wardrobePresets[_wardrobeGender]![category]!;
+                        return Column(
+                          children: [
+                            GestureDetector(
+                              onTap: () => setModalState(() {
+                                _expandedWardrobeCategory = isExpanded
+                                    ? null
+                                    : category;
+                              }),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                  horizontal: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isExpanded
+                                      ? Colors.white.withOpacity(0.05)
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      category,
+                                      style: TextStyle(
+                                        color: isExpanded
+                                            ? const Color(0xFFD4AF37)
+                                            : Colors.white70,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Icon(
+                                      isExpanded
+                                          ? Icons.keyboard_arrow_up
+                                          : Icons.keyboard_arrow_down,
+                                      color: Colors.white38,
+                                      size: 18,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            if (isExpanded)
+                              Container(
+                                padding: const EdgeInsets.only(
+                                  left: 8,
+                                  bottom: 8,
+                                ),
+                                child: Column(
+                                  children: items.take(10).map((item) {
+                                    return GestureDetector(
+                                      onTap: () {
+                                        _promptController.text = item;
+                                        setModalState(() {});
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 6,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.add,
+                                              size: 12,
+                                              color: Colors.white24,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                item.length > 60
+                                                    ? '${item.substring(0, 60)}...'
+                                                    : item,
+                                                style: const TextStyle(
+                                                  color: Colors.white54,
+                                                  fontSize: 11,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                          ],
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // ADJUSTMENTS SECTION
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F0F0F),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header
+                      const Row(
+                        children: [
+                          Icon(Icons.tune, size: 14, color: Color(0xFFD4AF37)),
+                          SizedBox(width: 8),
+                          Text(
+                            'ADJUSTMENTS',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 10,
+                              letterSpacing: 1.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // Filter Presets
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: filterPresets.map((filter) {
+                            final isSelected = _selectedFilter == filter.id;
+                            return GestureDetector(
+                              onTap: () {
+                                setModalState(() {
+                                  _selectedFilter = filter.id;
+                                  _brightness = filter.brightness;
+                                  _contrast = filter.contrast;
+                                  _saturation = filter.saturation;
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                margin: const EdgeInsets.only(right: 8),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? const Color(0xFFD4AF37)
+                                      : Colors.white.withOpacity(0.05),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? const Color(0xFFD4AF37)
+                                        : Colors.white12,
+                                  ),
+                                ),
+                                child: Text(
+                                  filter.name,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Colors.black
+                                        : Colors.white70,
+                                    fontSize: 11,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Sliders
+                      _buildAdjustmentSlider(
+                        'Brightness',
+                        _brightness,
+                        50,
+                        150,
+                        (v) => setModalState(() => _brightness = v),
+                      ),
+                      _buildAdjustmentSlider(
+                        'Contrast',
+                        _contrast,
+                        50,
+                        150,
+                        (v) => setModalState(() => _contrast = v),
+                      ),
+                      _buildAdjustmentSlider(
+                        'Saturation',
+                        _saturation,
+                        0,
+                        200,
+                        (v) => setModalState(() => _saturation = v),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 24),
 
@@ -1267,6 +1582,48 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           style: const TextStyle(color: Colors.white54, fontSize: 11),
         ),
       ),
+    );
+  }
+
+  Widget _buildAdjustmentSlider(
+    String label,
+    double value,
+    double min,
+    double max,
+    ValueChanged<double> onChanged,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            Text(
+              '${value.toInt()}%',
+              style: const TextStyle(color: Colors.white38, fontSize: 11),
+            ),
+          ],
+        ),
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: const Color(0xFFD4AF37),
+            inactiveTrackColor: Colors.white10,
+            thumbColor: Colors.white,
+            trackHeight: 2,
+            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+            overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+          ),
+          child: Slider(value: value, min: min, max: max, onChanged: onChanged),
+        ),
+      ],
     );
   }
 

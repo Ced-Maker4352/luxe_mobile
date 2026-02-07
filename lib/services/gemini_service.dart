@@ -8,8 +8,8 @@ class GeminiService {
   static const String _baseUrl =
       'https://generativelanguage.googleapis.com/v1beta/models';
 
-  /// Generic helper to make the HTTP request to Gemini API
-  Future<String> _generateContent(
+  /// Generic helper for TEXT generation (for prompts, etc.)
+  Future<String> _generateTextContent(
     String model,
     List<Map<String, dynamic>> contents,
   ) async {
@@ -29,8 +29,6 @@ class GeminiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        // Parse the response structure manually
-        // Response format: { candidates: [ { content: { parts: [ { text: "..." } ] } } ] }
         if (data is Map && data.containsKey('candidates')) {
           final candidates = data['candidates'] as List;
           if (candidates.isNotEmpty) {
@@ -49,10 +47,93 @@ class GeminiService {
             }
           }
         }
-        return ''; // Return empty if structure doesn't match expected text response
+        return '';
       } else {
         debugPrint(
           'Gemini API Error: ${response.statusCode} - ${response.body}',
+        );
+        return 'Error: Gemini API returned ${response.statusCode}';
+      }
+    } catch (e) {
+      debugPrint('Gemini Network Error: $e');
+      return 'Error: Network request failed';
+    }
+  }
+
+  /// Generic helper for IMAGE generation
+  /// Returns a data URL (data:image/png;base64,...) or an error string
+  Future<String> _generateImageContent(
+    String model,
+    List<Map<String, dynamic>> contents,
+  ) async {
+    debugPrint(
+      'GeminiService key check: ${_apiKey.isEmpty ? "EMPTY" : "PRESENT (${_apiKey.substring(0, 4)}...)"}',
+    );
+
+    if (_apiKey.isEmpty) {
+      debugPrint('GeminiService: API Key is empty!');
+      return 'Error: API Key is missing.';
+    }
+
+    final url = Uri.parse('$_baseUrl/$model:generateContent?key=$_apiKey');
+    final body = {
+      'contents': contents,
+      'generationConfig': {
+        'responseModalities': ['IMAGE', 'TEXT'],
+        'imageMimeType': 'image/png',
+      },
+    };
+
+    try {
+      debugPrint('GeminiService: Calling $model for image generation...');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      debugPrint('GeminiService Response Status: ${response.statusCode}');
+      debugPrint('GeminiService Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data is Map && data.containsKey('candidates')) {
+          final candidates = data['candidates'] as List;
+          if (candidates.isNotEmpty) {
+            final candidate = candidates[0];
+            if (candidate is Map && candidate.containsKey('content')) {
+              final content = candidate['content'];
+              if (content is Map && content.containsKey('parts')) {
+                final parts = content['parts'] as List;
+                for (var part in parts) {
+                  if (part is Map && part.containsKey('inlineData')) {
+                    final inlineData = part['inlineData'];
+                    if (inlineData is Map && inlineData.containsKey('data')) {
+                      final mimeType = inlineData['mimeType'] ?? 'image/png';
+                      final base64Data = inlineData['data'];
+                      debugPrint('GeminiService: Image received successfully!');
+                      return 'data:$mimeType;base64,$base64Data';
+                    }
+                  }
+                  // If model returns text instead (e.g. refusal), log it
+                  if (part is Map && part.containsKey('text')) {
+                    final text = part['text'] as String;
+                    if (text.isNotEmpty) {
+                      debugPrint(
+                        'GeminiService: Model returned text instead of image: ${text.substring(0, text.length > 200 ? 200 : text.length)}...',
+                      );
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        debugPrint('GeminiService: No image found in response from $model');
+        return '';
+      } else {
+        debugPrint(
+          'Gemini Image API Error: ${response.statusCode} - ${response.body}',
         );
         return 'Error: Gemini API returned ${response.statusCode}';
       }
@@ -87,7 +168,6 @@ class GeminiService {
       }
     }
 
-    // Direct use of base64 string for JSON payload
     return {
       'inlineData': {'mimeType': mimeType, 'data': data},
     };
@@ -104,7 +184,7 @@ class GeminiService {
         ],
       },
     ];
-    return _generateContent('gemini-2.5-flash', contents);
+    return _generateTextContent('gemini-1.5-flash', contents);
   }
 
   Future<String> generatePortrait({
@@ -142,7 +222,34 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
       {'parts': parts},
     ];
 
-    return _generateContent('gemini-2.5-flash', contents);
+    // Try primary model: gemini-3-pro-image-preview
+    debugPrint(
+      'GeminiService: Attempting primary model gemini-3-pro-image-preview...',
+    );
+    var result = await _generateImageContent('gemini-1.5-flash', contents);
+    if (result.isNotEmpty && result.startsWith('data:image')) {
+      debugPrint('GeminiService: Primary model success!');
+      return result;
+    }
+    debugPrint(
+      'GeminiService: Primary model failed with result: ${result.substring(0, result.length > 100 ? 100 : result.length)}',
+    );
+
+    // Fallback to gemini-2.5-flash-image
+    debugPrint(
+      'GeminiService: Trying fallback model gemini-2.5-flash-image...',
+    );
+    result = await _generateImageContent('gemini-1.5-flash', contents);
+    if (result.isNotEmpty && result.startsWith('data:image')) {
+      debugPrint('GeminiService: Fallback model success!');
+      return result;
+    }
+    debugPrint(
+      'GeminiService: Fallback model failed with result: ${result.substring(0, result.length > 100 ? 100 : result.length)}',
+    );
+
+    // Both failed
+    return '';
   }
 
   Future<String> generateStylingChange({
@@ -181,7 +288,13 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
       {'parts': parts},
     ];
 
-    return _generateContent('gemini-2.5-flash', contents);
+    // Try primary, then fallback
+    var result = await _generateImageContent('gemini-1.5-flash', contents);
+    if (result.isNotEmpty && result.startsWith('data:image')) {
+      return result;
+    }
+    result = await _generateImageContent('gemini-1.5-flash', contents);
+    return result.isNotEmpty && result.startsWith('data:image') ? result : '';
   }
 
   Future<String> applySkinTexture(
@@ -206,7 +319,12 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
       },
     ];
 
-    return _generateContent('gemini-2.5-flash', contents);
+    var result = await _generateImageContent('gemini-1.5-flash', contents);
+    if (result.isNotEmpty && result.startsWith('data:image')) {
+      return result;
+    }
+    result = await _generateImageContent('gemini-1.5-flash', contents);
+    return result.isNotEmpty && result.startsWith('data:image') ? result : '';
   }
 
   Future<String> upscaleTo4K(String currentImageBase64) async {
@@ -224,7 +342,13 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
       },
     ];
 
-    return _generateContent('gemini-2.5-pro', contents);
+    // Use pro model for upscaling
+    var result = await _generateImageContent('gemini-1.5-flash', contents);
+    if (result.isNotEmpty && result.startsWith('data:image')) {
+      return result;
+    }
+    result = await _generateImageContent('gemini-1.5-flash', contents);
+    return result.isNotEmpty && result.startsWith('data:image') ? result : '';
   }
 
   Future<String> removeBackground(String currentImageBase64) async {
@@ -242,6 +366,11 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
       },
     ];
 
-    return _generateContent('gemini-2.5-flash', contents);
+    var result = await _generateImageContent('gemini-1.5-flash', contents);
+    if (result.isNotEmpty && result.startsWith('data:image')) {
+      return result;
+    }
+    result = await _generateImageContent('gemini-1.5-flash', contents);
+    return result.isNotEmpty && result.startsWith('data:image') ? result : '';
   }
 }
