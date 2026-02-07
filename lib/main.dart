@@ -12,7 +12,7 @@ import 'services/stripe_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: "assets/.env");
-  await StripeService.init(); // Initialize Stripe with publishable key
+  await StripeService.init(); // Initialize Stripe
   runApp(
     ChangeNotifierProvider(
       create: (_) => SessionProvider(),

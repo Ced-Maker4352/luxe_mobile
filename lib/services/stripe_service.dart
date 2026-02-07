@@ -1,45 +1,44 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:convert';
 
 class StripeService {
   static Future<void> init() async {
-    // Skip Stripe initialization on web - it only works on native mobile
-    if (kIsWeb) {
-      debugPrint('Stripe: Skipping native initialization on web platform');
-      return;
-    }
+    try {
+      // Skip Stripe initialization on web as flutter_stripe has limited web support
+      if (kIsWeb) {
+        debugPrint('Stripe: Skipping native initialization on web platform');
+        return;
+      }
 
-    Stripe.publishableKey =
-        dotenv.env['STRIPE_PUBLISHABLE_KEY'] ?? 'pk_live_...';
-    await Stripe.instance.applySettings();
+      // Note: You should have STRIPE_PUBLISHABLE_KEY in your .env
+      Stripe.publishableKey =
+          dotenv.env['STRIPE_PUBLISHABLE_KEY'] ?? 'pk_live_...';
+      await Stripe.instance.applySettings();
+      debugPrint('Stripe: Initialized successfully');
+    } catch (e) {
+      debugPrint('Stripe initialization error: $e');
+      // Don't throw - allow app to continue even if Stripe fails
+    }
   }
 
   static Future<bool> handlePayment(
     String packageId,
     String customerEmail,
   ) async {
-    // On web, use payment links instead of native Payment Sheet
-    if (kIsWeb) {
-      debugPrint('Stripe: Web platform detected, using payment link');
-      final link = getPaymentLink(packageId);
-      if (link != null) {
-        final uri = Uri.parse('$link?prefilled_email=$customerEmail');
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-          return true; // Assume success - user will complete on Stripe page
-        }
-      }
-      debugPrint('Stripe: No payment link found for $packageId');
-      return false;
-    }
-
-    // Native mobile flow
     try {
+      // On web, use payment links instead of native PaymentSheet
+      if (kIsWeb) {
+        debugPrint(
+          'Stripe: Web platform detected, use getPaymentLink() instead',
+        );
+        return false;
+      }
+
+      // 1. Create Payment Intent on your backend
       final response = await http.post(
         Uri.parse('${dotenv.env['VITE_API_URL']}/api/create-payment-intent'),
         headers: {'Content-Type': 'application/json'},
@@ -55,6 +54,7 @@ class StripeService {
 
       final data = jsonDecode(response.body);
 
+      // 2. Initialize Payment Sheet
       await Stripe.instance.initPaymentSheet(
         paymentSheetParameters: SetupPaymentSheetParameters(
           paymentIntentClientSecret: data['paymentIntent'],
@@ -75,7 +75,9 @@ class StripeService {
         ),
       );
 
+      // 3. Display Payment Sheet
       await Stripe.instance.presentPaymentSheet();
+
       return true;
     } catch (e) {
       debugPrint('Stripe Error: $e');
@@ -84,15 +86,15 @@ class StripeService {
   }
 
   static String? getPaymentLink(String packageId) {
-    // Live Stripe payment links for each package
+    // These match the test links in your web app's paymentLinks.ts
     const links = {
-      'INDEPENDENT_ARTIST': 'https://buy.stripe.com/28E5kv5eigiD04N0lW',
-      'EXECUTIVE': 'https://buy.stripe.com/eVq5kv36ac2naJrfgQ',
-      'ANNIVERSARY_SUITE': 'https://buy.stripe.com/8x24gr2263vR04N9Ww',
-      'CINEMATIC_NOIR': 'https://buy.stripe.com/5kQ9AL7mqc2n04N5Gg',
-      'ENTERTAINER': 'https://buy.stripe.com/fZubIT0Y2eavaJrecM',
-      'SNAPSHOT_DAILY': 'https://buy.stripe.com/fZucMXfSW9Uf8Bj2u4',
-      'SNAPSHOT_STYLE': 'https://buy.stripe.com/fZucMXfSW9Uf8Bj2u5',
+      'INDEPENDENT_ARTIST':
+          'https://buy.stripe.com/test_28E5kv5eigiD04N0lW7N600',
+      'EXECUTIVE': 'https://buy.stripe.com/test_eVq5kv36ac2naJrfgQ7N601',
+      'BIRTHDAY_LUXE': 'https://buy.stripe.com/test_8x24gr2263vR04N9Ww7N602',
+      'CINEMATIC_NOIR': 'https://buy.stripe.com/test_5kQ9AL7mqc2n04N5Gg7N603',
+      'ENTERTAINER': 'https://buy.stripe.com/test_fZubIT0Y2eavaJrecM7N604',
+      'MOTION': 'https://buy.stripe.com/test_fZucMXfSW9Uf8Bj2u47N605',
     };
     return links[packageId];
   }
