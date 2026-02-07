@@ -65,7 +65,10 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                 ),
                 title: const Text(
                   'Take Photo',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 subtitle: const Text(
                   'Use your camera to capture a portrait',
@@ -91,7 +94,10 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                 ),
                 title: const Text(
                   'Choose from Gallery',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 subtitle: const Text(
                   'Select an existing photo from your device',
@@ -119,7 +125,7 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
         imageQuality: 85,
         preferredCameraDevice: CameraDevice.front,
       );
-      
+
       if (pickedFile != null) {
         final bytes = await pickedFile.readAsBytes();
         setState(() {
@@ -127,7 +133,11 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
           _imageName = pickedFile.name;
         });
         if (mounted) {
-          context.read<SessionProvider>().uploadImage(pickedFile.name);
+          // Store bytes directly in SessionProvider (works on web and mobile)
+          context.read<SessionProvider>().uploadImageBytes(
+            bytes,
+            pickedFile.name,
+          );
         }
       }
     } catch (e) {
@@ -190,10 +200,7 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                   child: _imageBytes != null
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(24),
-                          child: Image.memory(
-                            _imageBytes!,
-                            fit: BoxFit.cover,
-                          ),
+                          child: Image.memory(_imageBytes!, fit: BoxFit.cover),
                         )
                       : Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -271,5 +278,4 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
       ),
     );
   }
-
 }

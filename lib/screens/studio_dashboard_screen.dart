@@ -7,7 +7,6 @@ import '../shared/constants.dart';
 import 'asset_editor_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
-import 'dart:io';
 
 class StudioDashboardScreen extends StatefulWidget {
   const StudioDashboardScreen({super.key});
@@ -24,6 +23,12 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final session = context.read<SessionProvider>();
+
+      // Auto-select first available rig if none selected
+      if (session.selectedRig == null && cameraRigs.isNotEmpty) {
+        session.selectRig(cameraRigs.first);
+      }
+
       if (session.results.isEmpty && !session.isGenerating) {
         _generateInitialPortrait(session);
       }
@@ -31,16 +36,26 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen> {
   }
 
   Future<void> _generateInitialPortrait(SessionProvider session) async {
-    if (session.uploadedImagePath == null ||
-        session.selectedPackage == null ||
-        session.selectedRig == null)
+    // Check if we have image bytes (works on web and mobile)
+    if (!session.hasUploadedImage || session.selectedPackage == null) {
+      debugPrint('Studio: Missing image bytes or package');
       return;
+    }
+
+    // Auto-select first rig if still none
+    if (session.selectedRig == null && cameraRigs.isNotEmpty) {
+      session.selectRig(cameraRigs.first);
+    }
+
+    if (session.selectedRig == null) {
+      debugPrint('Studio: No camera rig available');
+      return;
+    }
 
     session.setGenerating(true);
     try {
-      final file = File(session.uploadedImagePath!);
-      final bytes = await file.readAsBytes();
-      final base64Image = base64Encode(bytes);
+      // Use bytes directly - no File() needed, works on web!
+      final base64Image = base64Encode(session.uploadedImageBytes!);
 
       final resultUrl = await _gemini.generatePortrait(
         referenceImageBase64: base64Image,
