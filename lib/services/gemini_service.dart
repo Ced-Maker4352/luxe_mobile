@@ -139,7 +139,116 @@ class GeminiService {
     }
   }
 
-  Future<String> enhancePrompt(String draftPrompt) async {
+  /// Helper for GEMINI generation (generateContent endpoint with inlineData)
+  Future<String> _generateImageWithGemini(
+    String model,
+    String prompt,
+    String referenceImageBase64, {
+    String? backgroundImageBase64,
+  }) async {
+    final url = Uri.parse('$_baseUrl/$model:generateContent?key=$_apiKey');
+
+    final parts = <Map<String, dynamic>>[];
+    
+    // Add reference image
+    if (referenceImageBase64.isNotEmpty) {
+       final dataPart = _getDataPart(referenceImageBase64);
+       parts.add(dataPart);
+    }
+
+    // Add background image if present
+    if (backgroundImageBase64 != null && backgroundImageBase64.isNotEmpty) {
+       final bgPart = _getDataPart(backgroundImageBase64);
+       parts.add(bgPart);
+    }
+
+    // Add prompt
+    parts.add({'text': prompt});
+
+    final body = {
+      'contents': [
+        {'parts': parts}
+      ],
+      'generationConfig': {
+        // 'response_modalities': ['IMAGE'], // Do not send for gemini-2.5
+        'temperature': 0.4,
+      }
+    };
+
+    try {
+      debugPrint('GeminiService: Calling $model (Gemini) for image generation...');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      debugPrint('GeminiService Response Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data is Map && data.containsKey('candidates')) {
+          final candidates = data['candidates'] as List;
+          if (candidates.isNotEmpty) {
+            final candidate = candidates[0];
+            if (candidate is Map && candidate.containsKey('content')) {
+              final content = candidate['content'];
+              if (content is Map && content.containsKey('parts')) {
+                final parts = content['parts'] as List;
+                for (final part in parts) {
+                    if (part is Map && part.containsKey('inlineData')) {
+                        final inlineData = part['inlineData'];
+                        debugPrint('GeminiService: Gemini image received successfully!');
+                        final mimeType = inlineData['mimeType'];
+                        final base64Data = inlineData['data'];
+                        return 'data:$mimeType;base64,$base64Data';
+                    }
+                }
+              }
+            }
+          }
+        }
+        debugPrint('GeminiService: No image found in Gemini response');
+        return 'Error: No image in response.';
+      } else {
+        debugPrint('Gemini API Error: ${response.statusCode} - ${response.body}');
+        return 'Error: Gemini API returned ${response.statusCode}';
+      }
+    } catch (e) {
+      debugPrint('Gemini Network Error: $e');
+      return 'Error: Network request failed';
+    }
+  }
+
+  // Helper to extract clean data from a data URL for inlineData
+  Map<String, dynamic> _getDataPart(String base64String) {
+    String data = base64String;
+    String mimeType = 'image/jpeg';
+
+    if (base64String.startsWith('data:')) {
+      final match = RegExp(
+        r'^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$',
+      ).firstMatch(base64String);
+      if (match != null) {
+        mimeType = match.group(1)!;
+        data = match.group(2)!;
+      }
+    } else if (base64String.contains(',')) {
+      final parts = base64String.split(',');
+      data = parts[1];
+      final header = parts[0];
+      final mimeMatch = RegExp(
+        r':([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);',
+      ).firstMatch(header);
+      if (mimeMatch != null) {
+        mimeType = mimeMatch.group(1)!;
+      }
+    }
+
+    return {
+      'inlineData': {'mimeType': mimeType, 'data': data},
+    };
+  }
     final contents = [
       {
         'parts': [
@@ -189,12 +298,30 @@ ${backgroundImageBase64 != null ? 'INSTRUCTION: Composite the subject from the f
 
 Final Output: RAW, unedited, professional photographic master file. 4K resolution. Zero AI artifacts.""";
 
-    // Try primary model: imagen-4.0-fast-generate-001
-    debugPrint(
-      'GeminiService: Attempting primary model imagen-4.0-fast-generate-001...',
-    );
+    // Try primary model: imagen-4.0-fast-generate-001 (for new generation)
+    // If we have a reference image, we might need to use gemini-2.5-flash-image if imagen 4 doesn't support it?
+    // Let's stick to imagen-4.0-fast-generate-001 for now but handle the error or switch model if reference is present.
+
+    // Actually, for generation from reference image, let's use gemini-2.5-flash-image based on web app success.
+    String modelName = 'imagen-4.0-fast-generate-001';
+    if (referenceImageBase64.isNotEmpty) {
+      modelName = 'gemini-2.5-flash-image';
+    }
+
+    debugPrint('GeminiService: Attempting primary model $modelName...');
+    // Note: gemini-2.5 uses generateContent, not predict.
+    if (modelName.contains('gemini')) {
+      // Use _generateContent with image payload
+      return _generateImageWithGemini(
+        modelName,
+        finalPrompt,
+        referenceImageBase64,
+        backgroundImageBase64: backgroundImageBase64,
+      );
+    }
+
     var result = await _generateImageWithImagen(
-      'imagen-4.0-fast-generate-001',
+      modelName,
       finalPrompt,
       referenceImageBase64: referenceImageBase64,
     );
@@ -231,16 +358,13 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
     If the clothing request refers to a specific brand or institution, create a generic artistic version with similar colors and style.
     Output a photorealistic image.""";
 
-    // Try imagen-4.0-fast-generate-001
-    var result = await _generateImageWithImagen(
-      'imagen-4.0-fast-generate-001',
+    // Use gemini-2.5-flash-image for styling change
+    return _generateImageWithGemini(
+      'gemini-2.5-flash-image',
       prompt,
-      referenceImageBase64: currentImageBase64,
+      currentImageBase64,
+      backgroundImageBase64: clothingReferenceBase64, // Reuse this param for second image
     );
-    if (result.isNotEmpty && result.startsWith('data:image')) {
-      return result;
-    }
-    return result;
   }
 
   Future<String> applySkinTexture(
@@ -254,47 +378,35 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
     IDENTITY LOCK: Preserve all facial features, hair, body proportions, and distinguishing features exactly.
     Only modify the skin texture as instructed. Output a photorealistic image.""";
 
-    // Use imagen-4.0-fast-generate-001 for skin texture
-    var result = await _generateImageWithImagen(
-      'imagen-4.0-fast-generate-001',
+    // Use gemini-2.5-flash-image for skin texture
+    return _generateImageWithGemini(
+      'gemini-2.5-flash-image',
       prompt,
-      referenceImageBase64: currentImageBase64,
+      currentImageBase64,
     );
-    if (result.isNotEmpty && result.startsWith('data:image')) {
-      return result;
-    }
-    return result;
   }
 
   Future<String> upscaleTo4K(String currentImageBase64) async {
     final prompt =
         "Perform a high-fidelity UHD enhancement. Upscale to 4K resolution (3840x5120). Reconstruct fine skin pores, hair strands, and fabric weaves. Maintain the exact facial identity. Enhance the lens-specific micro-contrast and sharpen eye reflections to liquid clarity.";
 
-    // Use imagen-4.0-fast-generate-001 for upscaling
-    var result = await _generateImageWithImagen(
-      'imagen-4.0-fast-generate-001',
+    // Use gemini-2.5-flash-image for upscaling
+    return _generateImageWithGemini(
+      'gemini-2.5-flash-image',
       prompt,
-      referenceImageBase64: currentImageBase64,
+      currentImageBase64,
     );
-    if (result.isNotEmpty && result.startsWith('data:image')) {
-      return result;
-    }
-    return result;
   }
 
   Future<String> removeBackground(String currentImageBase64) async {
     final prompt =
         "Isolate the subject from the background. Replace background with solid #FFFFFF. Maintain 1:1 facial identity and edge clarity on hair and clothing for professional compositing.";
 
-    // Use imagen-4.0-fast-generate-001 for background removal
-    var result = await _generateImageWithImagen(
-      'imagen-4.0-fast-generate-001',
+    // Use gemini-2.5-flash-image for background removal
+    return _generateImageWithGemini(
+      'gemini-2.5-flash-image',
       prompt,
-      referenceImageBase64: currentImageBase64,
+      currentImageBase64,
     );
-    if (result.isNotEmpty && result.startsWith('data:image')) {
-      return result;
-    }
-    return result;
   }
 }
