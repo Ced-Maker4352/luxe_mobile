@@ -44,8 +44,9 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Environment secrets
-.env
+# Environment secrets (use .env.local for local overrides)
+# assets/.env is tracked with placeholder values for Flutter builds
+.env.local
 
 .prompt_attachments
 *.hologram.dart
