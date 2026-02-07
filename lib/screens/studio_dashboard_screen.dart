@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/session_provider.dart';
 import '../models/types.dart';
 import '../shared/constants.dart';
+import '../services/gemini_service.dart';
 import 'asset_editor_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
@@ -76,23 +77,47 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
     session.setGenerating(true);
     try {
-      // Preview mode: Use uploaded image with settings info
-      final base64Image = base64Encode(session.uploadedImageBytes!);
-      final dataUrl = 'data:image/jpeg;base64,$base64Image';
+      debugPrint('Studio: Starting generation with Gemini...');
+      final service = GeminiService();
+
+      // Combine package prompt with user custom prompt
+      final fullPrompt =
+          '${session.selectedPackage!.basePrompt} $_customPrompt';
+
+      final resultText = await service.generatePortrait(
+        referenceImageBase64: base64Encode(session.uploadedImageBytes!),
+        basePrompt: fullPrompt,
+        opticProtocol: session.selectedRig!.promptAddition,
+        backgroundImageBase64: null, // TODO: Handle background image if needed
+        skinTexturePrompt: _selectedSkinTexture.prompt,
+      );
+
+      // Determine if result is an image or text fallback
+      String imageUrl;
+      if (resultText.startsWith('data:image') ||
+          (resultText.length > 200 && !resultText.contains(' '))) {
+        imageUrl = resultText.startsWith('data:')
+            ? resultText
+            : 'data:image/jpeg;base64,$resultText';
+      } else {
+        debugPrint(
+          'Studio: API returned text (fallback to original): $resultText',
+        );
+        final base64Image = base64Encode(session.uploadedImageBytes!);
+        imageUrl = 'data:image/jpeg;base64,$base64Image';
+      }
 
       session.addResult(
         GenerationResult(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
-          imageUrl: dataUrl,
+          imageUrl: imageUrl,
           mediaType: 'image',
           packageType: session.selectedPackage!.id,
           timestamp: DateTime.now().millisecondsSinceEpoch,
         ),
       );
       debugPrint('Studio: Generated with rig: ${session.selectedRig!.name}');
-      debugPrint(
-        'Studio: Mode: $_bgMode, Prompt: $_customPrompt, Background: $_customBgPrompt',
-      );
+      debugPrint('Studio: API Response length: ${resultText.length}');
     } catch (e) {
       debugPrint("Generation failed: $e");
     } finally {
