@@ -93,7 +93,13 @@ class GeminiService {
       );
 
       debugPrint('GeminiService Response Status: ${response.statusCode}');
-      debugPrint('GeminiService Response Body: ${response.body}');
+      if (response.body.length < 1000) {
+        debugPrint('GeminiService Response Body (SHORT): ${response.body}');
+      } else {
+        debugPrint(
+          'GeminiService Response Body Length: ${response.body.length}',
+        );
+      }
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
