@@ -76,13 +76,7 @@ class GeminiService {
     }
 
     final url = Uri.parse('$_baseUrl/$model:generateContent?key=$_apiKey');
-    final body = {
-      'contents': contents,
-      'generationConfig': {
-        'response_mime_type': 'image/png',
-        'response_modalities': ['IMAGE'],
-      },
-    };
+    final body = {'contents': contents, 'generationConfig': {}};
 
     try {
       debugPrint('GeminiService: Calling $model for image generation...');
