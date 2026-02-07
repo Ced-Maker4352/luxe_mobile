@@ -21,6 +21,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   String _customPrompt = '';
   final TextEditingController _promptController = TextEditingController();
 
+  // NEW: Missing web features
+  SkinTexture _selectedSkinTexture = skinTextures[1]; // Default to 'Soft'
+  String _bgMode = 'presets'; // 'package', 'presets', 'upload', 'ai'
+  String _customBgPrompt = '';
+  final TextEditingController _bgPromptController = TextEditingController();
+  bool _isEnhancingPrompt = false;
+
   @override
   void initState() {
     super.initState();
@@ -41,6 +48,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   @override
   void dispose() {
     _promptController.dispose();
+    _bgPromptController.dispose();
     super.dispose();
   }
 
@@ -203,78 +211,458 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (context, scrollController) => Column(
-          children: [
-            const SizedBox(height: 12),
-            _buildSheetHandle(),
-            const SizedBox(height: 20),
-            const Text(
-              'BACKDROP',
-              style: TextStyle(
-                color: Color(0xFFD4AF37),
-                letterSpacing: 3,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => DraggableScrollableSheet(
+          initialChildSize: 0.85,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (context, scrollController) => Column(
+            children: [
+              const SizedBox(height: 12),
+              _buildSheetHandle(),
+              const SizedBox(height: 20),
+              const Text(
+                'SCENE ARCHITECTURE',
+                style: TextStyle(
+                  color: Color(0xFFD4AF37),
+                  letterSpacing: 3,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Background Mode Tabs
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    _buildModeTab('package', 'Package', setModalState),
+                    const SizedBox(width: 8),
+                    _buildModeTab('presets', 'Library', setModalState),
+                    const SizedBox(width: 8),
+                    _buildModeTab('upload', 'Upload', setModalState),
+                    const SizedBox(width: 8),
+                    _buildModeTab('ai', 'AI', setModalState),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Mode Content
+              Expanded(
+                child: _buildBgModeContent(scrollController, setModalState),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModeTab(String mode, String label, StateSetter setModalState) {
+    final isActive = _bgMode == mode;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setModalState(() => _bgMode = mode);
+          setState(() {});
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isActive ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: isActive ? Colors.white : Colors.white24),
+          ),
+          child: Text(
+            label.toUpperCase(),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: isActive ? Colors.black : Colors.white54,
+              fontWeight: FontWeight.bold,
+              fontSize: 10,
+              letterSpacing: 1,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBgModeContent(
+    ScrollController controller,
+    StateSetter setModalState,
+  ) {
+    switch (_bgMode) {
+      case 'package':
+        return const Center(
+          child: Padding(
+            padding: EdgeInsets.all(32),
+            child: Text(
+              'Using curated package environment.\nSelect a different mode to customize.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white38, fontSize: 12),
+            ),
+          ),
+        );
+      case 'presets':
+        return ListView.builder(
+          controller: controller,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: backgroundPresets.length,
+          itemBuilder: (context, catIndex) {
+            final category = backgroundPresets[catIndex];
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                    category.category.toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white54,
+                      fontSize: 10,
+                      letterSpacing: 2,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemCount: category.items.length,
+                  itemBuilder: (context, index) {
+                    final preset = category.items[index];
+                    final isSelected = _selectedBackdrop?.id == preset.id;
+                    return _buildBackdropTile(preset, isSelected);
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      case 'upload':
+        // TODO: Implement image upload for custom backdrop
+        return Center(
+          child: GestureDetector(
+            onTap: () {
+              // Will add image picker integration
+              Navigator.pop(context);
+            },
+            child: Container(
+              margin: const EdgeInsets.all(32),
+              padding: const EdgeInsets.all(40),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white24, width: 2),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.upload_file, color: Colors.white38, size: 48),
+                  SizedBox(height: 16),
+                  Text(
+                    'Upload Custom Backdrop',
+                    style: TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Choose your scene environment',
-              style: TextStyle(color: Colors.white38, fontSize: 11),
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: ListView.builder(
-                controller: scrollController,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: backgroundPresets.length,
-                itemBuilder: (context, catIndex) {
-                  final category = backgroundPresets[catIndex];
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: Text(
-                          category.category.toUpperCase(),
+          ),
+        );
+      case 'ai':
+        return SingleChildScrollView(
+          controller: controller,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // AI Prompt Input with Clear/Enhance buttons
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0A0A0A),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: _bgPromptController,
+                      maxLines: 3,
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      decoration: const InputDecoration(
+                        hintText: "Describe your dream location...",
+                        hintStyle: TextStyle(color: Colors.white24),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.all(12),
+                      ),
+                      onChanged: (value) {
+                        setModalState(() => _customBgPrompt = value);
+                      },
+                    ),
+                    // Action Buttons Row
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 6,
+                      ),
+                      decoration: const BoxDecoration(
+                        border: Border(top: BorderSide(color: Colors.white10)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          // Clear Button
+                          if (_bgPromptController.text.isNotEmpty)
+                            GestureDetector(
+                              onTap: () {
+                                _bgPromptController.clear();
+                                setModalState(() => _customBgPrompt = '');
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.red.withValues(alpha: 0.7),
+                                  size: 16,
+                                ),
+                              ),
+                            ),
+                          const SizedBox(width: 8),
+                          // Enhance Button
+                          GestureDetector(
+                            onTap: _isEnhancingPrompt
+                                ? null
+                                : () {
+                                    // Simulated enhance - in real app would call AI
+                                    setModalState(
+                                      () => _isEnhancingPrompt = true,
+                                    );
+                                    Future.delayed(
+                                      const Duration(seconds: 1),
+                                      () {
+                                        if (mounted) {
+                                          final enhanced =
+                                              "${_bgPromptController.text}, cinematic lighting, 8K detail";
+                                          _bgPromptController.text = enhanced;
+                                          setModalState(() {
+                                            _customBgPrompt = enhanced;
+                                            _isEnhancingPrompt = false;
+                                          });
+                                        }
+                                      },
+                                    );
+                                  },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(
+                                  0xFFD4AF37,
+                                ).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Row(
+                                children: [
+                                  _isEnhancingPrompt
+                                      ? const SizedBox(
+                                          width: 12,
+                                          height: 12,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 1.5,
+                                            color: Color(0xFFD4AF37),
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.auto_fix_high,
+                                          size: 12,
+                                          color: Color(0xFFD4AF37),
+                                        ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    _isEnhancingPrompt
+                                        ? 'ENHANCING...'
+                                        : 'ENHANCE',
+                                    style: const TextStyle(
+                                      color: Color(0xFFD4AF37),
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Prompt Categories
+              ...promptCategories.entries.map(
+                (entry) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 4,
+                          height: 4,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFD4AF37),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          entry.key.toUpperCase(),
                           style: const TextStyle(
                             color: Colors.white54,
-                            fontSize: 10,
+                            fontSize: 9,
                             letterSpacing: 2,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 4,
-                              crossAxisSpacing: 8,
-                              mainAxisSpacing: 8,
-                              childAspectRatio: 1,
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: entry.value
+                          .map(
+                            (prompt) => GestureDetector(
+                              onTap: () {
+                                final current = _bgPromptController.text;
+                                _bgPromptController.text = current.isEmpty
+                                    ? prompt
+                                    : '$current $prompt';
+                                setModalState(
+                                  () => _customBgPrompt =
+                                      _bgPromptController.text,
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.05),
+                                  ),
+                                ),
+                                child: Text(
+                                  prompt,
+                                  style: const TextStyle(
+                                    color: Colors.white54,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ),
                             ),
-                        itemCount: category.items.length,
-                        itemBuilder: (context, index) {
-                          final preset = category.items[index];
-                          final isSelected = _selectedBackdrop?.id == preset.id;
-                          return _buildBackdropTile(preset, isSelected);
-                        },
-                      ),
-                    ],
-                  );
-                },
+                          )
+                          .toList(),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
+              const Divider(color: Colors.white10),
+              const SizedBox(height: 16),
+              // Curated Locations
+              Row(
+                children: [
+                  const Icon(Icons.public, size: 12, color: Color(0xFFD4AF37)),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'CURATED LOCATIONS',
+                    style: TextStyle(
+                      color: Colors.white54,
+                      fontSize: 9,
+                      letterSpacing: 2,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+                childAspectRatio: 2.5,
+                children: environmentPromptTips.entries
+                    .expand(
+                      (entry) => entry.value
+                          .take(2)
+                          .map(
+                            (tip) => GestureDetector(
+                              onTap: () {
+                                _bgPromptController.text = tip;
+                                setModalState(() => _customBgPrompt = tip);
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.1),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      entry.key.toUpperCase(),
+                                      style: const TextStyle(
+                                        color: Color(0xFFD4AF37),
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      tip,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Colors.white38,
+                                        fontSize: 9,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                    )
+                    .toList(),
+              ),
+            ],
+          ),
+        );
+      default:
+        return const SizedBox();
+    }
   }
 
   Widget _buildBackdropTile(BackgroundPreset preset, bool isSelected) {
@@ -317,111 +705,248 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildSheetHandle(),
-              const SizedBox(height: 20),
-              const Text(
-                'STYLE PROMPT',
-                style: TextStyle(
-                  color: Color(0xFFD4AF37),
-                  letterSpacing: 3,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Describe styling, clothing, or mood',
-                style: TextStyle(color: Colors.white38, fontSize: 11),
-              ),
-              const SizedBox(height: 24),
-              TextField(
-                controller: _promptController,
-                maxLines: 4,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText:
-                      'e.g., "Wearing a navy Armani suit, soft golden hour light"',
-                  hintStyle: const TextStyle(
-                    color: Colors.white24,
-                    fontSize: 13,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildSheetHandle(),
+                const SizedBox(height: 20),
+                const Text(
+                  'STYLE PROMPT',
+                  style: TextStyle(
+                    color: Color(0xFFD4AF37),
+                    letterSpacing: 3,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
                   ),
-                  filled: true,
-                  fillColor: const Color(0xFF0A0A0A),
-                  border: OutlineInputBorder(
+                ),
+                const SizedBox(height: 16),
+
+                // Skin Texture Selector
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F0F0F),
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(
+                                Icons.auto_awesome,
+                                size: 12,
+                                color: Color(0xFFD4AF37),
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'SKIN FINISH',
+                                style: TextStyle(
+                                  color: Colors.white54,
+                                  fontSize: 9,
+                                  letterSpacing: 1.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            _selectedSkinTexture.label,
+                            style: const TextStyle(
+                              color: Color(0xFFD4AF37),
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.05),
+                          ),
+                        ),
+                        child: Row(
+                          children: skinTextures.map((texture) {
+                            final isActive =
+                                _selectedSkinTexture.id == texture.id;
+                            return Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  setModalState(
+                                    () => _selectedSkinTexture = texture,
+                                  );
+                                  setState(() {});
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isActive
+                                        ? const Color(0xFFD4AF37)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    texture.label.toUpperCase(),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: isActive
+                                          ? Colors.black
+                                          : Colors.white38,
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _selectedSkinTexture.description,
+                        style: const TextStyle(
+                          color: Colors.white24,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Prompt Input with Clear Button
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0A0A0A),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
                       color: Colors.white.withValues(alpha: 0.1),
                     ),
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.1),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFD4AF37)),
+                  child: Stack(
+                    children: [
+                      TextField(
+                        controller: _promptController,
+                        maxLines: 4,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'Describe styling, clothing, or mood...',
+                          hintStyle: const TextStyle(
+                            color: Colors.white24,
+                            fontSize: 13,
+                          ),
+                          filled: true,
+                          fillColor: Colors.transparent,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.fromLTRB(
+                            12,
+                            12,
+                            40,
+                            12,
+                          ),
+                        ),
+                      ),
+                      // Clear Button
+                      if (_promptController.text.isNotEmpty)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: GestureDetector(
+                            onTap: () {
+                              _promptController.clear();
+                              setModalState(() {});
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Icon(
+                                Icons.close,
+                                size: 14,
+                                color: Colors.red.withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              // Quick Presets
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _buildQuickPreset('Business Formal'),
-                  _buildQuickPreset('Casual Luxury'),
-                  _buildQuickPreset('Dramatic Lighting'),
-                  _buildQuickPreset('Studio Portrait'),
-                ],
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    setState(() => _customPrompt = _promptController.text);
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD4AF37),
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 16),
+
+                // Quick Presets
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _buildQuickPreset('Business Formal', setModalState),
+                    _buildQuickPreset('Casual Luxury', setModalState),
+                    _buildQuickPreset('Dramatic Noir', setModalState),
+                    _buildQuickPreset('Golden Hour', setModalState),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Apply Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      setState(() => _customPrompt = _promptController.text);
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD4AF37),
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                  ),
-                  child: const Text(
-                    'APPLY PROMPT',
-                    style: TextStyle(
-                      letterSpacing: 2,
-                      fontWeight: FontWeight.bold,
+                    child: const Text(
+                      'APPLY STYLING',
+                      style: TextStyle(
+                        letterSpacing: 2,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildQuickPreset(String label) {
+  Widget _buildQuickPreset(String label, StateSetter setModalState) {
     return GestureDetector(
       onTap: () {
         _promptController.text = label;
+        setModalState(() {});
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
