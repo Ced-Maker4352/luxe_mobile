@@ -1,16 +1,69 @@
 import 'dart:convert';
-import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
 
 class GeminiService {
   final String _apiKey = dotenv.env['VITE_GEMINI_API_KEY'] ?? '';
+  static const String _baseUrl =
+      'https://generativelanguage.googleapis.com/v1beta/models';
 
-  GenerativeModel _getModel(String modelName) {
-    return GenerativeModel(model: modelName, apiKey: _apiKey);
+  /// Generic helper to make the HTTP request to Gemini API
+  Future<String> _generateContent(
+    String model,
+    List<Map<String, dynamic>> contents,
+  ) async {
+    if (_apiKey.isEmpty) {
+      debugPrint('GeminiService: API Key is empty!');
+      return 'Error: API Key is missing.';
+    }
+
+    final url = Uri.parse('$_baseUrl/$model:generateContent?key=$_apiKey');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'contents': contents}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // Parse the response structure manually
+        // Response format: { candidates: [ { content: { parts: [ { text: "..." } ] } } ] }
+        if (data is Map && data.containsKey('candidates')) {
+          final candidates = data['candidates'] as List;
+          if (candidates.isNotEmpty) {
+            final candidate = candidates[0];
+            if (candidate is Map && candidate.containsKey('content')) {
+              final content = candidate['content'];
+              if (content is Map && content.containsKey('parts')) {
+                final parts = content['parts'] as List;
+                if (parts.isNotEmpty) {
+                  final part = parts[0];
+                  if (part is Map && part.containsKey('text')) {
+                    return part['text'] as String;
+                  }
+                }
+              }
+            }
+          }
+        }
+        return ''; // Return empty if structure doesn't match expected text response
+      } else {
+        debugPrint(
+          'Gemini API Error: ${response.statusCode} - ${response.body}',
+        );
+        return 'Error: Gemini API returned ${response.statusCode}';
+      }
+    } catch (e) {
+      debugPrint('Gemini Network Error: $e');
+      return 'Error: Network request failed';
+    }
   }
 
   // Helper to extract clean data from a data URL for inlineData
-  DataPart _getDataPart(String base64String) {
+  Map<String, dynamic> _getDataPart(String base64String) {
     String data = base64String;
     String mimeType = 'image/jpeg';
 
@@ -34,18 +87,24 @@ class GeminiService {
       }
     }
 
-    return DataPart(mimeType, base64.decode(data));
+    // Direct use of base64 string for JSON payload
+    return {
+      'inlineData': {'mimeType': mimeType, 'data': data},
+    };
   }
 
   Future<String> enhancePrompt(String draftPrompt) async {
-    final model = _getModel('gemini-2.5-flash');
-    final content = [
-      Content.text(
-        'You are a world-class photography director. Transform this raw user idea into a professional image generation prompt. Add specific details about lighting (e.g., volumetric, rim, chiaroscuro), camera angle, lens type (e.g., 85mm), and texture. Keep it concise but elite. \n\nUser Idea: "$draftPrompt"\n\nProfessional Prompt:',
-      ),
+    final contents = [
+      {
+        'parts': [
+          {
+            'text':
+                'You are a world-class photography director. Transform this raw user idea into a professional image generation prompt. Add specific details about lighting (e.g., volumetric, rim, chiaroscuro), camera angle, lens type (e.g., 85mm), and texture. Keep it concise but elite. \n\nUser Idea: "$draftPrompt"\n\nProfessional Prompt:',
+          },
+        ],
+      },
     ];
-    final response = await model.generateContent(content);
-    return response.text ?? draftPrompt;
+    return _generateContent('gemini-2.5-flash', contents);
   }
 
   Future<String> generatePortrait({
@@ -55,10 +114,6 @@ class GeminiService {
     String? backgroundImageBase64,
     String? skinTexturePrompt,
   }) async {
-    final model = _getModel(
-      'gemini-2.5-flash',
-    ); // Using available 2.5 flash alias
-
     final skinInstruction = skinTexturePrompt != null
         ? 'SKIN TEXTURE PRIORITY: $skinTexturePrompt'
         : 'SKIN TEXTURE: Balanced realism. Natural pores visible but not exaggerated. Healthy, hydrated look.';
@@ -75,31 +130,19 @@ ${backgroundImageBase64 != null ? 'INSTRUCTION: Composite the subject from the f
 
 Final Output: RAW, unedited, professional photographic master file. 4K resolution. Zero AI artifacts.""";
 
-    final parts = <DataPart>[];
+    final parts = <Map<String, dynamic>>[];
     parts.add(_getDataPart(referenceImageBase64));
 
     if (backgroundImageBase64 != null) {
       parts.add(_getDataPart(backgroundImageBase64));
     }
+    parts.add({'text': finalPrompt});
 
-    final content = [
-      Content.multi([...parts, TextPart(finalPrompt)]),
+    final contents = [
+      {'parts': parts},
     ];
 
-    final response = await model.generateContent(content);
-
-    // In Dart SDK, images are often returned as DataParts in the response
-    // But for the "image" specific models, we might need to handle it differently
-    // if the SDK doesn't support the 'inlineData' response part yet as a direct return.
-    // However, the current Dart SDK returns text. For image generation, we usually
-    // use specific Vertex AI or Imagen endpoints.
-    // In the web app, you are using "gemini-2.5-flash-image" which is a custom/preview model.
-    // I will assume for now the response contains the base64 or we handle the specific return type.
-
-    // NOTE: Generating images directly via Gemini's generateContent is a preview feature.
-    // I will port the logic structure, but we may need to use 'http' for experimental endpoints.
-
-    return response.text ?? '';
+    return _generateContent('gemini-2.5-flash', contents);
   }
 
   Future<String> generateStylingChange({
@@ -108,7 +151,6 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
     required String framingMode,
     String? clothingReferenceBase64,
   }) async {
-    final model = _getModel('gemini-2.5-flash');
     final image = _getDataPart(currentImageBase64);
 
     final framingInstructions = {
@@ -129,24 +171,23 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
     If the clothing request refers to a specific brand or institution, create a generic artistic version with similar colors and style.
     Output a photorealistic image.""";
 
-    final parts = <DataPart>[image];
+    final parts = <Map<String, dynamic>>[image];
     if (clothingReferenceBase64 != null) {
       parts.add(_getDataPart(clothingReferenceBase64));
     }
+    parts.add({'text': prompt});
 
-    final content = [
-      Content.multi([...parts, TextPart(prompt)]),
+    final contents = [
+      {'parts': parts},
     ];
 
-    final response = await model.generateContent(content);
-    return response.text ?? '';
+    return _generateContent('gemini-2.5-flash', contents);
   }
 
   Future<String> applySkinTexture(
     String currentImageBase64,
     String skinTexturePrompt,
   ) async {
-    final model = _getModel('gemini-2.5-flash');
     final image = _getDataPart(currentImageBase64);
 
     final prompt =
@@ -156,41 +197,51 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
     IDENTITY LOCK: Preserve all facial features, hair, body proportions, and distinguishing features exactly.
     Only modify the skin texture as instructed. Output a photorealistic image.""";
 
-    final content = [
-      Content.multi([image, TextPart(prompt)]),
+    final contents = [
+      {
+        'parts': [
+          image,
+          {'text': prompt},
+        ],
+      },
     ];
 
-    final response = await model.generateContent(content);
-    return response.text ?? '';
+    return _generateContent('gemini-2.5-flash', contents);
   }
 
   Future<String> upscaleTo4K(String currentImageBase64) async {
-    final model = _getModel('gemini-2.5-pro'); // Pro is better for upscaling
     final image = _getDataPart(currentImageBase64);
 
     final prompt =
         "Perform a high-fidelity UHD enhancement. Upscale to 4K resolution (3840x5120). Reconstruct fine skin pores, hair strands, and fabric weaves. Maintain the exact facial identity. Enhance the lens-specific micro-contrast and sharpen eye reflections to liquid clarity.";
 
-    final content = [
-      Content.multi([image, TextPart(prompt)]),
+    final contents = [
+      {
+        'parts': [
+          image,
+          {'text': prompt},
+        ],
+      },
     ];
 
-    final response = await model.generateContent(content);
-    return response.text ?? '';
+    return _generateContent('gemini-2.5-pro', contents);
   }
 
   Future<String> removeBackground(String currentImageBase64) async {
-    final model = _getModel('gemini-2.5-flash');
     final image = _getDataPart(currentImageBase64);
 
     final prompt =
         "Isolate the subject from the background. Replace background with solid #FFFFFF. Maintain 1:1 facial identity and edge clarity on hair and clothing for professional compositing.";
 
-    final content = [
-      Content.multi([image, TextPart(prompt)]),
+    final contents = [
+      {
+        'parts': [
+          image,
+          {'text': prompt},
+        ],
+      },
     ];
 
-    final response = await model.generateContent(content);
-    return response.text ?? '';
+    return _generateContent('gemini-2.5-flash', contents);
   }
 }
