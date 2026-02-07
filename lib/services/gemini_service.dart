@@ -57,9 +57,7 @@ class GeminiService {
     String? backgroundImageBase64,
     String? skinTexturePrompt,
   }) async {
-    final model = _getModel(
-      'gemini-1.5-flash-latest',
-    ); // Using stable flash for now
+    final model = _getModel('gemini-1.5-flash'); // Using stable flash for now
 
     final skinInstruction = skinTexturePrompt != null
         ? 'SKIN TEXTURE PRIORITY: $skinTexturePrompt'
@@ -110,7 +108,7 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
     required String framingMode,
     String? clothingReferenceBase64,
   }) async {
-    final model = _getModel('gemini-1.5-flash-latest');
+    final model = _getModel('gemini-1.5-flash');
     final image = _getDataPart(currentImageBase64);
 
     final framingInstructions = {
@@ -148,7 +146,7 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
     String currentImageBase64,
     String skinTexturePrompt,
   ) async {
-    final model = _getModel('gemini-1.5-flash-latest');
+    final model = _getModel('gemini-1.5-flash');
     final image = _getDataPart(currentImageBase64);
 
     final prompt =
@@ -167,9 +165,7 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
   }
 
   Future<String> upscaleTo4K(String currentImageBase64) async {
-    final model = _getModel(
-      'gemini-1.5-pro-latest',
-    ); // Pro is better for upscaling
+    final model = _getModel('gemini-1.5-pro'); // Pro is better for upscaling
     final image = _getDataPart(currentImageBase64);
 
     final prompt =
@@ -184,7 +180,7 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
   }
 
   Future<String> removeBackground(String currentImageBase64) async {
-    final model = _getModel('gemini-1.5-flash-latest');
+    final model = _getModel('gemini-1.5-flash');
     final image = _getDataPart(currentImageBase64);
 
     final prompt =

@@ -121,6 +121,29 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       debugPrint('Studio: API Response length: ${resultText.length}');
     } catch (e) {
       debugPrint("Generation failed: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Generation failed: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+      // Fallback: Add original image so screen isn't empty
+      if (session.results.isEmpty) {
+        final base64Image = base64Encode(session.uploadedImageBytes!);
+        final dataUrl = 'data:image/jpeg;base64,$base64Image';
+        session.addResult(
+          GenerationResult(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            imageUrl: dataUrl,
+            mediaType: 'image',
+            packageType: session.selectedPackage!.id,
+            timestamp: DateTime.now().millisecondsSinceEpoch,
+          ),
+        );
+      }
     } finally {
       session.setGenerating(false);
     }
