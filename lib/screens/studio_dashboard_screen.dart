@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/session_provider.dart';
-import '../services/gemini_service.dart';
 import '../models/types.dart';
 import '../shared/constants.dart';
 import 'asset_editor_screen.dart';
@@ -16,7 +15,8 @@ class StudioDashboardScreen extends StatefulWidget {
 }
 
 class _StudioDashboardScreenState extends State<StudioDashboardScreen> {
-  final GeminiService _gemini = GeminiService();
+  // Note: GeminiService is not used currently because the Dart SDK
+  // doesn't support image generation. Using uploaded image preview instead.
 
   @override
   void initState() {
@@ -54,26 +54,23 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen> {
 
     session.setGenerating(true);
     try {
-      // Use bytes directly - no File() needed, works on web!
-      final base64Image = base64Encode(session.uploadedImageBytes!);
+      // NOTE: The Dart Gemini SDK text models don't generate images.
+      // We'll display the uploaded image directly as a preview.
+      // In production, integrate with Vertex AI Imagen or similar.
 
-      final resultUrl = await _gemini.generatePortrait(
-        referenceImageBase64: base64Image,
-        basePrompt: session.selectedPackage!.basePrompt,
-        opticProtocol: session.selectedRig!.opticProtocol,
-      );
+      final base64Image = base64Encode(session.uploadedImageBytes!);
+      final dataUrl = 'data:image/jpeg;base64,$base64Image';
 
       session.addResult(
         GenerationResult(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
-          imageUrl: resultUrl.isNotEmpty
-              ? resultUrl
-              : 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=1000',
+          imageUrl: dataUrl,
           mediaType: 'image',
           packageType: session.selectedPackage!.id,
           timestamp: DateTime.now().millisecondsSinceEpoch,
         ),
       );
+      debugPrint('Studio: Added uploaded image as result');
     } catch (e) {
       debugPrint("Generation failed: $e");
     } finally {
@@ -328,30 +325,49 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNavIcon(Icons.grid_view_rounded, 'GALLERY'),
-          _buildNavIcon(Icons.layers_outlined, 'PORTFOLIO'),
-          _buildNavIcon(Icons.shopping_bag_outlined, 'BOUTIQUE'),
-          _buildNavIcon(Icons.person_outline, 'LOGIN'),
+          _buildNavIcon(Icons.grid_view_rounded, 'GALLERY', () {
+            // Already on gallery/studio
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('You are in the Gallery')),
+            );
+          }),
+          _buildNavIcon(Icons.layers_outlined, 'PORTFOLIO', () {
+            // Show portfolio of generated images
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Portfolio coming soon!')),
+            );
+          }),
+          _buildNavIcon(Icons.shopping_bag_outlined, 'BOUTIQUE', () {
+            Navigator.pushNamed(context, '/boutique');
+          }),
+          _buildNavIcon(Icons.person_outline, 'PROFILE', () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Profile coming soon!')),
+            );
+          }),
         ],
       ),
     );
   }
 
-  Widget _buildNavIcon(IconData icon, String label) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, color: Colors.white30, size: 24),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white24,
-            fontSize: 9,
-            letterSpacing: 1,
+  Widget _buildNavIcon(IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: Colors.white30, size: 24),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white24,
+              fontSize: 9,
+              letterSpacing: 1,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
