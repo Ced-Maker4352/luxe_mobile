@@ -6,7 +6,6 @@ import 'screens/boutique_screen.dart';
 import 'screens/camera_selection_screen.dart';
 import 'screens/identity_reference_screen.dart';
 import 'screens/studio_dashboard_screen.dart';
-import 'screens/access_granted_screen.dart';
 import 'providers/session_provider.dart';
 import 'services/stripe_service.dart';
 

@@ -16,7 +16,6 @@ class IdentityReferenceScreen extends StatefulWidget {
 
 class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
   Uint8List? _imageBytes;
-  String? _imageName;
   final ImagePicker _picker = ImagePicker();
 
   void _showImageSourceOptions() {
@@ -130,7 +129,6 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
         final bytes = await pickedFile.readAsBytes();
         setState(() {
           _imageBytes = bytes;
-          _imageName = pickedFile.name;
         });
         if (mounted) {
           // Store bytes directly in SessionProvider (works on web and mobile)

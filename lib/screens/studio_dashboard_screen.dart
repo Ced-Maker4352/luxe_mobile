@@ -81,13 +81,14 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       final service = GeminiService();
 
       // Combine package prompt with user custom prompt
+      // Combine package prompt with user custom prompt
       final fullPrompt =
-          '${session.selectedPackage!.basePrompt} $_customPrompt';
+          '${session.selectedPackage!.basePrompt} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""}';
 
       final resultText = await service.generatePortrait(
         referenceImageBase64: base64Encode(session.uploadedImageBytes!),
         basePrompt: fullPrompt,
-        opticProtocol: session.selectedRig!.promptAddition,
+        opticProtocol: session.selectedRig!.opticProtocol,
         backgroundImageBase64: null, // TODO: Handle background image if needed
         skinTexturePrompt: _selectedSkinTexture.prompt,
       );

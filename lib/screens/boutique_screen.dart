@@ -95,10 +95,8 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => AccessGrantedScreen(
-            package: pkg,
-            isPromoCode: true,
-          ),
+          builder: (context) =>
+              AccessGrantedScreen(package: pkg, isPromoCode: true),
         ),
       );
       return;
@@ -118,10 +116,8 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => AccessGrantedScreen(
-              package: pkg,
-              isPromoCode: false,
-            ),
+            builder: (context) =>
+                AccessGrantedScreen(package: pkg, isPromoCode: false),
           ),
         );
       }
@@ -340,10 +336,21 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text(
-                      'SELECT FOR COLLECTION',
-                      style: TextStyle(letterSpacing: 2),
-                    ),
+                    child: _isProcessing
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                        : const Text(
+                            'SELECT FOR COLLECTION',
+                            style: TextStyle(letterSpacing: 2),
+                          ),
                   ),
                 ),
               ],
