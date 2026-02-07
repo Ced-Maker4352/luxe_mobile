@@ -38,9 +38,7 @@ class GeminiService {
   }
 
   Future<String> enhancePrompt(String draftPrompt) async {
-    final model = _getModel(
-      'gemini-1.5-flash',
-    ); // Fallback model if 2.5 isn't available in SDK yet
+    final model = _getModel('gemini-2.5-flash');
     final content = [
       Content.text(
         'You are a world-class photography director. Transform this raw user idea into a professional image generation prompt. Add specific details about lighting (e.g., volumetric, rim, chiaroscuro), camera angle, lens type (e.g., 85mm), and texture. Keep it concise but elite. \n\nUser Idea: "$draftPrompt"\n\nProfessional Prompt:',
@@ -57,7 +55,9 @@ class GeminiService {
     String? backgroundImageBase64,
     String? skinTexturePrompt,
   }) async {
-    final model = _getModel('gemini-1.5-flash'); // Using stable flash alias
+    final model = _getModel(
+      'gemini-2.5-flash',
+    ); // Using available 2.5 flash alias
 
     final skinInstruction = skinTexturePrompt != null
         ? 'SKIN TEXTURE PRIORITY: $skinTexturePrompt'
@@ -108,7 +108,7 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
     required String framingMode,
     String? clothingReferenceBase64,
   }) async {
-    final model = _getModel('gemini-1.5-flash');
+    final model = _getModel('gemini-2.5-flash');
     final image = _getDataPart(currentImageBase64);
 
     final framingInstructions = {
@@ -146,7 +146,7 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
     String currentImageBase64,
     String skinTexturePrompt,
   ) async {
-    final model = _getModel('gemini-1.5-flash');
+    final model = _getModel('gemini-2.5-flash');
     final image = _getDataPart(currentImageBase64);
 
     final prompt =
@@ -165,7 +165,7 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
   }
 
   Future<String> upscaleTo4K(String currentImageBase64) async {
-    final model = _getModel('gemini-1.5-pro'); // Pro is better for upscaling
+    final model = _getModel('gemini-2.5-pro'); // Pro is better for upscaling
     final image = _getDataPart(currentImageBase64);
 
     final prompt =
@@ -180,7 +180,7 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
   }
 
   Future<String> removeBackground(String currentImageBase64) async {
-    final model = _getModel('gemini-1.5-flash');
+    final model = _getModel('gemini-2.5-flash');
     final image = _getDataPart(currentImageBase64);
 
     final prompt =
