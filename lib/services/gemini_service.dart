@@ -149,17 +149,17 @@ class GeminiService {
     final url = Uri.parse('$_baseUrl/$model:generateContent?key=$_apiKey');
 
     final parts = <Map<String, dynamic>>[];
-    
+
     // Add reference image
     if (referenceImageBase64.isNotEmpty) {
-       final dataPart = _getDataPart(referenceImageBase64);
-       parts.add(dataPart);
+      final dataPart = _getDataPart(referenceImageBase64);
+      parts.add(dataPart);
     }
 
     // Add background image if present
     if (backgroundImageBase64 != null && backgroundImageBase64.isNotEmpty) {
-       final bgPart = _getDataPart(backgroundImageBase64);
-       parts.add(bgPart);
+      final bgPart = _getDataPart(backgroundImageBase64);
+      parts.add(bgPart);
     }
 
     // Add prompt
@@ -167,16 +167,18 @@ class GeminiService {
 
     final body = {
       'contents': [
-        {'parts': parts}
+        {'parts': parts},
       ],
       'generationConfig': {
         // 'response_modalities': ['IMAGE'], // Do not send for gemini-2.5
         'temperature': 0.4,
-      }
+      },
     };
 
     try {
-      debugPrint('GeminiService: Calling $model (Gemini) for image generation...');
+      debugPrint(
+        'GeminiService: Calling $model (Gemini) for image generation...',
+      );
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -196,13 +198,15 @@ class GeminiService {
               if (content is Map && content.containsKey('parts')) {
                 final parts = content['parts'] as List;
                 for (final part in parts) {
-                    if (part is Map && part.containsKey('inlineData')) {
-                        final inlineData = part['inlineData'];
-                        debugPrint('GeminiService: Gemini image received successfully!');
-                        final mimeType = inlineData['mimeType'];
-                        final base64Data = inlineData['data'];
-                        return 'data:$mimeType;base64,$base64Data';
-                    }
+                  if (part is Map && part.containsKey('inlineData')) {
+                    final inlineData = part['inlineData'];
+                    debugPrint(
+                      'GeminiService: Gemini image received successfully!',
+                    );
+                    final mimeType = inlineData['mimeType'];
+                    final base64Data = inlineData['data'];
+                    return 'data:$mimeType;base64,$base64Data';
+                  }
                 }
               }
             }
@@ -211,7 +215,9 @@ class GeminiService {
         debugPrint('GeminiService: No image found in Gemini response');
         return 'Error: No image in response.';
       } else {
-        debugPrint('Gemini API Error: ${response.statusCode} - ${response.body}');
+        debugPrint(
+          'Gemini API Error: ${response.statusCode} - ${response.body}',
+        );
         return 'Error: Gemini API returned ${response.statusCode}';
       }
     } catch (e) {
@@ -249,6 +255,8 @@ class GeminiService {
       'inlineData': {'mimeType': mimeType, 'data': data},
     };
   }
+
+  Future<String> enhancePrompt(String draftPrompt) async {
     final contents = [
       {
         'parts': [
@@ -363,7 +371,8 @@ Final Output: RAW, unedited, professional photographic master file. 4K resolutio
       'gemini-2.5-flash-image',
       prompt,
       currentImageBase64,
-      backgroundImageBase64: clothingReferenceBase64, // Reuse this param for second image
+      backgroundImageBase64:
+          clothingReferenceBase64, // Reuse this param for second image
     );
   }
 
