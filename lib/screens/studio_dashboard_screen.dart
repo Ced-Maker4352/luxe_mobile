@@ -83,6 +83,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         ),
       );
       debugPrint('Studio: Generated with rig: ${session.selectedRig!.name}');
+      debugPrint(
+        'Studio: Mode: $_bgMode, Prompt: $_customPrompt, Background: $_customBgPrompt',
+      );
     } catch (e) {
       debugPrint("Generation failed: $e");
     } finally {
@@ -128,22 +131,16 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             ),
             const SizedBox(height: 20),
             Expanded(
-              child:// List of cameras
-            Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 itemCount: cameraRigs.length,
                 itemBuilder: (context, index) {
                   final rig = cameraRigs[index];
                   final isSelected = session.selectedRig?.id == rig.id;
-                  return _buildCameraCard(
-                    rig,
-                    isSelected,
-                    () {
-                      session.setRig(rig);
-                      Navigator.pop(context);
-                    },
-                  );
+                  return _buildCameraCard(rig, isSelected, () {
+                    session.selectRig(rig);
+                    Navigator.pop(context);
+                  });
                 },
               ),
             ),
@@ -287,46 +284,46 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               ),
               const SizedBox(height: 20),
               // Mode Content
-            Expanded(
-              child: _buildBgModeContent(scrollController, setModalState),
-            ),
-            // Generate Button (Bottom pinned)
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    // Trigger generation immediately
-                    _generatePortrait(context.read<SessionProvider>());
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD4AF37),
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.auto_awesome, size: 16),
-                      SizedBox(width: 8),
-                      Text(
-                        'GENERATE',
-                        style: TextStyle(
-                          letterSpacing: 2,
-                          fontWeight: FontWeight.bold,
-                        ),
+              Expanded(
+                child: _buildBgModeContent(scrollController, setModalState),
+              ),
+              // Generate Button (Bottom pinned)
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      // Trigger generation immediately
+                      _generatePortrait(context.read<SessionProvider>());
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD4AF37),
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                    ],
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.auto_awesome, size: 16),
+                        SizedBox(width: 8),
+                        Text(
+                          'GENERATE',
+                          style: TextStyle(
+                            letterSpacing: 2,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
           ),
         ),
       ),
@@ -410,9 +407,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.05),
-                  ),
+                  border: Border.all(color: Colors.white.withOpacity(0.05)),
                 ),
                 child: Column(
                   children: [
@@ -628,9 +623,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFFD4AF37,
-                                ).withOpacity(0.1),
+                                color: const Color(0xFFD4AF37).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Row(
@@ -815,7 +808,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                               ),
                             ),
                           )
-                    .toList(),
+                          .toList(),
+                    )
+                    .toList()
+                    .cast<Widget>(),
               ),
             ],
           ),
@@ -997,9 +993,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   decoration: BoxDecoration(
                     color: const Color(0xFF0A0A0A),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.1),
-                    ),
+                    border: Border.all(color: Colors.white.withOpacity(0.1)),
                   ),
                   child: Column(
                     children: [
@@ -1054,9 +1048,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                               onTap: () {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text(
-                                      'Voice input coming soon!',
-                                    ),
+                                    content: Text('Voice input coming soon!'),
                                     duration: Duration(seconds: 1),
                                   ),
                                 );
