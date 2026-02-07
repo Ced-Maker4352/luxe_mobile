@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'screens/splash_screen.dart';
+import 'screens/boutique_screen.dart';
+import 'screens/camera_selection_screen.dart';
+import 'screens/identity_reference_screen.dart';
+import 'screens/studio_dashboard_screen.dart';
 import 'providers/session_provider.dart';
 
 void main() async {
@@ -29,6 +33,12 @@ class MainApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFF0A0A0A),
       ),
       home: const SplashScreen(),
+      routes: {
+        '/boutique': (context) => const BoutiqueScreen(),
+        '/camera': (context) => const CameraSelectionScreen(),
+        '/identity': (context) => const IdentityReferenceScreen(),
+        '/studio': (context) => const StudioDashboardScreen(),
+      },
     );
   }
 }
