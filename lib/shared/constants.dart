@@ -583,8 +583,7 @@ final List<PackageDetails> packages = [
       "Natural Light Simulation",
       "Social Media Crops",
     ],
-    exampleImage:
-        "https://images.unsplash.com/photo-1493225255756-d9584f8606e9?auto=format&fit=crop&q=80&w=800&h=1000",
+    exampleImage: "assets/images/independent_artist.jpg",
     basePrompt:
         "IDENTITY INTEGRITY: 1:1 facial identity. COMPOSITION: Candid, artistic portrait.",
     styles: [
