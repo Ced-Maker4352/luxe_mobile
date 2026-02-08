@@ -286,6 +286,64 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
               ),
             ),
 
+            // === SNAPSHOT OPTIONS SECTION (Middle Scroll) ===
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 100, // Reduced height
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: [
+                  _buildSnapshotCard(
+                    title: "DAILY SNAPSHOT",
+                    price: "\$0.99",
+                    icon: Icons.camera_alt_outlined,
+                    onTap: () {
+                      final snapshotPackage = packages.firstWhere(
+                        (p) => p.id == PortraitPackage.SNAPSHOT_DAILY,
+                      );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SingleStyleSelectionScreen(
+                            package: snapshotPackage,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 12),
+                  _buildSnapshotCard(
+                    title: "STYLE REFRESH",
+                    price: "\$1.99",
+                    icon: Icons.auto_awesome_outlined,
+                    isPremium: true,
+                    onTap: () {
+                      final snapshotPackage = packages.firstWhere(
+                        (p) => p.id == PortraitPackage.SNAPSHOT_STYLE,
+                      );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SingleStyleSelectionScreen(
+                            package: snapshotPackage,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 12),
+                  _buildSnapshotCard(
+                    title: "BUDGET TIERS",
+                    price: "FROM \$3",
+                    icon: Icons.savings_outlined,
+                    onTap: _showBudgetTiersModal,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
             // === BOTTOM DETAILS SECTION ===
             Expanded(
               flex: 3,
@@ -379,72 +437,40 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                         ),
                     const Spacer(),
                     // Action Button
-                    // Snapshot Options Row
-                    const SizedBox(height: 24),
-                    Text(
-                      "OR TRY A QUICK SNAPSHOT",
-                      style: TextStyle(
-                        fontFamily: 'BodoniModa',
-                        fontSize: 10,
-                        letterSpacing: 2.0,
-                        color: Colors.white.withOpacity(0.5),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
+                    // Action Button
                     SizedBox(
-                      height: 110, // Fixed height for scrolling cards
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        children: [
-                          _buildSnapshotCard(
-                            title: "DAILY SNAPSHOT",
-                            price: "\$0.99",
-                            icon: Icons.camera_alt_outlined,
-                            onTap: () {
-                              final snapshotPackage = packages.firstWhere(
-                                (p) => p.id == PortraitPackage.SNAPSHOT_DAILY,
-                              );
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      SingleStyleSelectionScreen(
-                                        package: snapshotPackage,
-                                      ),
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () =>
+                            _handlePackageSelection(_selectedPackage),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFD4AF37), // Gold bg
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 5,
+                        ),
+                        child: _isProcessing
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.black,
+                                  ),
                                 ),
-                              );
-                            },
-                          ),
-                          const SizedBox(width: 12),
-                          _buildSnapshotCard(
-                            title: "STYLE REFRESH",
-                            price: "\$1.99",
-                            icon: Icons.auto_awesome_outlined,
-                            isPremium: true,
-                            onTap: () {
-                              final snapshotPackage = packages.firstWhere(
-                                (p) => p.id == PortraitPackage.SNAPSHOT_STYLE,
-                              );
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      SingleStyleSelectionScreen(
-                                        package: snapshotPackage,
-                                      ),
+                              )
+                            : const Text(
+                                'SELECT COLLECTION',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.0,
                                 ),
-                              );
-                            },
-                          ),
-                          const SizedBox(width: 12),
-                          _buildSnapshotCard(
-                            title: "BUDGET TIERS",
-                            price: "FROM \$3",
-                            icon: Icons.savings_outlined,
-                            onTap: _showBudgetTiersModal,
-                          ),
-                        ],
+                              ),
                       ),
                     ),
                     const SizedBox(height: 20),
