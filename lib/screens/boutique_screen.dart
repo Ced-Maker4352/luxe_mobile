@@ -14,8 +14,15 @@ class BoutiqueScreen extends StatefulWidget {
 }
 
 class _BoutiqueScreenState extends State<BoutiqueScreen> {
-  String _selectedCategory = 'premium';
+  // Default to the first package
+  late PackageDetails _selectedPackage;
   bool _isProcessing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedPackage = packages.first;
+  }
 
   Future<void> _handlePackageSelection(PackageDetails pkg) async {
     // Show promo code dialog
@@ -91,7 +98,6 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
       if (!mounted) return;
       final session = Provider.of<SessionProvider>(context, listen: false);
       session.selectPackage(pkg);
-      // Navigate to confirmation screen, then to upload page
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -105,14 +111,10 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
     // Proceed with Stripe Payment
     setState(() => _isProcessing = true);
     try {
-      final success = await StripeService.handlePayment(
-        pkg.id.name, // Convert enum to string like 'INDEPENDENT_ARTIST'
-        email,
-      );
+      final success = await StripeService.handlePayment(pkg.id.name, email);
       if (success && mounted) {
         final session = Provider.of<SessionProvider>(context, listen: false);
         session.selectPackage(pkg);
-        // Navigate to confirmation screen, then to upload page
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -125,7 +127,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Payment failed: $e'),
+            content: Text('Payment failed: \$e'),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -139,225 +141,279 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredPackages = packages
-        .where((p) => p.category == _selectedCategory)
-        .toList();
-
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
-      body: CustomScrollView(
-        slivers: [
-          // Premium Header
-          SliverAppBar(
-            backgroundColor: const Color(0xFF0A0A0A),
-            pinned: true,
-            expandedHeight: 120,
-            flexibleSpace: FlexibleSpaceBar(
-              title: const Text(
-                'STUDIO BOUTIQUE',
-                style: TextStyle(
-                  color: Colors.white,
-                  letterSpacing: 4,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              centerTitle: true,
-            ),
-          ),
-
-          // Category Selector
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildCategoryTab('PREMIUM', 'premium'),
-                  const SizedBox(width: 20),
-                  _buildCategoryTab('SNAPSHOT', 'snapshot'),
-                ],
-              ),
-            ),
-          ),
-
-          // Package Grid
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final pkg = filteredPackages[index];
-                return _buildPackageCard(pkg);
-              }, childCount: filteredPackages.length),
-            ),
-          ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryTab(String label, String category) {
-    final isActive = _selectedCategory == category;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedCategory = category),
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: isActive ? const Color(0xFFD4AF37) : Colors.white24,
-              letterSpacing: 2,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            height: 2,
-            width: 40,
-            color: isActive ? const Color(0xFFD4AF37) : Colors.transparent,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPackageCard(PackageDetails pkg) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 30),
-      decoration: BoxDecoration(
-        color: const Color(0xFF141414),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Banner Image
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: ShaderMask(
-              shaderCallback: (rect) {
-                return LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.0),
-                    Colors.black.withValues(alpha: 0.6),
-                  ],
-                ).createShader(rect);
-              },
-              blendMode: BlendMode.dstIn,
-              child: Image.network(
-                pkg.exampleImage,
-                height: 200,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // === TOP HERO SECTION ===
+            Expanded(
+              flex: 3,
+              child: Container(
                 width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      pkg.name.toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                    Text(
-                      pkg.price,
-                      style: const TextStyle(
-                        color: Color(0xFFD4AF37),
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  pkg.description,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5),
-                    fontSize: 14,
-                    height: 1.5,
+                decoration: const BoxDecoration(
+                  image: DecorationImage(
+                    image: NetworkImage(
+                      "https://images.unsplash.com/photo-1493225255756-d9584f8606e9?auto=format&fit=crop&q=80&w=1000",
+                    ), // Fallback hero
+                    fit: BoxFit.cover,
+                    opacity: 0.4,
                   ),
                 ),
-                const SizedBox(height: 20),
-                ...pkg.features
-                    .take(3)
-                    .map(
-                      (f) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "UNLEASH\nCREATIVITY",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily:
+                            'Serif', // Fallback to Serif if custom font not loaded
+                        color: Color(0xFFD4AF37),
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2.0,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "YOUR VISION, AMPLIFIED",
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 14,
+                        letterSpacing: 3.0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // === MIDDLE GRID SECTION ===
+            Expanded(
+              flex: 3,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: GridView.builder(
+                  physics: const NeverScrollableScrollPhysics(), // No scrolling
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    childAspectRatio: 1.1,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                  ),
+                  itemCount: packages.length,
+                  itemBuilder: (context, index) {
+                    final pkg = packages[index];
+                    final isSelected = pkg.id == _selectedPackage.id;
+                    return GestureDetector(
+                      onTap: () => setState(() => _selectedPackage = pkg),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color(0xFFD4AF37).withValues(alpha: 0.2)
+                              : Colors.transparent,
+                          border: Border.all(
+                            color: isSelected
+                                ? const Color(0xFFD4AF37)
+                                : const Color(
+                                    0xFFD4AF37,
+                                  ).withValues(alpha: 0.5),
+                            width: 1.5,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.all(8),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(
-                              Icons.check,
-                              color: Color(0xFFD4AF37),
-                              size: 14,
+                            Icon(
+                              _getPackageIcon(pkg.id),
+                              color: const Color(0xFFD4AF37),
+                              size: 24,
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(height: 8),
                             Text(
-                              f,
+                              pkg.name
+                                  .replaceAll("The ", "")
+                                  .replaceAll("Package", "")
+                                  .trim()
+                                  .toUpperCase(),
+                              textAlign: TextAlign.center,
                               style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 13,
+                                color: Color(0xFFD4AF37),
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.0,
                               ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
                       ),
-                    ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => _handlePackageSelection(pkg),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      foregroundColor: Colors.white,
-                      side: BorderSide(
-                        color: const Color(0xFFD4AF37).withValues(alpha: 0.5),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: _isProcessing
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
-                          )
-                        : const Text(
-                            'SELECT FOR COLLECTION',
-                            style: TextStyle(letterSpacing: 2),
-                          ),
-                  ),
+                    );
+                  },
                 ),
-              ],
+              ),
             ),
-          ),
-        ],
+
+            // === BOTTOM DETAILS SECTION ===
+            Expanded(
+              flex: 4,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF141824), // Dark blue/charcoal from mockup
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Dynamic Image + Title Row
+                    Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            _selectedPackage.exampleImage,
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _selectedPackage.name.toUpperCase(),
+                                style: const TextStyle(
+                                  color: Color(0xFFD4AF37), // Gold
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _selectedPackage.price,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w300,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    // Description
+                    Text(
+                      _selectedPackage.description,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 16),
+                    // Features
+                    ..._selectedPackage.features
+                        .take(3)
+                        .map(
+                          (f) => Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.check_circle_outline,
+                                  color: Color(0xFFD4AF37),
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  f,
+                                  style: const TextStyle(
+                                    color: Colors.white60,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    const Spacer(),
+                    // Action Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () =>
+                            _handlePackageSelection(_selectedPackage),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFD4AF37), // Gold bg
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 5,
+                        ),
+                        child: _isProcessing
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.black,
+                                  ),
+                                ),
+                              )
+                            : const Text(
+                                'SELECT FOR COLLECTION',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.5,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  IconData _getPackageIcon(PortraitPackage id) {
+    switch (id) {
+      case PortraitPackage.INDEPENDENT_ARTIST:
+        return Icons.person;
+      case PortraitPackage.STUDIO_PRO:
+        return Icons.camera_alt;
+      case PortraitPackage.VISIONARY_CREATOR:
+        return Icons.visibility;
+      case PortraitPackage.MASTER_PACKAGE:
+        return Icons.diamond;
+      case PortraitPackage.DIGITAL_NOMAD:
+        return Icons.laptop_mac;
+      case PortraitPackage.CREATIVE_DIRECTOR:
+        return Icons.movie_creation;
+      default:
+        return Icons.star;
+    }
   }
 }
