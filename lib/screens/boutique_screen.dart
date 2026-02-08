@@ -286,13 +286,12 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
               ),
             ),
 
-            // === SNAPSHOT OPTIONS SECTION (Middle Scroll) ===
+            // === SNAPSHOT OPTIONS SECTION (Centered Row) ===
             const SizedBox(height: 12),
-            SizedBox(
-              height: 100, // Reduced height
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _buildSnapshotCard(
                     title: "DAILY SNAPSHOT",
@@ -342,139 +341,146 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
 
             // === BOTTOM DETAILS SECTION ===
             Expanded(
               flex: 3,
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
                 decoration: const BoxDecoration(
-                  color: Color(0xFF141824), // Dark blue/charcoal from mockup
+                  color: Color(0xFF141824),
                   borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Dynamic Image + Title Row
-                    Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            _selectedPackage.exampleImage,
-                            width: 80,
-                            height: 80,
-                            fit: BoxFit.cover,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Dynamic Image + Title Row
+                      Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              _selectedPackage.exampleImage,
+                              width: 70,
+                              height: 70,
+                              fit: BoxFit.cover,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _selectedPackage.name.toUpperCase(),
-                                style: const TextStyle(
-                                  color: Color(0xFFD4AF37), // Gold
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.2,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _selectedPackage.price,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w300,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    // Description
-                    Text(
-                      _selectedPackage.description,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        height: 1.4,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 16),
-                    // Features
-                    ..._selectedPackage.features
-                        .take(3)
-                        .map(
-                          (f) => Padding(
-                            padding: const EdgeInsets.only(bottom: 6),
-                            child: Row(
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(
-                                  Icons.check_circle_outline,
-                                  color: Color(0xFFD4AF37),
-                                  size: 16,
-                                ),
-                                const SizedBox(width: 8),
                                 Text(
-                                  f,
+                                  _selectedPackage.name.toUpperCase(),
                                   style: const TextStyle(
-                                    color: Colors.white60,
-                                    fontSize: 13,
+                                    color: Color(0xFFD4AF37),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.0,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _selectedPackage.price,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w300,
                                   ),
                                 ),
                               ],
                             ),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      // Description
+                      Text(
+                        _selectedPackage.description,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          height: 1.3,
                         ),
-                    const Spacer(),
-                    // Action Button
-                    // Action Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () =>
-                            _handlePackageSelection(_selectedPackage),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFD4AF37), // Gold bg
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 12),
+                      // Features
+                      ..._selectedPackage.features
+                          .take(2)
+                          .map(
+                            (f) => Padding(
+                              padding: const EdgeInsets.only(bottom: 6),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.check_circle_outline,
+                                    color: Color(0xFFD4AF37),
+                                    size: 14,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      f,
+                                      style: const TextStyle(
+                                        color: Colors.white60,
+                                        fontSize: 11,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          elevation: 5,
-                        ),
-                        child: _isProcessing
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.black,
+                      const SizedBox(height: 16),
+                      // Action Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () =>
+                              _handlePackageSelection(_selectedPackage),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFD4AF37),
+                            foregroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 5,
+                          ),
+                          child: _isProcessing
+                              ? const SizedBox(
+                                  height: 18,
+                                  width: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.black,
+                                    ),
+                                  ),
+                                )
+                              : const Text(
+                                  'SELECT COLLECTION',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.0,
                                   ),
                                 ),
-                              )
-                            : const Text(
-                                'SELECT COLLECTION',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.0,
-                                ),
-                              ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -510,55 +516,57 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
     bool isPremium = false,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 140,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isPremium
-              ? const Color(0xFFD4AF37).withValues(alpha: 0.1)
-              : Colors.white.withValues(alpha: 0.05),
-          border: Border.all(
+    return Flexible(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
             color: isPremium
-                ? const Color(0xFFD4AF37)
-                : Colors.white.withValues(alpha: 0.1),
+                ? const Color(0xFFD4AF37).withValues(alpha: 0.1)
+                : Colors.white.withValues(alpha: 0.05),
+            border: Border.all(
+              color: isPremium
+                  ? const Color(0xFFD4AF37)
+                  : Colors.white.withValues(alpha: 0.1),
+            ),
+            borderRadius: BorderRadius.circular(12),
           ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Icon(
-              icon,
-              color: isPremium ? const Color(0xFFD4AF37) : Colors.white70,
-              size: 20,
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: isPremium ? const Color(0xFFD4AF37) : Colors.white,
-                    fontSize: 9,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                color: isPremium ? const Color(0xFFD4AF37) : Colors.white70,
+                size: 20,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isPremium ? const Color(0xFFD4AF37) : Colors.white,
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  price,
-                  style: TextStyle(
-                    color: isPremium ? const Color(0xFFD4AF37) : Colors.white70,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                price,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isPremium ? const Color(0xFFD4AF37) : Colors.white70,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
                 ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
