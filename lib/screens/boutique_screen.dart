@@ -5,6 +5,7 @@ import '../services/stripe_service.dart';
 import '../providers/session_provider.dart';
 import 'access_granted_screen.dart';
 import 'package:provider/provider.dart';
+import '../widgets/hero_carousel.dart';
 
 class BoutiqueScreen extends StatefulWidget {
   const BoutiqueScreen({super.key});
@@ -149,44 +150,68 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
             // === TOP HERO SECTION ===
             Expanded(
               flex: 3,
-              child: Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: NetworkImage(
-                      "https://images.unsplash.com/photo-1493225255756-d9584f8606e9?auto=format&fit=crop&q=80&w=1000",
-                    ), // Fallback hero
-                    fit: BoxFit.cover,
-                    opacity: 0.4,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // 1. CAROUSEL LAYER
+                  const HeroCarousel(),
+
+                  // 2. TEXT OVERLAY LAYER
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.4),
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.6),
+                        ],
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          "LUXE AI STUDIO",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'Serif',
+                            color: Color(0xFFD4AF37),
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 2.0,
+                            height: 1.2,
+                            shadows: [
+                              Shadow(
+                                blurRadius: 10.0,
+                                color: Colors.black,
+                                offset: Offset(2.0, 2.0),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "YOUR VISION, AMPLIFIED",
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 14,
+                            letterSpacing: 3.0,
+                            fontWeight: FontWeight.w500,
+                            shadows: const [
+                              Shadow(
+                                blurRadius: 4.0,
+                                color: Colors.black,
+                                offset: Offset(1.0, 1.0),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "UNLEASH\nCREATIVITY",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily:
-                            'Serif', // Fallback to Serif if custom font not loaded
-                        color: Color(0xFFD4AF37),
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 2.0,
-                        height: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "YOUR VISION, AMPLIFIED",
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
-                        fontSize: 14,
-                        letterSpacing: 3.0,
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
             ),
 
