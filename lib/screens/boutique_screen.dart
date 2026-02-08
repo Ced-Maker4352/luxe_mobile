@@ -545,91 +545,88 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder:
-          (context) => Container(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "SELECT BUDGET TIER",
-                  style: TextStyle(
-                    fontFamily: 'Serif',
-                    fontSize: 18,
-                    color: Color(0xFFD4AF37),
-                    letterSpacing: 1.0,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                ...budgetTiers.map(
-                  (tier) => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color:
-                            tier.bestValue
-                                ? const Color(0xFFD4AF37).withValues(alpha: 0.2)
-                                : Colors.white.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        "\$${tier.amount}",
-                        style: TextStyle(
-                          color:
-                              tier.bestValue
-                                  ? const Color(0xFFD4AF37)
-                                  : Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    title: Text(
-                      tier.label,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    subtitle: Text(
-                      tier.description,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.5),
-                        fontSize: 12,
-                      ),
-                    ),
-                    trailing:
-                        tier.bestValue
-                            ? Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFD4AF37),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text(
-                                "BEST VALUE",
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            )
-                            : null,
-                    onTap: () {
-                      Navigator.pop(context);
-                      // TODO: Navigate to payment for budget tier
-                    },
-                  ),
-                ),
-                const SizedBox(height: 24),
-              ],
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "SELECT BUDGET TIER",
+              style: TextStyle(
+                fontFamily: 'Serif',
+                fontSize: 18,
+                color: Color(0xFFD4AF37),
+                letterSpacing: 1.0,
+              ),
             ),
-          ),
+            const SizedBox(height: 24),
+            ...budgetTiers.map(
+              (tier) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: tier.bestValue
+                        ? const Color(0xFFD4AF37).withValues(alpha: 0.2)
+                        : Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    "\$${tier.amount}",
+                    style: TextStyle(
+                      color: tier.bestValue
+                          ? const Color(0xFFD4AF37)
+                          : Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                title: Text(
+                  tier.label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                subtitle: Text(
+                  tier.description,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    fontSize: 12,
+                  ),
+                ),
+                trailing: tier.bestValue
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD4AF37),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          "BEST VALUE",
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )
+                    : null,
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Navigate to payment for budget tier
+                },
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
     );
   }
+}
