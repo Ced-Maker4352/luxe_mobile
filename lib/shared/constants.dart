@@ -733,6 +733,60 @@ final List<PackageDetails> packages = [
       ),
     ],
   ),
+  PackageDetails(
+    id: PortraitPackage.SNAPSHOT_DAILY,
+    name: "Express Daily Snapshot",
+    price: "\$0.99",
+    payAsYouGoPrice: "\$0.99",
+    category: 'snapshot',
+    assetCount: 1,
+    description:
+        "One high-fidelity AI portrait. Fast, simple, and perfect for a daily refresh.",
+    features: ["1 Master Shot", "Standard Rig", "Auto-Style Protocol"],
+    exampleImage:
+        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=800&h=1000",
+    basePrompt:
+        "IDENTITY INTEGRITY: 1:1 facial accuracy. COMPOSITION: Professional headshot. LIGHTING: Soft studio light. TEXTURE: Realistic skin details.",
+    styles: [
+      StyleOption(
+        id: "daily_clean",
+        name: "Clean Studio",
+        description: "Pure, neutral studio look.",
+        icon: "⚪",
+        image:
+            "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400",
+        promptAddition:
+            "BACKGROUND: Minimalist grey studio. LIGHTING: Bright, even butterfly lighting.",
+      ),
+    ],
+  ),
+  PackageDetails(
+    id: PortraitPackage.SNAPSHOT_STYLE,
+    name: "Style Refresh Mini",
+    price: "\$1.99",
+    payAsYouGoPrice: "\$1.99",
+    category: 'snapshot',
+    assetCount: 1,
+    description:
+        "One premium stylized generation. Cinematic quality for an entry-level price.",
+    features: ["1 Stylized Shot", "Cinematic Rig", "Custom Style Target"],
+    exampleImage:
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=800&h=1000",
+    basePrompt:
+        "IDENTITY INTEGRITY: 1:1 facial accuracy. COMPOSITION: Cinematic portrait. TEXTURE: Film-grade grain and depth.",
+    styles: [
+      StyleOption(
+        id: "style_film",
+        name: "35mm Film",
+        description: "Classic analog aesthetic.",
+        icon: "🎞️",
+        image:
+            "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=400",
+        promptAddition:
+            "BACKGROUND: Out of focus urban lights. LIGHTING: Natural light with subtle halation. MOOD: Moody, organic.",
+      ),
+    ],
+  ),
 ];
 
 class BudgetTier {

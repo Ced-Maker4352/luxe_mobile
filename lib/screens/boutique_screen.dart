@@ -288,7 +288,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
 
             // === BOTTOM DETAILS SECTION ===
             Expanded(
-              flex: 4,
+              flex: 3,
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
@@ -379,100 +379,75 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                         ),
                     const Spacer(),
                     // Action Button
+                    // Snapshot Options Row
+                    const SizedBox(height: 24),
+                    Text(
+                      "OR TRY A QUICK SNAPSHOT",
+                      style: TextStyle(
+                        fontFamily: 'BodoniModa',
+                        fontSize: 10,
+                        letterSpacing: 2.0,
+                        color: Colors.white.withOpacity(0.5),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     SizedBox(
-                      width: double.infinity,
-                      child: Row(
+                      height: 110, // Fixed height for scrolling cards
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
                         children: [
-                          Expanded(
-                            flex: 3,
-                            child: ElevatedButton(
-                              onPressed: () =>
-                                  _handlePackageSelection(_selectedPackage),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(
-                                  0xFFD4AF37,
-                                ), // Gold bg
-                                foregroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                elevation: 5,
-                              ),
-                              child: _isProcessing
-                                  ? const SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              Colors.black,
-                                            ),
+                          _buildSnapshotCard(
+                            title: "DAILY SNAPSHOT",
+                            price: "\$0.99",
+                            icon: Icons.camera_alt_outlined,
+                            onTap: () {
+                              final snapshotPackage = packages.firstWhere(
+                                (p) => p.id == PortraitPackage.SNAPSHOT_DAILY,
+                              );
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      SingleStyleSelectionScreen(
+                                        package: snapshotPackage,
                                       ),
-                                    )
-                                  : const Text(
-                                      'SELECT COLLECTION',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 1.0,
-                                      ),
-                                    ),
-                            ),
+                                ),
+                              );
+                            },
                           ),
                           const SizedBox(width: 12),
-                          Expanded(
-                            flex: 2,
-                            child: OutlinedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        SingleStyleSelectionScreen(
-                                          package: _selectedPackage,
-                                        ),
-                                  ),
-                                );
-                              },
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: Colors.white30),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
+                          _buildSnapshotCard(
+                            title: "STYLE REFRESH",
+                            price: "\$1.99",
+                            icon: Icons.auto_awesome_outlined,
+                            isPremium: true,
+                            onTap: () {
+                              final snapshotPackage = packages.firstWhere(
+                                (p) => p.id == PortraitPackage.SNAPSHOT_STYLE,
+                              );
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      SingleStyleSelectionScreen(
+                                        package: snapshotPackage,
+                                      ),
                                 ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Text(
-                                    'TRY ONE',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 1.0,
-                                    ),
-                                  ),
-                                  Text(
-                                    _selectedPackage.payAsYouGoPrice,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Color(0xFFD4AF37),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 12),
+                          _buildSnapshotCard(
+                            title: "BUDGET TIERS",
+                            price: "FROM \$3",
+                            icon: Icons.savings_outlined,
+                            onTap: _showBudgetTiersModal,
                           ),
                         ],
                       ),
                     ),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -501,4 +476,160 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
         return Icons.star;
     }
   }
-}
+
+  Widget _buildSnapshotCard({
+    required String title,
+    required String price,
+    required IconData icon,
+    bool isPremium = false,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 140,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isPremium
+              ? const Color(0xFFD4AF37).withValues(alpha: 0.1)
+              : Colors.white.withValues(alpha: 0.05),
+          border: Border.all(
+            color: isPremium
+                ? const Color(0xFFD4AF37)
+                : Colors.white.withValues(alpha: 0.1),
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Icon(
+              icon,
+              color: isPremium ? const Color(0xFFD4AF37) : Colors.white70,
+              size: 20,
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: isPremium ? const Color(0xFFD4AF37) : Colors.white,
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  price,
+                  style: TextStyle(
+                    color: isPremium ? const Color(0xFFD4AF37) : Colors.white70,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showBudgetTiersModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF141824),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (context) => Container(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "SELECT BUDGET TIER",
+                  style: TextStyle(
+                    fontFamily: 'Serif',
+                    fontSize: 18,
+                    color: Color(0xFFD4AF37),
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ...budgetTiers.map(
+                  (tier) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color:
+                            tier.bestValue
+                                ? const Color(0xFFD4AF37).withValues(alpha: 0.2)
+                                : Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        "\$${tier.amount}",
+                        style: TextStyle(
+                          color:
+                              tier.bestValue
+                                  ? const Color(0xFFD4AF37)
+                                  : Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    title: Text(
+                      tier.label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    subtitle: Text(
+                      tier.description,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: 12,
+                      ),
+                    ),
+                    trailing:
+                        tier.bestValue
+                            ? Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFD4AF37),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                "BEST VALUE",
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            )
+                            : null,
+                    onTap: () {
+                      Navigator.pop(context);
+                      // TODO: Navigate to payment for budget tier
+                    },
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+    );
+  }
