@@ -4,11 +4,15 @@ import 'package:luxe_mobile/models/types.dart';
 class AccessGrantedScreen extends StatefulWidget {
   final PackageDetails package;
   final bool isPromoCode;
+  final bool singleStyleMode;
+  final String? selectedStyleId;
 
   const AccessGrantedScreen({
     super.key,
     required this.package,
     this.isPromoCode = false,
+    this.singleStyleMode = false,
+    this.selectedStyleId,
   });
 
   @override
@@ -66,7 +70,7 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
           child: Column(
             children: [
               const Spacer(),
-              
+
               // Animated checkmark
               AnimatedBuilder(
                 animation: _controller,
@@ -88,7 +92,9 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
+                            color: const Color(
+                              0xFFD4AF37,
+                            ).withValues(alpha: 0.3),
                             blurRadius: 30,
                             spreadRadius: 5,
                           ),
@@ -103,16 +109,20 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                   );
                 },
               ),
-              
+
               const SizedBox(height: 40),
-              
+
               // Title
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: Column(
                   children: [
                     Text(
-                      widget.isPromoCode ? 'VIP ACCESS GRANTED' : 'PAYMENT ACCEPTED',
+                      widget.isPromoCode
+                          ? 'VIP ACCESS GRANTED'
+                          : (widget.singleStyleMode
+                                ? 'STYLE UNLOCKED'
+                                : 'PAYMENT ACCEPTED'),
                       style: const TextStyle(
                         color: Color(0xFFD4AF37),
                         fontSize: 24,
@@ -122,7 +132,9 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Welcome to ${widget.package.name}',
+                      widget.singleStyleMode
+                          ? 'Get ready to create'
+                          : 'Welcome to ${widget.package.name}',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -131,7 +143,9 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      widget.package.description,
+                      widget.singleStyleMode
+                          ? 'Your single style session is ready.'
+                          : widget.package.description,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.5),
@@ -142,9 +156,9 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 40),
-              
+
               // Package details card
               FadeTransition(
                 opacity: _fadeAnimation,
@@ -169,37 +183,39 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                         ),
                       ),
                       const SizedBox(height: 16),
-                      ...widget.package.features.take(4).map(
-                        (feature) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.diamond_outlined,
-                                color: Color(0xFFD4AF37),
-                                size: 16,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  feature,
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 13,
+                      ...widget.package.features
+                          .take(4)
+                          .map(
+                            (feature) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.diamond_outlined,
+                                    color: Color(0xFFD4AF37),
+                                    size: 16,
                                   ),
-                                ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      feature,
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
               ),
-              
+
               const Spacer(),
-              
+
               // Next steps info
               FadeTransition(
                 opacity: _fadeAnimation,
@@ -231,9 +247,9 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Continue button
               SizedBox(
                 width: double.infinity,
@@ -256,7 +272,7 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 16),
             ],
           ),

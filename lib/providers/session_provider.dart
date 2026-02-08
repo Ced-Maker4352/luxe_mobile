@@ -9,6 +9,8 @@ class SessionProvider extends ChangeNotifier {
   String? _uploadedImageName;
   final List<GenerationResult> _results = [];
   bool _isGenerating = false;
+  StyleOption? _selectedStyle;
+  bool _isSingleStyleMode = false;
 
   PackageDetails? get selectedPackage => _selectedPackage;
   CameraRig? get selectedRig => _selectedRig;
@@ -16,6 +18,8 @@ class SessionProvider extends ChangeNotifier {
   String? get uploadedImageName => _uploadedImageName;
   List<GenerationResult> get results => _results;
   bool get isGenerating => _isGenerating;
+  StyleOption? get selectedStyle => _selectedStyle;
+  bool get isSingleStyleMode => _isSingleStyleMode;
 
   void addResult(GenerationResult result) {
     _results.insert(0, result);
@@ -27,6 +31,11 @@ class SessionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setSingleStyleMode(bool val) {
+    _isSingleStyleMode = val;
+    notifyListeners();
+  }
+
   void selectPackage(PackageDetails package) {
     _selectedPackage = package;
     notifyListeners();
@@ -34,6 +43,12 @@ class SessionProvider extends ChangeNotifier {
 
   void selectRig(CameraRig rig) {
     _selectedRig = rig;
+    notifyListeners();
+  }
+
+  void selectStyle(StyleOption style) {
+    _selectedStyle = style;
+    _isSingleStyleMode = true;
     notifyListeners();
   }
 
@@ -59,6 +74,8 @@ class SessionProvider extends ChangeNotifier {
     _uploadedImageName = null;
     _results.clear();
     _isGenerating = false;
+    _selectedStyle = null; // Clear style
+    _isSingleStyleMode = false; // Reset mode
     notifyListeners();
   }
 }

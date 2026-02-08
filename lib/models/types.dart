@@ -112,7 +112,8 @@ class PackageDetails {
   final PortraitPackage id;
   final String name;
   final String price;
-  final String category; // 'premium' | 'snapshot'
+  final String payAsYouGoPrice;
+  final String category;
   final int assetCount;
   final String description;
   final List<String> features;
@@ -124,6 +125,7 @@ class PackageDetails {
     required this.id,
     required this.name,
     required this.price,
+    required this.payAsYouGoPrice,
     required this.category,
     required this.assetCount,
     required this.description,

@@ -6,6 +6,7 @@ import '../providers/session_provider.dart';
 import 'access_granted_screen.dart';
 import 'package:provider/provider.dart';
 import '../widgets/hero_carousel.dart';
+import 'single_style_selection_screen.dart';
 
 class BoutiqueScreen extends StatefulWidget {
   const BoutiqueScreen({super.key});
@@ -380,37 +381,96 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                     // Action Button
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () =>
-                            _handlePackageSelection(_selectedPackage),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFD4AF37), // Gold bg
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 5,
-                        ),
-                        child: _isProcessing
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.black,
-                                  ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: ElevatedButton(
+                              onPressed: () =>
+                                  _handlePackageSelection(_selectedPackage),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(
+                                  0xFFD4AF37,
+                                ), // Gold bg
+                                foregroundColor: Colors.black,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
                                 ),
-                              )
-                            : const Text(
-                                'SELECT FOR COLLECTION',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.5,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 5,
+                              ),
+                              child: _isProcessing
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.black,
+                                            ),
+                                      ),
+                                    )
+                                  : const Text(
+                                      'SELECT COLLECTION',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 1.0,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 2,
+                            child: OutlinedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        SingleStyleSelectionScreen(
+                                          package: _selectedPackage,
+                                        ),
+                                  ),
+                                );
+                              },
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Colors.white30),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Text(
+                                    'TRY ONE',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.0,
+                                    ),
+                                  ),
+                                  Text(
+                                    _selectedPackage.payAsYouGoPrice,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFFD4AF37),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],

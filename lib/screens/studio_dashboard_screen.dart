@@ -92,10 +92,16 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       );
       final service = GeminiService();
 
-      // Combine package prompt with user custom prompt
-      // Combine package prompt with user custom prompt
-      final fullPrompt =
-          '${session.selectedPackage!.basePrompt} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""}';
+      // Combine package prompt with user custom prompt or single style prompt
+      String fullPrompt;
+      if (session.isSingleStyleMode && session.selectedStyle != null) {
+        fullPrompt =
+            '${session.selectedPackage!.basePrompt} ${session.selectedStyle!.promptAddition} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""}';
+        debugPrint('Studio: Using Single Style Prompt: $fullPrompt');
+      } else {
+        fullPrompt =
+            '${session.selectedPackage!.basePrompt} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""}';
+      }
 
       final resultText = await service.generatePortrait(
         referenceImageBase64: base64Encode(session.uploadedImageBytes!),
