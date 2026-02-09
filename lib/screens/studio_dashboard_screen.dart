@@ -69,11 +69,29 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   }
 
   Future<void> _generatePortrait(SessionProvider session) async {
+    debugPrint('Studio: _generatePortrait called');
+    debugPrint(
+      'Studio: Session State -> hasUploadedImage: ${session.hasUploadedImage}, Package: ${session.selectedPackage?.name}',
+    );
+
     if (!session.hasUploadedImage || session.selectedPackage == null) {
-      if (!session.hasUploadedImage) debugPrint('Studio: Missing image bytes');
+      if (!session.hasUploadedImage)
+        debugPrint('Studio: FAILURE - Missing image bytes');
       if (session.selectedPackage == null)
-        debugPrint('Studio: Missing package');
-      return;
+        debugPrint('Studio: FAILURE - Missing package');
+
+      // Auto-recover for testing if package is missing
+      if (session.selectedPackage == null && packages.isNotEmpty) {
+        debugPrint('Studio: Attempting auto-recovery for package...');
+        session.selectPackage(packages.first);
+        if (session.selectedPackage != null) {
+          debugPrint(
+            'Studio: Auto-recovery successful. Selected: ${session.selectedPackage!.name}',
+          );
+        }
+      }
+
+      if (!session.hasUploadedImage) return;
     }
 
     if (session.selectedRig == null && cameraRigs.isNotEmpty) {
