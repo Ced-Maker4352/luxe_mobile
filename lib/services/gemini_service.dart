@@ -212,7 +212,7 @@ class GeminiService {
             }
           }
         }
-        debugPrint('GeminiService: No image found in Gemini response');
+        debugPrint('GeminiService: No image found. content: ${response.body}');
         return 'Error: No image in response.';
       } else {
         debugPrint(
