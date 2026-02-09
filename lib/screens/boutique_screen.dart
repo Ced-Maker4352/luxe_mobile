@@ -47,9 +47,79 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
         final uri = Uri.parse(link);
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
-          // TODO: In a real app, listen for success via deep link or webhook
-          // For now, we mimic success after return for demo purposes?
-          // No, better to let them come back.
+
+          // Show confirmation dialog for web flow
+          if (mounted) {
+            final confirmed = await showDialog<bool>(
+              context: context,
+              barrierDismissible: false,
+              builder: (context) => AlertDialog(
+                backgroundColor: const Color(0xFF141824),
+                title: const Text(
+                  'Complete Payment',
+                  style: TextStyle(color: Color(0xFFD4AF37)),
+                ),
+                content: const Text(
+                  'Please complete the payment in the new tab.\n\nOnce done, click "I Have Paid" to continue.',
+                  style: TextStyle(color: Colors.white70),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false), // Cancel
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(color: Colors.white54),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context, true), // Confirm
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD4AF37),
+                    ),
+                    child: const Text(
+                      'I Have Paid',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+
+            if (confirmed == true) {
+              // Proceed as if payment succeeded
+              // 1. Update Supabase Profile
+              try {
+                await Supabase.instance.client.from('profiles').upsert({
+                  'id': user.id,
+                  'email': user.email,
+                  'is_subscribed': true,
+                  'subscription_tier': pkg.id.name,
+                  'updated_at': DateTime.now().toIso8601String(),
+                });
+              } catch (dbError) {
+                debugPrint('Error updating profile: $dbError');
+              }
+
+              // 2. Grant Access
+              if (mounted) {
+                final session = Provider.of<SessionProvider>(
+                  context,
+                  listen: false,
+                );
+                session.selectPackage(pkg);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        AccessGrantedScreen(package: pkg, isPromoCode: false),
+                  ),
+                );
+              }
+            }
+          }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Could not launch payment link')),
