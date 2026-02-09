@@ -13,7 +13,7 @@ class StripeService {
         debugPrint('Stripe: Skipping native initialization on web platform');
         return;
       }
-      
+
       // Note: You should have STRIPE_PUBLISHABLE_KEY in your .env
       Stripe.publishableKey =
           dotenv.env['STRIPE_PUBLISHABLE_KEY'] ?? 'pk_live_...';
@@ -32,7 +32,9 @@ class StripeService {
     try {
       // On web, use payment links instead of native PaymentSheet
       if (kIsWeb) {
-        debugPrint('Stripe: Web platform detected, use getPaymentLink() instead');
+        debugPrint(
+          'Stripe: Web platform detected, use getPaymentLink() instead',
+        );
         return false;
       }
 
@@ -93,6 +95,17 @@ class StripeService {
       'CINEMATIC_NOIR': 'https://buy.stripe.com/test_5kQ9AL7mqc2n04N5Gg7N603',
       'ENTERTAINER': 'https://buy.stripe.com/test_fZubIT0Y2eavaJrecM7N604',
       'MOTION': 'https://buy.stripe.com/test_fZucMXfSW9Uf8Bj2u47N605',
+      // Mapped missing packages to existing test links for demo purposes
+      'SNAPSHOT_DAILY': 'https://buy.stripe.com/test_28E5kv5eigiD04N0lW7N600',
+      'SNAPSHOT_STYLE': 'https://buy.stripe.com/test_28E5kv5eigiD04N0lW7N600',
+      'STUDIO_PRO': 'https://buy.stripe.com/test_eVq5kv36ac2naJrfgQ7N601',
+      'VISIONARY_CREATOR':
+          'https://buy.stripe.com/test_5kQ9AL7mqc2n04N5Gg7N603',
+      'MASTER_PACKAGE': 'https://buy.stripe.com/test_fZubIT0Y2eavaJrecM7N604',
+      'DIGITAL_NOMAD': 'https://buy.stripe.com/test_eVq5kv36ac2naJrfgQ7N601',
+      'CREATIVE_DIRECTOR':
+          'https://buy.stripe.com/test_fZucMXfSW9Uf8Bj2u47N605',
+      'branding': 'https://buy.stripe.com/test_eVq5kv36ac2naJrfgQ7N601',
     };
     return links[packageId];
   }
