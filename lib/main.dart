@@ -8,10 +8,19 @@ import 'screens/identity_reference_screen.dart';
 import 'screens/studio_dashboard_screen.dart';
 import 'providers/session_provider.dart';
 import 'services/stripe_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'screens/auth_gate.dart';
+import 'screens/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: "assets/.env");
+
+  await Supabase.initialize(
+    url: dotenv.env['VITE_SUPABASE_URL']!,
+    anonKey: dotenv.env['VITE_SUPABASE_ANON_KEY']!,
+  );
+
   await StripeService.init(); // Initialize Stripe
   runApp(
     ChangeNotifierProvider(
@@ -40,6 +49,8 @@ class MainApp extends StatelessWidget {
         '/camera': (context) => const CameraSelectionScreen(),
         '/identity': (context) => const IdentityReferenceScreen(),
         '/studio': (context) => const StudioDashboardScreen(),
+        '/auth': (context) => const AuthGate(),
+        '/login': (context) => const LoginScreen(),
       },
     );
   }

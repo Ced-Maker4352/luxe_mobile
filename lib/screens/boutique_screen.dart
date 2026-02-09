@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../shared/constants.dart';
 import '../models/types.dart';
 import '../services/stripe_service.dart';
@@ -27,94 +28,40 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
   }
 
   Future<void> _handlePackageSelection(PackageDetails pkg) async {
-    // Show promo code dialog
-    final promoController = TextEditingController();
-    final emailController = TextEditingController();
-
-    final result = await showDialog<Map<String, String>>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF141414),
-        title: const Text(
-          'Enter Your Details',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: emailController,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                labelStyle: TextStyle(color: Colors.white54),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white24),
-                ),
-              ),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: promoController,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: 'Promo Code (Optional)',
-                labelStyle: TextStyle(color: Colors.white54),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white24),
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: Colors.white54),
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, {
-              'email': emailController.text,
-              'promo': promoController.text,
-            }),
-            child: const Text(
-              'Continue',
-              style: TextStyle(color: Color(0xFFD4AF37)),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (result == null || result['email']?.isEmpty == true) return;
-
-    final email = result['email']!;
-    final promo = result['promo']?.toUpperCase() ?? '';
-
-    // Check for bypass codes
-    if (promo == 'LUXEFREE' || promo == 'CCDN_APPS') {
-      if (!mounted) return;
-      final session = Provider.of<SessionProvider>(context, listen: false);
-      session.selectPackage(pkg);
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              AccessGrantedScreen(package: pkg, isPromoCode: true),
-        ),
-      );
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null || user.email == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please sign in to continue')),
+        );
+      }
       return;
     }
 
-    // Proceed with Stripe Payment
     setState(() => _isProcessing = true);
     try {
-      final success = await StripeService.handlePayment(pkg.id.name, email);
+      // Proceed with Stripe Payment using authenticated email
+      final success = await StripeService.handlePayment(
+        pkg.id.name,
+        user.email!,
+      );
+
       if (success && mounted) {
+        // 1. Update Supabase Profile with subscription status
+        try {
+          await Supabase.instance.client.from('profiles').upsert({
+            'id': user.id,
+            'email': user.email,
+            'is_subscribed': true,
+            'subscription_tier': pkg.id.name,
+            'updated_at': DateTime.now().toIso8601String(),
+          });
+        } catch (dbError) {
+          debugPrint('Error updating profile: $dbError');
+          // We continue granting access since payment succeeded
+        }
+
+        // 2. Grant Access
         final session = Provider.of<SessionProvider>(context, listen: false);
         session.selectPackage(pkg);
         Navigator.push(
@@ -129,7 +76,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Payment failed: \$e'),
+            content: Text('Payment failed: $e'),
             backgroundColor: Colors.redAccent,
           ),
         );
