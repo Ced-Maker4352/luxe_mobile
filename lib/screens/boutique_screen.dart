@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:url_launcher/url_launcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../shared/constants.dart';
 import '../models/types.dart';
@@ -39,6 +41,31 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
     }
 
     setState(() => _isProcessing = true);
+    if (kIsWeb) {
+      final link = StripeService.getPaymentLink(pkg.id.name);
+      if (link != null) {
+        final uri = Uri.parse(link);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+          // TODO: In a real app, listen for success via deep link or webhook
+          // For now, we mimic success after return for demo purposes?
+          // No, better to let them come back.
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not launch payment link')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Payment link not configured for this package'),
+          ),
+        );
+      }
+      setState(() => _isProcessing = false);
+      return;
+    }
+
     try {
       // Proceed with Stripe Payment using authenticated email
       final success = await StripeService.handlePayment(

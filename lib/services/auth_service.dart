@@ -59,7 +59,8 @@ class AuthService {
 
       const webClientId =
           '925697717577-5c3nejgcjg3l19k76kifbnd5pfp9rbnj.apps.googleusercontent.com';
-      const iosClientId = 'YOUR_IOS_CLIENT_ID_FROM_GOOGLE_CLOUD_CONSOLE';
+      const iosClientId =
+          '925697717577-fke5epuauuh500pe48d5n9g6mdlh3f57.apps.googleusercontent.com';
 
       // Use the singleton instance
       final GoogleSignIn googleSignIn = GoogleSignIn.instance;
