@@ -307,14 +307,12 @@ User Idea: "$draftPrompt"''',
     String? backgroundImageBase64,
     String? skinTexturePrompt,
   }) async {
-    // ... (prompt logic remains same) ...
     final finalPrompt =
         """TASK: Generate a high-fidelity professional studio portrait of the SPECIFIC PERSON provided in the reference image.
 
-SUBJECT IDENTITY:
-- The face must match the reference image exactly. 
-- Maintain facial structure, key features, and likeness with high fidelity.
-- Do NOT alter the person's identity or create a generic face. 
+SUBJECT IDENTITY & STRUCTURE:
+- The face must match the reference image exactly (Maintain facial structure, key features, and likeness).
+- BODY STRUCTURE: Strictly preserve the subject's natural body weight, shape, and proportions. Do not slim or alter the body type.
 - This is a RE-STYLING task, not a new person generation.
 
 SCENE & STYLE CONTEXT:
@@ -330,6 +328,7 @@ ${backgroundImageBase64 != null ? 'SETTING: Place the subject in the provided ba
 Output: Photorealistic 4K photograph.""";
 
     // Try primary model: imagen-4.0-fast-generate-001 (for new generation)
+    // Actually, for generation from reference image, let's use gemini-2.5-flash-image based on web app success.
     String modelName = 'imagen-4.0-fast-generate-001';
     if (referenceImageBase64.isNotEmpty) {
       modelName = 'gemini-2.5-flash-image';
@@ -381,22 +380,22 @@ Output: Photorealistic 4K photograph.""";
     final prompt =
         """TASK: Update the clothing of the SPECIFIC PERSON using TWO source images.
 IMAGE 1: Context Image (Use for Pose, Lighting, Composition).
-IMAGE 2: Identity Image (Use STRICTLY for Facial Features).
+IMAGE 2: Identity Image (Use STRICTLY for Facial Features and Body Structure).
 
-SUBJECT IDENTITY (FROM IMAGE 2):
+SUBJECT IDENTITY & STRUCTURE (FROM IMAGE 2):
 - The face must match IMAGE 2 exactly.
+- BODY STRUCTURE: Strictly preserve the subject's natural body weight, shape, and proportions from IMAGE 2. Do NOT alter the body type to fit "fashion standards".
 - Copy facial structure, key features, and likeness from IMAGE 2.
-- Do NOT alter the person's identity.
 
 CLOTHING INSTRUCTION (APPLY TO IMAGE 1):
 ${clothingReferenceBase64 != null ? 'Match the garment shown in the clothing reference image.' : ''} 
 Style: ${stylingPrompt.isNotEmpty ? stylingPrompt : 'Fashionable and fitted'}
-Ensure the clothing fits naturally.
+Ensure the clothing fits the subject's natural body type naturally.
 
 FRAMING:
 ${framingInstructions[framingMode] ?? framingInstructions['portrait']}
 
-Output: Photorealistic image combining Image 1's style with Image 2's face.""";
+Output: Photorealistic image combining Image 1's style with Image 2's face and body structure.""";
 
     // Use gemini-2.5-flash-image for styling change
     return _generateImageWithGemini(
@@ -419,8 +418,9 @@ Output: Photorealistic image combining Image 1's style with Image 2's face.""";
 IMAGE 1: Context Image.
 IMAGE 2: Identity Source.
 
-SUBJECT IDENTITY (FROM IMAGE 2):
+SUBJECT IDENTITY & STRUCTURE (FROM IMAGE 2):
 - The face must match IMAGE 2 exactly.
+- BODY STRUCTURE: Strictly preserve the subject's natural body weight and shape.
 - Copy facial structure from IMAGE 2.
 
 TEXTURE INSTRUCTION (APPLY TO IMAGE 1):
@@ -447,8 +447,8 @@ IMAGE 1: Low Res Input.
 IMAGE 2: High Res Identity Source.
 
 SUBJECT IDENTITY (FROM IMAGE 2):
-- Strictly preserve the facial features using IMAGE 2 as ground truth.
-- Do NOT hallucinate new features.
+- Strictly preserve the subject's facial features and body structure using IMAGE 2 as ground truth.
+- Do NOT hallucinate new features or alter body weight.
 
 DETAILS:
 - Refine skin texture and details based on Image 2.
@@ -473,8 +473,8 @@ IMAGE 1: Input.
 IMAGE 2: Identity Verification.
 
 SUBJECT IDENTITY:
-- Strictly preserve the facial features matching IMAGE 2.
-- Do NOT alter the face.
+- Strictly preserve the facial features and BODY PROPORTIONS matching IMAGE 2.
+- Do NOT alter the face or body weight.
 
 DETAILS:
 - Preserve edge details and hair strands.
