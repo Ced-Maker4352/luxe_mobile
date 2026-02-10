@@ -24,20 +24,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
   // NEW: Missing web features
   SkinTexture _selectedSkinTexture = skinTextures[1]; // Default to 'Soft'
-  String _bgMode = 'presets'; // 'package', 'presets', 'upload', 'ai'
   String _customBgPrompt = '';
   final TextEditingController _bgPromptController = TextEditingController();
-  bool _isEnhancingPrompt = false;
-
-  // Wardrobe/Clothing state
-  String _wardrobeGender = 'Female';
-  String? _expandedWardrobeCategory;
 
   // Adjustment sliders state
   double _brightness = 100;
   double _contrast = 100;
   double _saturation = 100;
-  String _selectedFilter = 'none';
 
   // Comparisons
   String? _comparingResultId;
@@ -45,8 +38,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   // NEW: Framing Options
   String _framingMode = 'portrait'; // 'portrait', 'full-body', 'head-to-toe'
 
-  // Drawer System
-  String? _activeDrawer; // 'retouch', 'stitch', 'print', 'download', 'share'
+  // V2 Split View State
+  String _activeControl =
+      'main'; // 'main', 'camera', 'backdrop', 'prompt', 'retouch', 'stitch', 'print', 'download', 'share'
   GenerationResult? _focusedResult;
 
   @override
@@ -217,1604 +211,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   }
 
   // ═══════════════════════════════════════════════════════════
-  // POP-UP PANELS
+  // V2 INLINE CONTROLS (Modal code removed)
   // ═══════════════════════════════════════════════════════════
 
-  void _showCameraSelector() {
-    final session = context.read<SessionProvider>();
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF141414),
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.65,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (context, scrollController) => Column(
-          children: [
-            const SizedBox(height: 12),
-            _buildSheetHandle(),
-            const SizedBox(height: 20),
-            const Text(
-              'CAMERA RIG',
-              style: TextStyle(
-                color: Color(0xFFD4AF37),
-                letterSpacing: 3,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Select your virtual optic system',
-              style: TextStyle(color: Colors.white38, fontSize: 11),
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                itemCount: cameraRigs.length,
-                itemBuilder: (context, index) {
-                  final rig = cameraRigs[index];
-                  final isSelected = session.selectedRig?.id == rig.id;
-                  return _buildCameraCard(rig, isSelected, () {
-                    session.selectRig(rig);
-                    Navigator.pop(context);
-                  });
-                },
-              ),
-            ),
-            // Generate Button
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _generatePortrait(session);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD4AF37),
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.auto_awesome, size: 16),
-                      SizedBox(width: 8),
-                      Text(
-                        'GENERATE',
-                        style: TextStyle(
-                          letterSpacing: 2,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCameraCard(CameraRig rig, bool isSelected, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF1A1A1A) : const Color(0xFF0F0F0F),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected
-                ? const Color(0xFFD4AF37)
-                : Colors.white.withOpacity(0.05),
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Text(rig.icon, style: const TextStyle(fontSize: 32)),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    rig.name,
-                    style: TextStyle(
-                      color: isSelected
-                          ? const Color(0xFFD4AF37)
-                          : Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    rig.specs.lens,
-                    style: const TextStyle(color: Colors.white38, fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-            if (isSelected)
-              const Icon(
-                Icons.check_circle,
-                color: Color(0xFFD4AF37),
-                size: 24,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showBackdropSelector() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF141414),
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => DraggableScrollableSheet(
-          initialChildSize: 0.85,
-          maxChildSize: 0.95,
-          expand: false,
-          builder: (context, scrollController) => Column(
-            children: [
-              const SizedBox(height: 12),
-              _buildSheetHandle(),
-              const SizedBox(height: 20),
-              const Text(
-                'SCENE ARCHITECTURE',
-                style: TextStyle(
-                  color: Color(0xFFD4AF37),
-                  letterSpacing: 3,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Background Mode Tabs
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    _buildModeTab('package', 'Package', setModalState),
-                    const SizedBox(width: 8),
-                    _buildModeTab('presets', 'Library', setModalState),
-                    const SizedBox(width: 8),
-                    _buildModeTab('upload', 'Upload', setModalState),
-                    const SizedBox(width: 8),
-                    _buildModeTab('ai', 'AI', setModalState),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              // Mode Content
-              Expanded(
-                child: _buildBgModeContent(scrollController, setModalState),
-              ),
-              // Generate Button (Bottom pinned)
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      // Trigger generation immediately
-                      _generatePortrait(context.read<SessionProvider>());
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD4AF37),
-                      foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.auto_awesome, size: 16),
-                        SizedBox(width: 8),
-                        Text(
-                          'GENERATE',
-                          style: TextStyle(
-                            letterSpacing: 2,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildModeTab(String mode, String label, StateSetter setModalState) {
-    final isActive = _bgMode == mode;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setModalState(() => _bgMode = mode);
-          setState(() {});
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: isActive ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: isActive ? Colors.white : Colors.white24),
-          ),
-          child: Text(
-            label.toUpperCase(),
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: isActive ? Colors.black : Colors.white54,
-              fontWeight: FontWeight.bold,
-              fontSize: 10,
-              letterSpacing: 1,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBgModeContent(
-    ScrollController controller,
-    StateSetter setModalState,
-  ) {
-    switch (_bgMode) {
-      case 'package':
-        final session = context.read<SessionProvider>();
-        final package = session.selectedPackage;
-        // Package Details
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD4AF37).withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.inventory_2_outlined,
-                  color: Color(0xFFD4AF37),
-                  size: 32,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                package?.name ?? 'Standard Package',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Includes ${package?.assetCount ?? 5} premium assets',
-                style: const TextStyle(color: Colors.white54, fontSize: 13),
-              ),
-              const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.05)),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      package?.description ??
-                          'Curated package environment optimized for this session type.',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Divider(color: Colors.white10),
-                    const SizedBox(height: 20),
-                    if (package?.features != null)
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        alignment: WrapAlignment.center,
-                        children: package!.features
-                            .map(
-                              (feature) => Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.black,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.1),
-                                  ),
-                                ),
-                                child: Text(
-                                  feature,
-                                  style: const TextStyle(
-                                    color: Colors.white38,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                              ),
-                            )
-                            .toList(),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      case 'presets':
-        return ListView.builder(
-          controller: controller,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: backgroundPresets.length,
-          itemBuilder: (context, catIndex) {
-            final category = backgroundPresets[catIndex];
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Text(
-                    category.category.toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white54,
-                      fontSize: 10,
-                      letterSpacing: 2,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                  ),
-                  itemCount: category.items.length,
-                  itemBuilder: (context, index) {
-                    final preset = category.items[index];
-                    final isSelected = _selectedBackdrop?.id == preset.id;
-                    return _buildBackdropTile(preset, isSelected);
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      case 'upload':
-        // TODO: Implement image upload for custom backdrop
-        return Center(
-          child: GestureDetector(
-            onTap: () {
-              // Will add image picker integration
-              Navigator.pop(context);
-            },
-            child: Container(
-              margin: const EdgeInsets.all(32),
-              padding: const EdgeInsets.all(40),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.white24, width: 2),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.upload_file, color: Colors.white38, size: 48),
-                  SizedBox(height: 16),
-                  Text(
-                    'Upload Custom Backdrop',
-                    style: TextStyle(color: Colors.white54, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      case 'ai':
-        return SingleChildScrollView(
-          controller: controller,
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // AI Prompt Input with Clear/Enhance buttons
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0A0A0A),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white10),
-                ),
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: _bgPromptController,
-                      maxLines: 3,
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
-                      decoration: const InputDecoration(
-                        hintText: "Describe your dream location...",
-                        hintStyle: TextStyle(color: Colors.white24),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.all(12),
-                      ),
-                      onChanged: (value) {
-                        setModalState(() => _customBgPrompt = value);
-                      },
-                    ),
-                    // Action Buttons Row
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 6,
-                      ),
-                      decoration: const BoxDecoration(
-                        border: Border(top: BorderSide(color: Colors.white10)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          // Clear Button
-                          if (_bgPromptController.text.isNotEmpty)
-                            GestureDetector(
-                              onTap: () {
-                                _bgPromptController.clear();
-                                setModalState(() => _customBgPrompt = '');
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.red.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Icon(
-                                  Icons.delete_outline,
-                                  color: Colors.red.withOpacity(0.7),
-                                  size: 16,
-                                ),
-                              ),
-                            ),
-                          const SizedBox(width: 8),
-                          // Enhance Button
-                          GestureDetector(
-                            onTap: _isEnhancingPrompt
-                                ? null
-                                : () {
-                                    // Simulated enhance - in real app would call AI
-                                    setModalState(
-                                      () => _isEnhancingPrompt = true,
-                                    );
-                                    Future.delayed(
-                                      const Duration(seconds: 1),
-                                      () {
-                                        if (mounted) {
-                                          final enhanced =
-                                              "${_bgPromptController.text}, cinematic lighting, 8K detail";
-                                          _bgPromptController.text = enhanced;
-                                          setModalState(() {
-                                            _customBgPrompt = enhanced;
-                                            _isEnhancingPrompt = false;
-                                          });
-                                        }
-                                      },
-                                    );
-                                  },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFD4AF37).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Row(
-                                children: [
-                                  _isEnhancingPrompt
-                                      ? const SizedBox(
-                                          width: 12,
-                                          height: 12,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 1.5,
-                                            color: Color(0xFFD4AF37),
-                                          ),
-                                        )
-                                      : const Icon(
-                                          Icons.auto_fix_high,
-                                          size: 12,
-                                          color: Color(0xFFD4AF37),
-                                        ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    _isEnhancingPrompt
-                                        ? 'ENHANCING...'
-                                        : 'ENHANCE',
-                                    style: const TextStyle(
-                                      color: Color(0xFFD4AF37),
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              // Prompt Categories
-              ...promptCategories.entries.map(
-                (entry) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 4,
-                          height: 4,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFD4AF37),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          entry.key.toUpperCase(),
-                          style: const TextStyle(
-                            color: Colors.white54,
-                            fontSize: 9,
-                            letterSpacing: 2,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: entry.value
-                          .map(
-                            (prompt) => GestureDetector(
-                              onTap: () {
-                                final current = _bgPromptController.text;
-                                _bgPromptController.text = current.isEmpty
-                                    ? prompt
-                                    : '$current $prompt';
-                                setModalState(
-                                  () => _customBgPrompt =
-                                      _bgPromptController.text,
-                                );
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.05),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.05),
-                                  ),
-                                ),
-                                child: Text(
-                                  prompt,
-                                  style: const TextStyle(
-                                    color: Colors.white54,
-                                    fontSize: 10,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                ),
-              ),
-              const Divider(color: Colors.white10),
-              const SizedBox(height: 16),
-              // Curated Locations
-              Row(
-                children: [
-                  const Icon(Icons.public, size: 12, color: Color(0xFFD4AF37)),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'CURATED LOCATIONS',
-                    style: TextStyle(
-                      color: Colors.white54,
-                      fontSize: 9,
-                      letterSpacing: 2,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                childAspectRatio: 2.5,
-                children: environmentPromptTips.entries
-                    .expand(
-                      (entry) => entry.value
-                          .take(2)
-                          .map(
-                            (tip) => GestureDetector(
-                              onTap: () {
-                                _bgPromptController.text = tip;
-                                setModalState(() => _customBgPrompt = tip);
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.05),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.1),
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      entry.key.toUpperCase(),
-                                      style: const TextStyle(
-                                        color: Color(0xFFD4AF37),
-                                        fontSize: 8,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      tip,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: Colors.white38,
-                                        fontSize: 9,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    )
-                    .toList()
-                    .cast<Widget>(),
-              ),
-            ],
-          ),
-        );
-      default:
-        return const SizedBox();
-    }
-  }
-
-  Widget _buildBackdropTile(BackgroundPreset preset, bool isSelected) {
-    return GestureDetector(
-      onTap: () {
-        setState(() => _selectedBackdrop = preset);
-        Navigator.pop(context);
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? const Color(0xFFD4AF37) : Colors.transparent,
-            width: 2,
-          ),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Image.network(preset.url, fit: BoxFit.cover),
-              if (isSelected)
-                Container(
-                  color: const Color(0xFFD4AF37).withOpacity(0.3),
-                  child: const Icon(Icons.check, color: Colors.white),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showPromptPanel() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF141414),
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildSheetHandle(),
-                const SizedBox(height: 20),
-                const Text(
-                  'STYLE PROMPT',
-                  style: TextStyle(
-                    color: Color(0xFFD4AF37),
-                    letterSpacing: 3,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Skin Texture Selector
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F0F0F),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white10),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Row(
-                            children: [
-                              Icon(
-                                Icons.auto_awesome,
-                                size: 12,
-                                color: Color(0xFFD4AF37),
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                'SKIN FINISH',
-                                style: TextStyle(
-                                  color: Colors.white54,
-                                  fontSize: 9,
-                                  letterSpacing: 1.5,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            _selectedSkinTexture.label,
-                            style: const TextStyle(
-                              color: Color(0xFFD4AF37),
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.05),
-                          ),
-                        ),
-                        child: Row(
-                          children: skinTextures.map((texture) {
-                            final isActive =
-                                _selectedSkinTexture.id == texture.id;
-                            return Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  setModalState(
-                                    () => _selectedSkinTexture = texture,
-                                  );
-                                  setState(() {});
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 10,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isActive
-                                        ? const Color(0xFFD4AF37)
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    texture.label.toUpperCase(),
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: isActive
-                                          ? Colors.black
-                                          : Colors.white38,
-                                      fontSize: 8,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _selectedSkinTexture.description,
-                        style: const TextStyle(
-                          color: Colors.white24,
-                          fontSize: 10,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Prompt Input with Action Bar
-                Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0A0A0A),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white.withOpacity(0.1)),
-                  ),
-                  child: Column(
-                    children: [
-                      TextField(
-                        controller: _promptController,
-                        maxLines: 4,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          hintText: 'Describe styling, clothing, or mood...',
-                          hintStyle: const TextStyle(
-                            color: Colors.white24,
-                            fontSize: 13,
-                          ),
-                          filled: true,
-                          fillColor: Colors.transparent,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.all(12),
-                        ),
-                      ),
-                      // Action Bar (Clear, Mic, Enhance)
-                      Container(
-                        padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            // Clear Button
-                            if (_promptController.text.isNotEmpty)
-                              GestureDetector(
-                                onTap: () {
-                                  _promptController.clear();
-                                  setModalState(() {});
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(6),
-                                  margin: const EdgeInsets.only(right: 8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Icon(
-                                    Icons.delete_outline,
-                                    size: 16,
-                                    color: Colors.red.withOpacity(0.7),
-                                  ),
-                                ),
-                              ),
-                            // Microphone Button (Visual Only for now)
-                            GestureDetector(
-                              onTap: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Voice input coming soon!'),
-                                    duration: Duration(seconds: 1),
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                margin: const EdgeInsets.only(right: 8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.05),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: const Icon(
-                                  Icons.mic_none,
-                                  size: 16,
-                                  color: Colors.white54,
-                                ),
-                              ),
-                            ),
-                            // Enhance Button
-                            GestureDetector(
-                              onTap: _isEnhancingPrompt
-                                  ? null
-                                  : () async {
-                                      if (_promptController.text
-                                          .trim()
-                                          .isEmpty) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Enter a prompt to enhance',
-                                            ),
-                                            duration: Duration(seconds: 1),
-                                          ),
-                                        );
-                                        return;
-                                      }
-                                      setModalState(
-                                        () => _isEnhancingPrompt = true,
-                                      );
-                                      try {
-                                        final enhanced = await GeminiService()
-                                            .enhancePrompt(
-                                              _promptController.text,
-                                            );
-                                        if (mounted &&
-                                            enhanced.isNotEmpty &&
-                                            !enhanced.startsWith('Error')) {
-                                          _promptController.text = enhanced;
-                                        }
-                                      } catch (e) {
-                                        debugPrint('Enhance error: $e');
-                                      } finally {
-                                        if (mounted) {
-                                          setModalState(
-                                            () => _isEnhancingPrompt = false,
-                                          );
-                                        }
-                                      }
-                                    },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFFD4AF37,
-                                  ).withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Row(
-                                  children: [
-                                    if (_isEnhancingPrompt)
-                                      const SizedBox(
-                                        width: 12,
-                                        height: 12,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 1.5,
-                                          color: Color(0xFFD4AF37),
-                                        ),
-                                      )
-                                    else
-                                      const Icon(
-                                        Icons.auto_fix_high,
-                                        size: 12,
-                                        color: Color(0xFFD4AF37),
-                                      ),
-                                    const SizedBox(width: 6),
-                                    const Text(
-                                      'ENHANCE',
-                                      style: TextStyle(
-                                        color: Color(0xFFD4AF37),
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Quick Presets Row
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _buildQuickPreset('Business Formal', setModalState),
-                    _buildQuickPreset('Casual Luxury', setModalState),
-                    _buildQuickPreset('Dramatic Noir', setModalState),
-                    _buildQuickPreset('Golden Hour', setModalState),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // WARDROBE SECTION
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F0F0F),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white10),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header with Gender Toggle
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Row(
-                            children: [
-                              Icon(
-                                Icons.checkroom,
-                                size: 14,
-                                color: Color(0xFFD4AF37),
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                'WARDROBE',
-                                style: TextStyle(
-                                  color: Colors.white54,
-                                  fontSize: 10,
-                                  letterSpacing: 1.5,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          // Gender Toggle
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: ['Female', 'Male'].map((g) {
-                                final isActive = _wardrobeGender == g;
-                                return GestureDetector(
-                                  onTap: () =>
-                                      setModalState(() => _wardrobeGender = g),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: isActive
-                                          ? const Color(0xFFD4AF37)
-                                          : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      g,
-                                      style: TextStyle(
-                                        color: isActive
-                                            ? Colors.black
-                                            : Colors.white38,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // NEW: Framing Selector
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'FRAMING',
-                            style: TextStyle(
-                              color: Colors.white54,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.5,
-                            ),
-                          ),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                _buildFramingOption(
-                                  'Portrait',
-                                  'portrait',
-                                  setModalState,
-                                ),
-                                _buildFramingOption(
-                                  'Full Body',
-                                  'full-body',
-                                  setModalState,
-                                ),
-                                _buildFramingOption(
-                                  'Head to Toe',
-                                  'head-to-toe',
-                                  setModalState,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      // Category Accordions
-                      ...wardrobePresets[_wardrobeGender]!.keys.map((category) {
-                        final isExpanded =
-                            _expandedWardrobeCategory == category;
-                        final items =
-                            wardrobePresets[_wardrobeGender]![category]!;
-                        return Column(
-                          children: [
-                            GestureDetector(
-                              onTap: () => setModalState(() {
-                                _expandedWardrobeCategory = isExpanded
-                                    ? null
-                                    : category;
-                              }),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 10,
-                                  horizontal: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isExpanded
-                                      ? Colors.white.withOpacity(0.05)
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      category,
-                                      style: TextStyle(
-                                        color: isExpanded
-                                            ? const Color(0xFFD4AF37)
-                                            : Colors.white70,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    Icon(
-                                      isExpanded
-                                          ? Icons.keyboard_arrow_up
-                                          : Icons.keyboard_arrow_down,
-                                      color: Colors.white38,
-                                      size: 18,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            if (isExpanded)
-                              Container(
-                                padding: const EdgeInsets.only(
-                                  left: 8,
-                                  bottom: 8,
-                                ),
-                                child: Column(
-                                  children: items.take(10).map((item) {
-                                    return GestureDetector(
-                                      onTap: () {
-                                        _promptController.text = item;
-                                        setModalState(() {});
-                                      },
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 6,
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.add,
-                                              size: 12,
-                                              color: Colors.white24,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: Text(
-                                                item.length > 60
-                                                    ? '${item.substring(0, 60)}...'
-                                                    : item,
-                                                style: const TextStyle(
-                                                  color: Colors.white54,
-                                                  fontSize: 11,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                              ),
-                          ],
-                        );
-                      }),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // ADJUSTMENTS SECTION
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F0F0F),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.white10),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header
-                      const Row(
-                        children: [
-                          Icon(Icons.tune, size: 14, color: Color(0xFFD4AF37)),
-                          SizedBox(width: 8),
-                          Text(
-                            'ADJUSTMENTS',
-                            style: TextStyle(
-                              color: Colors.white54,
-                              fontSize: 10,
-                              letterSpacing: 1.5,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      // Filter Presets
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: filterPresets.map((filter) {
-                            final isSelected = _selectedFilter == filter.id;
-                            return GestureDetector(
-                              onTap: () {
-                                setModalState(() {
-                                  _selectedFilter = filter.id;
-                                  _brightness = filter.brightness;
-                                  _contrast = filter.contrast;
-                                  _saturation = filter.saturation;
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
-                                margin: const EdgeInsets.only(right: 8),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? const Color(0xFFD4AF37)
-                                      : Colors.white.withOpacity(0.05),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? const Color(0xFFD4AF37)
-                                        : Colors.white12,
-                                  ),
-                                ),
-                                child: Text(
-                                  filter.name,
-                                  style: TextStyle(
-                                    color: isSelected
-                                        ? Colors.black
-                                        : Colors.white70,
-                                    fontSize: 11,
-                                    fontWeight: isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Sliders
-                      _buildAdjustmentSlider(
-                        'Brightness',
-                        _brightness,
-                        50,
-                        150,
-                        (v) => setModalState(() => _brightness = v),
-                      ),
-                      _buildAdjustmentSlider(
-                        'Contrast',
-                        _contrast,
-                        50,
-                        150,
-                        (v) => setModalState(() => _contrast = v),
-                      ),
-                      _buildAdjustmentSlider(
-                        'Saturation',
-                        _saturation,
-                        0,
-                        200,
-                        (v) => setModalState(() => _saturation = v),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Generate Button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      setState(() => _customPrompt = _promptController.text);
-                      Navigator.pop(context);
-                      // Trigger generation immediately
-                      _generatePortrait(context.read<SessionProvider>());
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD4AF37),
-                      foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.auto_awesome, size: 16),
-                        SizedBox(width: 8),
-                        Text(
-                          'GENERATE',
-                          style: TextStyle(
-                            letterSpacing: 2,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickPreset(String label, StateSetter setModalState) {
-    return GestureDetector(
-      onTap: () {
-        _promptController.text = label;
-        setModalState(() {});
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFF0A0A0A),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white12),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(color: Colors.white54, fontSize: 11),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAdjustmentSlider(
-    String label,
-    double value,
-    double min,
-    double max,
-    ValueChanged<double> onChanged,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            Text(
-              '${value.toInt()}%',
-              style: const TextStyle(color: Colors.white38, fontSize: 11),
-            ),
-          ],
-        ),
-        SliderTheme(
-          data: SliderTheme.of(context).copyWith(
-            activeTrackColor: const Color(0xFFD4AF37),
-            inactiveTrackColor: Colors.white10,
-            thumbColor: Colors.white,
-            trackHeight: 2,
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-            overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
-          ),
-          child: Slider(value: value, min: min, max: max, onChanged: onChanged),
-        ),
-      ],
-    );
-  }
-
-  void _showPrintLab() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF141414),
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (context, scrollController) => Column(
-          children: [
-            const SizedBox(height: 12),
-            _buildSheetHandle(),
-            const SizedBox(height: 24),
-            const Text(
-              'LUXE PRINT LAB',
-              style: TextStyle(
-                color: Color(0xFFD4AF37),
-                letterSpacing: 3,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Museum-grade physical assets',
-              style: TextStyle(color: Colors.white38, fontSize: 11),
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: ListView.builder(
-                controller: scrollController,
-                itemCount: printProducts.length,
-                itemBuilder: (context, index) {
-                  final product = printProducts[index];
-                  return ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 8,
-                    ),
-                    title: Text(
-                      product.name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    subtitle: Text(
-                      "${product.material} • FROM \$${product.price.toInt()}",
-                      style: const TextStyle(
-                        color: Colors.white54,
-                        fontSize: 11,
-                      ),
-                    ),
-                    trailing: const Icon(
-                      Icons.arrow_forward_ios,
-                      color: Color(0xFFD4AF37),
-                      size: 14,
-                    ),
-                    onTap: () async {
-                      if (product.partnerUrl != null) {
-                        final uri = Uri.parse(product.partnerUrl!);
-                        if (await canLaunchUrl(uri)) {
-                          await launchUrl(uri);
-                        }
-                      }
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSheetHandle() {
-    return Container(
-      width: 40,
-      height: 4,
-      decoration: BoxDecoration(
-        color: Colors.white24,
-        borderRadius: BorderRadius.circular(2),
-      ),
-    );
-  }
+  // (Legacy modal popup code removed — all replaced by V2 inline pickers)
 
   // ═══════════════════════════════════════════════════════════
   // MAIN BUILD
@@ -1829,30 +229,90 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           children: [
             // Custom App Bar
             _buildAppBar(),
-            // Floating Control Bar
-            _buildControlBar(),
-            // Main Content (shrinks when drawer is open)
+
+            // 1. TOP: IMAGE AREA (Always Visible, Expanded)
             Expanded(
+              flex: 6,
               child: Consumer<SessionProvider>(
                 builder: (context, session, child) {
                   if (session.isGenerating && session.results.isEmpty) {
                     return _buildLoadingState();
                   }
-                  if (session.results.isEmpty) {
-                    return _buildEmptyState();
+                  // If we have a focused result (Editor Mode), show it
+                  if (_focusedResult != null) {
+                    return _buildEditorImageArea(_focusedResult!);
                   }
-                  return _buildResultsGrid(session);
+                  // Otherwise show standard preview (Uploaded or Results Grid if not empty?)
+                  // Actually, V2 implies we always show *the* image.
+                  // If we have results, we show the selection.
+                  // For now, let's keep the Empty/Grid logic but wrapped in Container.
+                  // BETTER: If results exist, show the LATEST or SELECTED one.
+                  if (session.results.isNotEmpty) {
+                    return _buildResultsViewer(session);
+                  }
+                  return _buildEmptyState();
                 },
               ),
             ),
-            // Inline Drawer (slides up when a tool is active)
-            if (_activeDrawer != null && _focusedResult != null)
-              _buildInlineDrawer(),
-            // Bottom Navigation
+
+            // 2. BOTTOM: CONTROL CENTER (Persistent 40%)
+            Expanded(
+              flex: 4,
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Color(0xFF141414),
+                  border: Border(top: BorderSide(color: Colors.white12)),
+                ),
+                child: _buildControlCenter(),
+              ),
+            ),
+
+            // 3. BOTTOM NAV (Persistent)
             _buildBottomNav(),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildResultsViewer(SessionProvider session) {
+    // Show the most recent result or the one clicked
+    final result = _focusedResult ?? session.results.last;
+
+    // We can reuse _buildResultCard logic but stripped down to just image
+    // Actually, let's use a standard image viewer
+    return Stack(
+      children: [
+        Container(
+          width: double.infinity,
+          height: double.infinity,
+          child: (result.imageUrl.startsWith('data:')
+              ? Image.memory(
+                  base64Decode(result.imageUrl.split(',')[1]),
+                  fit: BoxFit.contain,
+                )
+              : Image.network(result.imageUrl, fit: BoxFit.contain)),
+        ),
+        // Floating "Back to Grid" or similar if needed?
+        // For V2, let's assume we just swipe or use the bottom strip.
+      ],
+    );
+  }
+
+  Widget _buildEditorImageArea(GenerationResult result) {
+    return Stack(
+      children: [
+        Container(
+          width: double.infinity,
+          height: double.infinity,
+          child: (result.imageUrl.startsWith('data:')
+              ? Image.memory(
+                  base64Decode(result.imageUrl.split(',')[1]),
+                  fit: BoxFit.contain,
+                )
+              : Image.network(result.imageUrl, fit: BoxFit.contain)),
+        ),
+      ],
     );
   }
 
@@ -1885,42 +345,574 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     );
   }
 
-  Widget _buildControlBar() {
+  Widget _buildControlCenter() {
+    switch (_activeControl) {
+      case 'camera':
+        return _buildCameraPicker();
+      case 'backdrop':
+        return _buildBackdropPicker();
+      case 'prompt':
+        return _buildPromptToInline(); // Renamed from _showPromptPanel content
+      case 'retouch':
+        return _buildRetouchDrawer(); // Reusing drawer content logic
+      case 'stitch':
+        return _buildStitchDrawer();
+      case 'print':
+        return _buildPrintDrawer();
+      case 'download':
+        return _buildDownloadDrawer();
+      case 'share':
+        return _buildShareDrawer();
+      default:
+        return _buildMainToolbar();
+    }
+  }
+
+  Widget _buildMainToolbar() {
     final session = context.watch<SessionProvider>();
+    return Column(
+      children: [
+        // Control Bar
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              _buildControlButton(
+                icon: Icons.camera_outlined,
+                label:
+                    session.selectedRig?.name.split('|').first.trim() ??
+                    'CAMERA',
+                onTap: () => setState(() => _activeControl = 'camera'),
+              ),
+              _buildDivider(),
+              _buildControlButton(
+                icon: Icons.wallpaper_outlined,
+                label: _selectedBackdrop?.name ?? 'BACKDROP',
+                onTap: () => setState(() => _activeControl = 'backdrop'),
+              ),
+              _buildDivider(),
+              _buildControlButton(
+                icon: Icons.edit_note_outlined,
+                label: _customPrompt.isEmpty ? 'PROMPT' : 'STYLED',
+                onTap: () => setState(() => _activeControl = 'prompt'),
+              ),
+              const SizedBox(width: 8),
+              _buildGenerateButton(session),
+            ],
+          ),
+        ),
+        // Post-Generation Tools Row
+        if (session.results.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: Colors.white10)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildToolIcon(Icons.auto_fix_high, 'Retouch', 'retouch'),
+                _buildToolIcon(Icons.merge_type, 'Stitch', 'stitch'),
+                _buildToolIcon(Icons.print_outlined, 'Print', 'print'),
+                _buildToolIcon(Icons.download_outlined, 'Save', 'download'),
+                _buildToolIcon(Icons.share_outlined, 'Share', 'share'),
+              ],
+            ),
+          ),
+        const Divider(color: Colors.white12, height: 1),
+        // Recent results thumbnail strip
+        if (session.results.isNotEmpty)
+          Expanded(
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.all(12),
+              itemCount: session.results.length,
+              itemBuilder: (context, index) {
+                final result = session.results[index];
+                final isSelected = _focusedResult?.id == result.id;
+                return GestureDetector(
+                  onTap: () => setState(() => _focusedResult = result),
+                  child: Container(
+                    width: 80,
+                    margin: const EdgeInsets.only(right: 12),
+                    decoration: BoxDecoration(
+                      border: isSelected
+                          ? Border.all(color: const Color(0xFFD4AF37), width: 2)
+                          : null,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.network(result.imageUrl, fit: BoxFit.cover),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildToolIcon(IconData icon, String label, String controlKey) {
+    return GestureDetector(
+      onTap: () => setState(() => _activeControl = controlKey),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white54, size: 20),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white38,
+              fontSize: 9,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // WHEEL PICKERS
+
+  Widget _buildCameraPicker() {
+    final session = context.watch<SessionProvider>();
+    return Column(
+      children: [
+        _buildPickerHeader(
+          'CAMERA RIG',
+          () => setState(() => _activeControl = 'main'),
+        ),
+        Expanded(
+          child: Stack(
+            children: [
+              // Gold magnifier highlight band
+              Center(
+                child: Container(
+                  height: 72,
+                  decoration: BoxDecoration(
+                    border: Border.symmetric(
+                      horizontal: BorderSide(
+                        color: const Color(0xFFD4AF37).withOpacity(0.3),
+                      ),
+                    ),
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFFD4AF37).withOpacity(0.05),
+                        const Color(0xFFD4AF37).withOpacity(0.12),
+                        const Color(0xFFD4AF37).withOpacity(0.05),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // Wheel picker
+              ListWheelScrollView.useDelegate(
+                itemExtent: 72,
+                perspective: 0.003,
+                diameterRatio: 1.6,
+                physics: const FixedExtentScrollPhysics(),
+                onSelectedItemChanged: (index) {
+                  session.selectRig(cameraRigs[index]);
+                },
+                childDelegate: ListWheelChildBuilderDelegate(
+                  childCount: cameraRigs.length,
+                  builder: (context, index) {
+                    final rig = cameraRigs[index];
+                    final isSelected = session.selectedRig?.id == rig.id;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Row(
+                        children: [
+                          // Camera icon
+                          Text(
+                            rig.icon,
+                            style: TextStyle(fontSize: isSelected ? 22 : 16),
+                          ),
+                          const SizedBox(width: 14),
+                          // Name + specs subtitle
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  rig.name,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? const Color(0xFFD4AF37)
+                                        : Colors.white54,
+                                    fontSize: isSelected ? 16 : 13,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                                if (isSelected)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Text(
+                                      '${rig.specs.lens}  •  ${rig.specs.sensor}',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.35),
+                                        fontSize: 10,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          // Selection indicator
+                          if (isSelected)
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFD4AF37),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBackdropPicker() {
+    // Flatten BackgroundCategory list into a single list of BackgroundPreset
+    final List<BackgroundPreset> flatPresets = backgroundPresets
+        .expand((cat) => cat.items)
+        .toList();
+
+    return Column(
+      children: [
+        _buildPickerHeader(
+          'BACKDROP',
+          () => setState(() => _activeControl = 'main'),
+        ),
+        Expanded(
+          child: Stack(
+            children: [
+              // Gold magnifier highlight band
+              Center(
+                child: Container(
+                  height: 56,
+                  decoration: BoxDecoration(
+                    border: Border.symmetric(
+                      horizontal: BorderSide(
+                        color: const Color(0xFFD4AF37).withOpacity(0.3),
+                      ),
+                    ),
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFFD4AF37).withOpacity(0.05),
+                        const Color(0xFFD4AF37).withOpacity(0.12),
+                        const Color(0xFFD4AF37).withOpacity(0.05),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // Wheel picker
+              ListWheelScrollView.useDelegate(
+                itemExtent: 56,
+                perspective: 0.003,
+                diameterRatio: 1.6,
+                physics: const FixedExtentScrollPhysics(),
+                onSelectedItemChanged: (index) {
+                  setState(() => _selectedBackdrop = flatPresets[index]);
+                },
+                childDelegate: ListWheelChildBuilderDelegate(
+                  childCount: flatPresets.length,
+                  builder: (context, index) {
+                    final preset = flatPresets[index];
+                    final isSelected = _selectedBackdrop?.id == preset.id;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Row(
+                        children: [
+                          // Color dot indicator
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isSelected
+                                  ? const Color(0xFFD4AF37)
+                                  : Colors.white24,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Text(
+                              preset.name,
+                              style: TextStyle(
+                                color: isSelected
+                                    ? const Color(0xFFD4AF37)
+                                    : Colors.white54,
+                                fontSize: isSelected ? 15 : 13,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ),
+                          if (isSelected)
+                            const Icon(
+                              Icons.check_circle,
+                              color: Color(0xFFD4AF37),
+                              size: 16,
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPromptToInline() {
+    return Column(
+      children: [
+        _buildPickerHeader(
+          'PROMPT',
+          () => setState(() => _activeControl = 'main'),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Text input
+                TextField(
+                  controller: _promptController,
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    hintText: 'Describe your vision...',
+                    hintStyle: const TextStyle(color: Colors.white24),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.05),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white12),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFFD4AF37)),
+                    ),
+                    contentPadding: const EdgeInsets.all(14),
+                  ),
+                  onChanged: (val) => setState(() => _customPrompt = val),
+                ),
+                const SizedBox(height: 14),
+                // Framing mode chips
+                const Text(
+                  'FRAMING',
+                  style: TextStyle(
+                    color: Colors.white24,
+                    fontSize: 9,
+                    letterSpacing: 2,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children:
+                      [
+                        {'label': 'Portrait', 'value': 'portrait'},
+                        {'label': 'Full Body', 'value': 'full-body'},
+                        {'label': 'Head to Toe', 'value': 'head-to-toe'},
+                      ].map((item) {
+                        final isActive = _framingMode == item['value'];
+                        return GestureDetector(
+                          onTap: () =>
+                              setState(() => _framingMode = item['value']!),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isActive
+                                  ? const Color(0xFFD4AF37)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: isActive
+                                    ? const Color(0xFFD4AF37)
+                                    : Colors.white24,
+                              ),
+                            ),
+                            child: Text(
+                              item['label']!,
+                              style: TextStyle(
+                                color: isActive ? Colors.black : Colors.white54,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                ),
+                const SizedBox(height: 14),
+                // Quick preset chips
+                const Text(
+                  'QUICK PRESETS',
+                  style: TextStyle(
+                    color: Colors.white24,
+                    fontSize: 9,
+                    letterSpacing: 2,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children:
+                      [
+                        'Corporate headshot',
+                        'Editorial fashion',
+                        'Cinematic noir',
+                        'Natural light',
+                        'Dramatic studio',
+                      ].map((preset) {
+                        return GestureDetector(
+                          onTap: () {
+                            _promptController.text = preset;
+                            setState(() => _customPrompt = preset);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.white12),
+                            ),
+                            child: Text(
+                              preset,
+                              style: const TextStyle(
+                                color: Colors.white54,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                ),
+                const SizedBox(height: 14),
+                // Skin texture selector
+                const Text(
+                  'SKIN TEXTURE',
+                  style: TextStyle(
+                    color: Colors.white24,
+                    fontSize: 9,
+                    letterSpacing: 2,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 36,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: skinTextures.length,
+                    itemBuilder: (context, index) {
+                      final tex = skinTextures[index];
+                      final isActive = _selectedSkinTexture.id == tex.id;
+                      return GestureDetector(
+                        onTap: () => setState(() => _selectedSkinTexture = tex),
+                        child: Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isActive
+                                ? const Color(0xFFD4AF37).withOpacity(0.15)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: isActive
+                                  ? const Color(0xFFD4AF37)
+                                  : Colors.white24,
+                            ),
+                          ),
+                          child: Text(
+                            tex.label,
+                            style: TextStyle(
+                              color: isActive
+                                  ? const Color(0xFFD4AF37)
+                                  : Colors.white54,
+                              fontSize: 11,
+                              fontWeight: isActive
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPickerHeader(String title, VoidCallback onClose) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF141414),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: Colors.white10)),
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Camera Button
-          _buildControlButton(
-            icon: Icons.camera_outlined,
-            label:
-                session.selectedRig?.name.split('|').first.trim() ?? 'CAMERA',
-            onTap: _showCameraSelector,
+          Text(
+            title,
+            style: const TextStyle(
+              color: Color(0xFFD4AF37),
+              fontWeight: FontWeight.bold,
+              letterSpacing: 2,
+            ),
           ),
-          _buildDivider(),
-          // Backdrop Button
-          _buildControlButton(
-            icon: Icons.wallpaper_outlined,
-            label: _selectedBackdrop?.name ?? 'BACKDROP',
-            onTap: _showBackdropSelector,
+          GestureDetector(
+            onTap: onClose,
+            child: const Icon(Icons.check, color: Colors.white),
           ),
-          _buildDivider(),
-          // Prompt Button
-          _buildControlButton(
-            icon: Icons.edit_note_outlined,
-            label: _customPrompt.isEmpty ? 'PROMPT' : 'STYLED',
-            onTap: _showPromptPanel,
-          ),
-          const SizedBox(width: 8),
-          // Generate Button
-          _buildGenerateButton(session),
         ],
       ),
     );
@@ -2181,32 +1173,6 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     );
   }
 
-  Widget _buildFramingOption(
-    String label,
-    String value,
-    StateSetter setModalState,
-  ) {
-    final isActive = _framingMode == value;
-    return GestureDetector(
-      onTap: () => setModalState(() => _framingMode = value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFD4AF37) : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isActive ? Colors.black : Colors.white38,
-            fontSize: 9,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildResultCard(GenerationResult result) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -2307,31 +1273,31 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 _buildActionButton(Icons.auto_fix_high, 'RETOUCH', () {
                   setState(() {
                     _focusedResult = result;
-                    _activeDrawer = 'retouch';
+                    _activeControl = 'retouch';
                   });
                 }),
                 _buildActionButton(Icons.collections, 'STITCH', () {
                   setState(() {
                     _focusedResult = result;
-                    _activeDrawer = 'stitch';
+                    _activeControl = 'stitch';
                   });
                 }),
                 _buildActionButton(Icons.local_printshop, 'PRINT', () {
                   setState(() {
                     _focusedResult = result;
-                    _activeDrawer = 'print';
+                    _activeControl = 'print';
                   });
                 }),
                 _buildActionButton(Icons.download, 'DOWNLOAD', () {
                   setState(() {
                     _focusedResult = result;
-                    _activeDrawer = 'download';
+                    _activeControl = 'download';
                   });
                 }),
                 _buildActionButton(Icons.share, 'SHARE', () {
                   setState(() {
                     _focusedResult = result;
-                    _activeDrawer = 'share';
+                    _activeControl = 'share';
                   });
                 }),
               ],
@@ -2453,7 +1419,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            titles[_activeDrawer] ?? '',
+            titles[_activeControl] ?? '',
             style: const TextStyle(
               color: Color(0xFFD4AF37),
               fontSize: 11,
@@ -2463,7 +1429,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           ),
           GestureDetector(
             onTap: () => setState(() {
-              _activeDrawer = null;
+              _activeControl = 'main';
               _focusedResult = null;
             }),
             child: Container(
@@ -2481,7 +1447,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   }
 
   Widget _buildDrawerContent() {
-    switch (_activeDrawer) {
+    switch (_activeControl) {
       case 'retouch':
         return _buildRetouchDrawer();
       case 'stitch':
@@ -2557,7 +1523,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () => setState(() {
-                _activeDrawer = null;
+                _activeControl = 'main';
                 _focusedResult = null;
               }),
               style: ElevatedButton.styleFrom(
