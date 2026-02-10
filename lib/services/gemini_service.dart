@@ -302,21 +302,18 @@ User Idea: "$draftPrompt"''',
     String? backgroundImageBase64,
     String? skinTexturePrompt,
   }) async {
-    final skinInstruction = skinTexturePrompt != null
-        ? 'SKIN TEXTURE PRIORITY: $skinTexturePrompt'
-        : 'SKIN TEXTURE: Balanced realism. Natural pores visible but not exaggerated. Healthy, hydrated look.';
-
     final finalPrompt =
-        """$basePrompt
+        """Create a professional studio portrait of the person provided in the reference image.
+        
+Context: $basePrompt
 
-$skinInstruction
+Style details:
+- Skin: Natural, healthy skin texture with realistic pores.
+- Camera: $opticProtocol
 
-OPTIC PROTOCOL (CORE REQUIREMENT):
-$opticProtocol
+${backgroundImageBase64 != null ? 'Setting: Place the subject in the provided background environment naturally.' : ''}
 
-${backgroundImageBase64 != null ? 'INSTRUCTION: Composite the subject from the first image into the environment/background of the second image seamlessly. Match lighting and perspective.' : ''}
-
-Final Output: RAW, unedited, professional photographic master file. 4K resolution. Zero AI artifacts.""";
+Output: High resolution, photorealistic photograph.""";
 
     // Try primary model: imagen-4.0-fast-generate-001 (for new generation)
     // If we have a reference image, we might need to use gemini-2.5-flash-image if imagen 4 doesn't support it?
