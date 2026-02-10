@@ -39,6 +39,12 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   double _saturation = 100;
   String _selectedFilter = 'none';
 
+  // Comparisons
+  String? _comparingResultId;
+
+  // NEW: Framing Options
+  String _framingMode = 'portrait'; // 'portrait', 'full-body', 'head-to-toe'
+
   @override
   void initState() {
     super.initState();
@@ -111,13 +117,24 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
       // Combine package prompt with user custom prompt or single style prompt
       String fullPrompt;
+      final framingInstructions = {
+        'portrait':
+            'Maintain the current portrait framing (shoulders and above).',
+        'full-body':
+            'Generate a 3/4 body shot from head to approximately knee level. Show most of the outfit.',
+        'head-to-toe':
+            'Generate a COMPLETE head-to-toe full body shot. The entire person must be visible from the top of their head to their feet standing on the ground. Ensure shoes/feet are clearly visible at the bottom of the frame.',
+      };
+
+      String framingText = framingInstructions[_framingMode] ?? '';
+
       if (session.isSingleStyleMode && session.selectedStyle != null) {
         fullPrompt =
-            '${session.selectedPackage!.basePrompt} ${session.selectedStyle!.promptAddition} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""}';
+            '${session.selectedPackage!.basePrompt} ${session.selectedStyle!.promptAddition} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""} \nFRAMING: $framingText';
         debugPrint('Studio: Using Single Style Prompt: $fullPrompt');
       } else {
         fullPrompt =
-            '${session.selectedPackage!.basePrompt} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""}';
+            '${session.selectedPackage!.basePrompt} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""} \nFRAMING: $framingText';
       }
 
       // Append Adjustment Logic to Prompt
@@ -1349,6 +1366,49 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                           ),
                         ],
                       ),
+                      const SizedBox(height: 16),
+
+                      // NEW: Framing Selector
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'FRAMING',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _buildFramingOption(
+                                  'Portrait',
+                                  'portrait',
+                                  setModalState,
+                                ),
+                                _buildFramingOption(
+                                  'Full Body',
+                                  'full-body',
+                                  setModalState,
+                                ),
+                                _buildFramingOption(
+                                  'Head to Toe',
+                                  'head-to-toe',
+                                  setModalState,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 12),
                       // Category Accordions
                       ...wardrobePresets[_wardrobeGender]!.keys.map((category) {
@@ -2105,6 +2165,32 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     );
   }
 
+  Widget _buildFramingOption(
+    String label,
+    String value,
+    StateSetter setModalState,
+  ) {
+    final isActive = _framingMode == value;
+    return GestureDetector(
+      onTap: () => setModalState(() => _framingMode = value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFFD4AF37) : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isActive ? Colors.black : Colors.white38,
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildResultCard(GenerationResult result) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -2118,21 +2204,83 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       child: Column(
         children: [
           // Image
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: result.imageUrl.startsWith('data:')
-                ? Image.memory(
-                    base64Decode(result.imageUrl.split(',')[1]),
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: 400,
-                  )
-                : Image.network(
-                    result.imageUrl,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: 400,
+          GestureDetector(
+            onLongPressStart: (_) {
+              final session = context.read<SessionProvider>();
+              if (session.uploadedImageBytes != null) {
+                setState(() => _comparingResultId = result.id);
+              }
+            },
+            onLongPressEnd: (_) => setState(() => _comparingResultId = null),
+            child: Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
                   ),
+                  child:
+                      (_comparingResultId == result.id &&
+                          context.read<SessionProvider>().uploadedImageBytes !=
+                              null)
+                      ? Image.memory(
+                          context.read<SessionProvider>().uploadedImageBytes!,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: 400,
+                        )
+                      : (result.imageUrl.startsWith('data:')
+                            ? Image.memory(
+                                base64Decode(result.imageUrl.split(',')[1]),
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: 400,
+                              )
+                            : Image.network(
+                                result.imageUrl,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: 400,
+                              )),
+                ),
+                if (_comparingResultId == result.id)
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.white24),
+                      ),
+                      child: const Text(
+                        "ORIGINAL",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (_comparingResultId != result.id)
+                  const Positioned(
+                    bottom: 10,
+                    right: 10,
+                    child: Text(
+                      "Hold to Compare",
+                      style: TextStyle(
+                        color: Colors.white38,
+                        fontSize: 10,
+                        shadows: [Shadow(blurRadius: 2, color: Colors.black)],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
           // Action Buttons
           Padding(
