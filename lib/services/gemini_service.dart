@@ -143,23 +143,27 @@ class GeminiService {
   Future<String> _generateImageWithGemini(
     String model,
     String prompt,
-    String referenceImageBase64, {
+    String contextImageBase64, {
+    String? identityImageBase64, // NEW: The original photo for ID lock
     String? backgroundImageBase64,
   }) async {
     final url = Uri.parse('$_baseUrl/$model:generateContent?key=$_apiKey');
 
     final parts = <Map<String, dynamic>>[];
 
-    // Add reference image
-    if (referenceImageBase64.isNotEmpty) {
-      final dataPart = _getDataPart(referenceImageBase64);
-      parts.add(dataPart);
+    // 1. Context Image (The image being edited)
+    if (contextImageBase64.isNotEmpty) {
+      parts.add(_getDataPart(contextImageBase64));
     }
 
-    // Add background image if present
+    // 2. Identity Image (The original photo - Source of Truth)
+    if (identityImageBase64 != null && identityImageBase64.isNotEmpty) {
+      parts.add(_getDataPart(identityImageBase64));
+    }
+
+    // 3. Background Image (Optional)
     if (backgroundImageBase64 != null && backgroundImageBase64.isNotEmpty) {
-      final bgPart = _getDataPart(backgroundImageBase64);
-      parts.add(bgPart);
+      parts.add(_getDataPart(backgroundImageBase64));
     }
 
     // Add prompt
@@ -187,9 +191,10 @@ class GeminiService {
       ],
     };
 
+    // ... (rest of method same as before) ...
     try {
       debugPrint(
-        'GeminiService: Calling $model (Gemini) for image generation...',
+        'GeminiService: Calling $model (Gemini) with Identity Anchor...',
       );
       final response = await http.post(
         url,
@@ -302,6 +307,7 @@ User Idea: "$draftPrompt"''',
     String? backgroundImageBase64,
     String? skinTexturePrompt,
   }) async {
+    // ... (prompt logic remains same) ...
     final finalPrompt =
         """TASK: Generate a high-fidelity professional studio portrait of the SPECIFIC PERSON provided in the reference image.
 
@@ -324,27 +330,26 @@ ${backgroundImageBase64 != null ? 'SETTING: Place the subject in the provided ba
 Output: Photorealistic 4K photograph.""";
 
     // Try primary model: imagen-4.0-fast-generate-001 (for new generation)
-    // If we have a reference image, we might need to use gemini-2.5-flash-image if imagen 4 doesn't support it?
-    // Let's stick to imagen-4.0-fast-generate-001 for now but handle the error or switch model if reference is present.
-
-    // Actually, for generation from reference image, let's use gemini-2.5-flash-image based on web app success.
     String modelName = 'imagen-4.0-fast-generate-001';
     if (referenceImageBase64.isNotEmpty) {
       modelName = 'gemini-2.5-flash-image';
     }
 
     debugPrint('GeminiService: Attempting primary model $modelName...');
-    // Note: gemini-2.5 uses generateContent, not predict.
+
     if (modelName.contains('gemini')) {
       // Use _generateContent with image payload
       return _generateImageWithGemini(
         modelName,
         finalPrompt,
-        referenceImageBase64,
+        referenceImageBase64, // context
+        identityImageBase64:
+            null, // Initial generation has only 1 image (reference)
         backgroundImageBase64: backgroundImageBase64,
       );
     }
 
+    // ... (Imagen fallback remains same) ...
     var result = await _generateImageWithImagen(
       modelName,
       finalPrompt,
@@ -354,13 +359,12 @@ Output: Photorealistic 4K photograph.""";
       debugPrint('GeminiService: Primary model success!');
       return result;
     }
-
-    // Both failed
-    return result; // Return the error message from the last attempt
+    return result;
   }
 
   Future<String> generateStylingChange({
     required String currentImageBase64,
+    required String identityImageBase64, // NEW: Requiring original photo
     required String stylingPrompt,
     required String framingMode,
     String? clothingReferenceBase64,
@@ -375,46 +379,51 @@ Output: Photorealistic 4K photograph.""";
     };
 
     final prompt =
-        """TASK: Update the clothing of the SPECIFIC PERSON in this portrait.
+        """TASK: Update the clothing of the SPECIFIC PERSON using TWO source images.
+IMAGE 1: Context Image (Use for Pose, Lighting, Composition).
+IMAGE 2: Identity Image (Use STRICTLY for Facial Features).
 
-SUBJECT IDENTITY:
-- The face must match the original image exactly.
-- Maintain facial structure, key features, and likeness with high fidelity.
+SUBJECT IDENTITY (FROM IMAGE 2):
+- The face must match IMAGE 2 exactly.
+- Copy facial structure, key features, and likeness from IMAGE 2.
 - Do NOT alter the person's identity.
 
-CLOTHING INSTRUCTION:
-${clothingReferenceBase64 != null ? 'Match the garment shown in the second image.' : ''} 
+CLOTHING INSTRUCTION (APPLY TO IMAGE 1):
+${clothingReferenceBase64 != null ? 'Match the garment shown in the clothing reference image.' : ''} 
 Style: ${stylingPrompt.isNotEmpty ? stylingPrompt : 'Fashionable and fitted'}
-Ensure the clothing fits naturally and maintains the person's proportions.
+Ensure the clothing fits naturally.
 
 FRAMING:
 ${framingInstructions[framingMode] ?? framingInstructions['portrait']}
 
-Output: Photorealistic image.""";
+Output: Photorealistic image combining Image 1's style with Image 2's face.""";
 
     // Use gemini-2.5-flash-image for styling change
     return _generateImageWithGemini(
       'gemini-2.5-flash-image',
       prompt,
       currentImageBase64,
+      identityImageBase64: identityImageBase64,
       backgroundImageBase64:
-          clothingReferenceBase64, // Reuse this param for second image
+          clothingReferenceBase64, // Reuse for clothing ref if needed
     );
   }
 
   Future<String> applySkinTexture(
     String currentImageBase64,
+    String identityImageBase64, // NEW
     String skinTexturePrompt,
   ) async {
     final prompt =
-        """TASK: Apply the following skin texture to the SPECIFIC PERSON in this portrait.
+        """TASK: Apply the following skin texture to the SPECIFIC PERSON using TWO source images.
+IMAGE 1: Context Image.
+IMAGE 2: Identity Source.
 
-SUBJECT IDENTITY:
-- The face must match the original image exactly.
-- Maintain facial structure, key features, and likeness with high fidelity.
-- Do NOT alter the person's identity.
+SUBJECT IDENTITY (FROM IMAGE 2):
+- The face must match IMAGE 2 exactly.
+- Copy facial structure from IMAGE 2.
 
-TEXTURE INSTRUCTION:
+TEXTURE INSTRUCTION (APPLY TO IMAGE 1):
 $skinTexturePrompt
 
 Output: Photorealistic image.""";
@@ -424,18 +433,25 @@ Output: Photorealistic image.""";
       'gemini-2.5-flash-image',
       prompt,
       currentImageBase64,
+      identityImageBase64: identityImageBase64,
     );
   }
 
-  Future<String> upscaleTo4K(String currentImageBase64) async {
-    final prompt = """TASK: Enhance this image to 4K resolution.
+  Future<String> upscaleTo4K(
+    String currentImageBase64,
+    String identityImageBase64, // NEW
+  ) async {
+    final prompt =
+        """TASK: Enhance this image to 4K resolution using Identify Reference.
+IMAGE 1: Low Res Input.
+IMAGE 2: High Res Identity Source.
 
-SUBJECT IDENTITY:
-- Strictly preserve the facial features and identity of the subject.
-- Do NOT alter the face.
+SUBJECT IDENTITY (FROM IMAGE 2):
+- Strictly preserve the facial features using IMAGE 2 as ground truth.
+- Do NOT hallucinate new features.
 
 DETAILS:
-- Refine skin texture and details.
+- Refine skin texture and details based on Image 2.
 - Output: High fidelity photograph.""";
 
     // Use gemini-2.5-flash-image for upscaling
@@ -443,16 +459,22 @@ DETAILS:
       'gemini-2.5-flash-image',
       prompt,
       currentImageBase64,
+      identityImageBase64: identityImageBase64,
     );
   }
 
-  Future<String> removeBackground(String currentImageBase64) async {
+  Future<String> removeBackground(
+    String currentImageBase64,
+    String identityImageBase64, // NEW
+  ) async {
     final prompt =
         """TASK: Isolate the subject on a solid white background (#FFFFFF).
+IMAGE 1: Input.
+IMAGE 2: Identity Verification.
 
 SUBJECT IDENTITY:
-- Strictly preserve the facial features and identity of the subject.
-- Do NOT alter the face or body proportions.
+- Strictly preserve the facial features matching IMAGE 2.
+- Do NOT alter the face.
 
 DETAILS:
 - Preserve edge details and hair strands.
@@ -463,6 +485,7 @@ DETAILS:
       'gemini-2.5-flash-image',
       prompt,
       currentImageBase64,
+      identityImageBase64: identityImageBase64,
     );
   }
 }
