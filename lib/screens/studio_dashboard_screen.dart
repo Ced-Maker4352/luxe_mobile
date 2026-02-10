@@ -45,6 +45,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   // NEW: Framing Options
   String _framingMode = 'portrait'; // 'portrait', 'full-body', 'head-to-toe'
 
+  // Drawer System
+  String? _activeDrawer; // 'retouch', 'stitch', 'print', 'download', 'share'
+  GenerationResult? _focusedResult;
+
   @override
   void initState() {
     super.initState();
@@ -1827,7 +1831,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             _buildAppBar(),
             // Floating Control Bar
             _buildControlBar(),
-            // Main Content
+            // Main Content (shrinks when drawer is open)
             Expanded(
               child: Consumer<SessionProvider>(
                 builder: (context, session, child) {
@@ -1841,6 +1845,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 },
               ),
             ),
+            // Inline Drawer (slides up when a tool is active)
+            if (_activeDrawer != null && _focusedResult != null)
+              _buildInlineDrawer(),
             // Bottom Navigation
             _buildBottomNav(),
           ],
@@ -2102,34 +2109,43 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         0,
       ];
 
-      return Center(
-        child: Container(
-          margin: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white12),
-            boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 20),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            // Apply Filters: Saturation -> Contrast -> Brightness
-            child: ColorFiltered(
-              colorFilter: ColorFilter.matrix(brightnessMatrix),
-              child: ColorFiltered(
-                colorFilter: ColorFilter.matrix(contrastMatrix),
+      return Stack(
+        children: [
+          Center(
+            child: Container(
+              margin: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.5),
+                    blurRadius: 20,
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                // Apply Filters: Saturation -> Contrast -> Brightness
                 child: ColorFiltered(
-                  colorFilter: ColorFilter.matrix(saturationMatrix),
-                  child: Image.memory(
-                    session.uploadedImageBytes!,
-                    fit: BoxFit.contain,
+                  colorFilter: ColorFilter.matrix(brightnessMatrix),
+                  child: ColorFiltered(
+                    colorFilter: ColorFilter.matrix(contrastMatrix),
+                    child: ColorFiltered(
+                      colorFilter: ColorFilter.matrix(saturationMatrix),
+                      child: Image.memory(
+                        session.uploadedImageBytes!,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
+          // Adjustments Overlay
+          _buildAdjustmentsOverlay(),
+        ],
       );
     }
 
@@ -2224,20 +2240,20 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                               null)
                       ? Image.memory(
                           context.read<SessionProvider>().uploadedImageBytes!,
-                          fit: BoxFit.cover,
+                          fit: BoxFit.contain,
                           width: double.infinity,
                           height: 400,
                         )
                       : (result.imageUrl.startsWith('data:')
                             ? Image.memory(
                                 base64Decode(result.imageUrl.split(',')[1]),
-                                fit: BoxFit.cover,
+                                fit: BoxFit.contain,
                                 width: double.infinity,
                                 height: 400,
                               )
                             : Image.network(
                                 result.imageUrl,
-                                fit: BoxFit.cover,
+                                fit: BoxFit.contain,
                                 width: double.infinity,
                                 height: 400,
                               )),
@@ -2289,26 +2305,34 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildActionButton(Icons.auto_fix_high, 'RETOUCH', () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => AssetEditorScreen(result: result),
-                    ),
-                  );
+                  setState(() {
+                    _focusedResult = result;
+                    _activeDrawer = 'retouch';
+                  });
                 }),
-                _buildActionButton(
-                  Icons.local_printshop,
-                  'PRINT',
-                  _showPrintLab,
-                ),
+                _buildActionButton(Icons.collections, 'STITCH', () {
+                  setState(() {
+                    _focusedResult = result;
+                    _activeDrawer = 'stitch';
+                  });
+                }),
+                _buildActionButton(Icons.local_printshop, 'PRINT', () {
+                  setState(() {
+                    _focusedResult = result;
+                    _activeDrawer = 'print';
+                  });
+                }),
                 _buildActionButton(Icons.download, 'DOWNLOAD', () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Download coming soon!')),
-                  );
+                  setState(() {
+                    _focusedResult = result;
+                    _activeDrawer = 'download';
+                  });
                 }),
                 _buildActionButton(Icons.share, 'SHARE', () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Share coming soon!')),
-                  );
+                  setState(() {
+                    _focusedResult = result;
+                    _activeDrawer = 'share';
+                  });
                 }),
               ],
             ),
@@ -2331,6 +2355,458 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               color: Colors.white54,
               fontSize: 9,
               letterSpacing: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ADJUSTMENTS OVERLAY (Pre-generation)
+  // ═══════════════════════════════════════════════════════════
+
+  Widget _buildAdjustmentsOverlay() {
+    final tags = <String>[];
+    if (_brightness != 100) tags.add('Brightness ${_brightness.toInt()}%');
+    if (_contrast != 100) tags.add('Contrast ${_contrast.toInt()}%');
+    if (_saturation != 100) tags.add('Saturation ${_saturation.toInt()}%');
+    tags.add('Skin: ${_selectedSkinTexture.label}');
+    tags.add('Framing: ${_framingMode.replaceAll('-', ' ').toUpperCase()}');
+    if (_customPrompt.isNotEmpty)
+      tags.add(
+        'Prompt: ${_customPrompt.length > 20 ? '${_customPrompt.substring(0, 20)}...' : _customPrompt}',
+      );
+    if (_selectedBackdrop != null) tags.add('BG: ${_selectedBackdrop!.name}');
+
+    return Positioned(
+      bottom: 12,
+      left: 12,
+      right: 12,
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: tags
+            .map(
+              (tag) => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: const Color(0xFFD4AF37).withOpacity(0.3),
+                  ),
+                ),
+                child: Text(
+                  tag,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // INLINE DRAWER
+  // ═══════════════════════════════════════════════════════════
+
+  Widget _buildInlineDrawer() {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+      decoration: const BoxDecoration(
+        color: Color(0xFF141414),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        border: Border(top: BorderSide(color: Color(0x33D4AF37))),
+      ),
+      constraints: const BoxConstraints(maxHeight: 280),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drawer Header with close button
+          _buildDrawerHeader(),
+          const Divider(color: Colors.white10, height: 1),
+          // Drawer Content
+          Expanded(child: _buildDrawerContent()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerHeader() {
+    final titles = {
+      'retouch': 'RETOUCH LAB',
+      'stitch': 'STITCH STUDIO',
+      'print': 'LUXE PRINT LAB',
+      'download': 'DOWNLOAD',
+      'share': 'SHARE',
+    };
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            titles[_activeDrawer] ?? '',
+            style: const TextStyle(
+              color: Color(0xFFD4AF37),
+              fontSize: 11,
+              letterSpacing: 2,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          GestureDetector(
+            onTap: () => setState(() {
+              _activeDrawer = null;
+              _focusedResult = null;
+            }),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Icon(Icons.close, color: Colors.white38, size: 18),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerContent() {
+    switch (_activeDrawer) {
+      case 'retouch':
+        return _buildRetouchDrawer();
+      case 'stitch':
+        return _buildStitchDrawer();
+      case 'print':
+        return _buildPrintDrawer();
+      case 'download':
+        return _buildDownloadDrawer();
+      case 'share':
+        return _buildShareDrawer();
+      default:
+        return const SizedBox();
+    }
+  }
+
+  Widget _buildRetouchDrawer() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'SKIN CORE PROTOCOLS',
+            style: TextStyle(
+              color: Colors.white24,
+              fontSize: 10,
+              letterSpacing: 2,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: ['MATTE SILK', 'DEWY GLOW', 'PORE LOCK', 'EDITORIAL'].map(
+              (label) {
+                return GestureDetector(
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Applying $label...'),
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xFFD4AF37).withOpacity(0.3),
+                      ),
+                    ),
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.white54,
+                        fontSize: 10,
+                        letterSpacing: 1,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ).toList(),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => setState(() {
+                _activeDrawer = null;
+                _focusedResult = null;
+              }),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD4AF37),
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text(
+                'FINALIZE',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStitchDrawer() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.collections,
+              color: const Color(0xFFD4AF37).withOpacity(0.5),
+              size: 36,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'STITCH STUDIO',
+              style: TextStyle(
+                color: Colors.white54,
+                fontSize: 11,
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Combine multiple generations into a single composition.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white24, fontSize: 10),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Stitch feature coming soon!')),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD4AF37),
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text(
+                'START STITCH',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                  fontSize: 11,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPrintDrawer() {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: printProducts.length,
+      itemBuilder: (context, index) {
+        final product = printProducts[index];
+        return ListTile(
+          contentPadding: const EdgeInsets.symmetric(vertical: 4),
+          dense: true,
+          title: Text(
+            product.name,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          subtitle: Text(
+            '${product.material} • FROM \$${product.price.toInt()}',
+            style: const TextStyle(color: Colors.white54, fontSize: 10),
+          ),
+          trailing: const Icon(
+            Icons.arrow_forward_ios,
+            color: Color(0xFFD4AF37),
+            size: 14,
+          ),
+          onTap: () async {
+            if (product.partnerUrl != null) {
+              final uri = Uri.parse(product.partnerUrl!);
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri);
+              }
+            }
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildDownloadDrawer() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.download, color: Color(0xFFD4AF37), size: 36),
+            const SizedBox(height: 12),
+            const Text(
+              'Save to your device',
+              style: TextStyle(color: Colors.white54, fontSize: 11),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildDownloadOption('HIGH RES', 'PNG • 4K'),
+                const SizedBox(width: 12),
+                _buildDownloadOption('STANDARD', 'JPG • 1080p'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDownloadOption(String label, String subtitle) {
+    return GestureDetector(
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Downloading $label...'),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.3)),
+        ),
+        child: Column(
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFFD4AF37),
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: const TextStyle(color: Colors.white38, fontSize: 9),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShareDrawer() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.share, color: Color(0xFFD4AF37), size: 36),
+            const SizedBox(height: 12),
+            const Text(
+              'Share your creation',
+              style: TextStyle(color: Colors.white54, fontSize: 11),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildShareOption(Icons.link, 'COPY LINK'),
+                const SizedBox(width: 16),
+                _buildShareOption(Icons.camera_alt, 'INSTAGRAM'),
+                const SizedBox(width: 16),
+                _buildShareOption(Icons.send, 'MESSAGE'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShareOption(IconData icon, String label) {
+    return GestureDetector(
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$label coming soon!'),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      },
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1A1A),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white10),
+            ),
+            child: Icon(icon, color: const Color(0xFFD4AF37), size: 22),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white38,
+              fontSize: 8,
+              letterSpacing: 0.5,
             ),
           ),
         ],

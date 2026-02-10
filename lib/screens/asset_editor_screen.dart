@@ -76,7 +76,7 @@ class _AssetEditorScreenState extends State<AssetEditorScreen> {
                   children: [
                     Image.network(
                       _currentImageUrl,
-                      fit: BoxFit.cover,
+                      fit: BoxFit.contain,
                       width: double.infinity,
                       height: double.infinity,
                     ),
