@@ -303,17 +303,25 @@ User Idea: "$draftPrompt"''',
     String? skinTexturePrompt,
   }) async {
     final finalPrompt =
-        """Create a professional studio portrait of the person provided in the reference image.
-        
-Context: $basePrompt
+        """TASK: Generate a high-fidelity professional studio portrait of the SPECIFIC PERSON provided in the reference image.
 
-Style details:
-- Skin: Natural, healthy skin texture with realistic pores.
+SUBJECT IDENTITY:
+- The face must match the reference image exactly. 
+- Maintain facial structure, key features, and likeness with high fidelity.
+- Do NOT alter the person's identity or create a generic face. 
+- This is a RE-STYLING task, not a new person generation.
+
+SCENE & STYLE CONTEXT:
+$basePrompt
+
+TECHNICAL DETAILS:
+- Skin: Natural, realistic texture with visible pores (avoid plastic smoothing).
 - Camera: $opticProtocol
+- Lighting: Professional studio lighting matching the requested mood.
 
-${backgroundImageBase64 != null ? 'Setting: Place the subject in the provided background environment naturally.' : ''}
+${backgroundImageBase64 != null ? 'SETTING: Place the subject in the provided background environment naturally.' : ''}
 
-Output: High resolution, photorealistic photograph.""";
+Output: Photorealistic 4K photograph.""";
 
     // Try primary model: imagen-4.0-fast-generate-001 (for new generation)
     // If we have a reference image, we might need to use gemini-2.5-flash-image if imagen 4 doesn't support it?
@@ -367,14 +375,22 @@ Output: High resolution, photorealistic photograph.""";
     };
 
     final prompt =
-        """Update the person's clothing in this portrait. ${clothingReferenceBase64 != null ? 'Match the garment shown in the second image.' : ''} 
-    
-    Style: ${stylingPrompt.isNotEmpty ? stylingPrompt : 'Fashionable and fitted'}
-    
-    Instruction: Ensure the clothing fits naturally. Maintain the person's identity and proportions.
-    Framing: ${framingInstructions[framingMode] ?? framingInstructions['portrait']}
-    
-    Output: Photorealistic image.""";
+        """TASK: Update the clothing of the SPECIFIC PERSON in this portrait.
+
+SUBJECT IDENTITY:
+- The face must match the original image exactly.
+- Maintain facial structure, key features, and likeness with high fidelity.
+- Do NOT alter the person's identity.
+
+CLOTHING INSTRUCTION:
+${clothingReferenceBase64 != null ? 'Match the garment shown in the second image.' : ''} 
+Style: ${stylingPrompt.isNotEmpty ? stylingPrompt : 'Fashionable and fitted'}
+Ensure the clothing fits naturally and maintains the person's proportions.
+
+FRAMING:
+${framingInstructions[framingMode] ?? framingInstructions['portrait']}
+
+Output: Photorealistic image.""";
 
     // Use gemini-2.5-flash-image for styling change
     return _generateImageWithGemini(
@@ -391,11 +407,17 @@ Output: High resolution, photorealistic photograph.""";
     String skinTexturePrompt,
   ) async {
     final prompt =
-        """Apply the following skin texture to this portrait:
-    $skinTexturePrompt
-    
-    Maintain the original pose, lighting, and person's identity.
-    Output: Photorealistic image.""";
+        """TASK: Apply the following skin texture to the SPECIFIC PERSON in this portrait.
+
+SUBJECT IDENTITY:
+- The face must match the original image exactly.
+- Maintain facial structure, key features, and likeness with high fidelity.
+- Do NOT alter the person's identity.
+
+TEXTURE INSTRUCTION:
+$skinTexturePrompt
+
+Output: Photorealistic image.""";
 
     // Use gemini-2.5-flash-image for skin texture
     return _generateImageWithGemini(
@@ -406,8 +428,15 @@ Output: High resolution, photorealistic photograph.""";
   }
 
   Future<String> upscaleTo4K(String currentImageBase64) async {
-    final prompt =
-        "Enhance this image to 4K resolution. Refine skin texture and details while maintaining the original identity. output: High fidelity photograph.";
+    final prompt = """TASK: Enhance this image to 4K resolution.
+
+SUBJECT IDENTITY:
+- Strictly preserve the facial features and identity of the subject.
+- Do NOT alter the face.
+
+DETAILS:
+- Refine skin texture and details.
+- Output: High fidelity photograph.""";
 
     // Use gemini-2.5-flash-image for upscaling
     return _generateImageWithGemini(
@@ -419,7 +448,15 @@ Output: High resolution, photorealistic photograph.""";
 
   Future<String> removeBackground(String currentImageBase64) async {
     final prompt =
-        "Isolate the subject on a solid white background (#FFFFFF). Preserve the person's identity and edge details.";
+        """TASK: Isolate the subject on a solid white background (#FFFFFF).
+
+SUBJECT IDENTITY:
+- Strictly preserve the facial features and identity of the subject.
+- Do NOT alter the face or body proportions.
+
+DETAILS:
+- Preserve edge details and hair strands.
+- Output: High fidelity image with white background.""";
 
     // Use gemini-2.5-flash-image for background removal
     return _generateImageWithGemini(
