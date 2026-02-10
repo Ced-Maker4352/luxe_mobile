@@ -367,13 +367,14 @@ Output: High resolution, photorealistic photograph.""";
     };
 
     final prompt =
-        """Change the person's clothing. ${clothingReferenceBase64 != null ? 'Use the garment shown in the second image as the primary reference.' : ''} 
-    ${stylingPrompt.isNotEmpty ? 'Specific style details: $stylingPrompt.' : ''}
-    CRITICAL INSTRUCTION: Ensure the clothing fits the subject's specific body size and proportions exactly. Do not alter the person's body shape, weight, height, or physique. Preserve their natural figure.
-    FRAMING: ${framingInstructions[framingMode] ?? framingInstructions['portrait']}
-    IDENTITY LOCK: Keep the facial features, skin tone, hair, and overall identity exactly the same. Do not alter age, ethnicity, or distinguishing features.
-    If the clothing request refers to a specific brand or institution, create a generic artistic version with similar colors and style.
-    Output a photorealistic image.""";
+        """Update the person's clothing in this portrait. ${clothingReferenceBase64 != null ? 'Match the garment shown in the second image.' : ''} 
+    
+    Style: ${stylingPrompt.isNotEmpty ? stylingPrompt : 'Fashionable and fitted'}
+    
+    Instruction: Ensure the clothing fits naturally. Maintain the person's identity and proportions.
+    Framing: ${framingInstructions[framingMode] ?? framingInstructions['portrait']}
+    
+    Output: Photorealistic image.""";
 
     // Use gemini-2.5-flash-image for styling change
     return _generateImageWithGemini(
@@ -390,11 +391,11 @@ Output: High resolution, photorealistic photograph.""";
     String skinTexturePrompt,
   ) async {
     final prompt =
-        """Re-generate this exact image with the following skin texture applied:
+        """Apply the following skin texture to this portrait:
     $skinTexturePrompt
-    CRITICAL: Keep EVERYTHING else exactly the same - same pose, same clothing, same background, same lighting, same composition.
-    IDENTITY LOCK: Preserve all facial features, hair, body proportions, and distinguishing features exactly.
-    Only modify the skin texture as instructed. Output a photorealistic image.""";
+    
+    Maintain the original pose, lighting, and person's identity.
+    Output: Photorealistic image.""";
 
     // Use gemini-2.5-flash-image for skin texture
     return _generateImageWithGemini(
@@ -406,7 +407,7 @@ Output: High resolution, photorealistic photograph.""";
 
   Future<String> upscaleTo4K(String currentImageBase64) async {
     final prompt =
-        "Perform a high-fidelity UHD enhancement. Upscale to 4K resolution (3840x5120). Reconstruct fine skin pores, hair strands, and fabric weaves. Maintain the exact facial identity. Enhance the lens-specific micro-contrast and sharpen eye reflections to liquid clarity.";
+        "Enhance this image to 4K resolution. Refine skin texture and details while maintaining the original identity. output: High fidelity photograph.";
 
     // Use gemini-2.5-flash-image for upscaling
     return _generateImageWithGemini(
@@ -418,7 +419,7 @@ Output: High resolution, photorealistic photograph.""";
 
   Future<String> removeBackground(String currentImageBase64) async {
     final prompt =
-        "Isolate the subject from the background. Replace background with solid #FFFFFF. Maintain 1:1 facial identity and edge clarity on hair and clothing for professional compositing.";
+        "Isolate the subject on a solid white background (#FFFFFF). Preserve the person's identity and edge details.";
 
     // Use gemini-2.5-flash-image for background removal
     return _generateImageWithGemini(
