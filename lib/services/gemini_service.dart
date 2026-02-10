@@ -319,7 +319,7 @@ SCENE & STYLE CONTEXT:
 $basePrompt
 
 TECHNICAL DETAILS:
-- Skin: Natural, realistic texture with visible pores (avoid plastic smoothing).
+- Skin: ${skinTexturePrompt ?? 'Natural, realistic texture with visible pores (avoid plastic smoothing)'}.
 - Camera: $opticProtocol
 - Lighting: Professional studio lighting matching the requested mood.
 
@@ -487,5 +487,116 @@ DETAILS:
       currentImageBase64,
       identityImageBase64: identityImageBase64,
     );
+  }
+
+  Future<String> generateGroupStitch({
+    required List<String> identityImagesBase64,
+    required String prompt,
+    String? backgroundImageBase64,
+    required String vibe,
+  }) async {
+    final parts = <Map<String, dynamic>>[];
+
+    // 1. Add all Identity Images
+    for (int i = 0; i < identityImagesBase64.length; i++) {
+      parts.add(_getDataPart(identityImagesBase64[i]));
+      parts.add({'text': 'REFERENCE IDENTITY ${i + 1} (Image above)'});
+    }
+
+    // 2. Background (Optional)
+    if (backgroundImageBase64 != null && backgroundImageBase64.isNotEmpty) {
+      parts.add(_getDataPart(backgroundImageBase64));
+      parts.add({'text': 'REFERENCE BACKGROUND (Image above)'});
+    }
+
+    // 3. Prompt
+    final fullPrompt =
+        """TASK: Create a realistic GROUP PHOTO of ${identityImagesBase64.length} distinctive people based on the reference identities provided above.
+    
+    IDENTITIES:
+    - You must generate exactly ${identityImagesBase64.length} people.
+    - Person 1 must match Identity 1.
+    - Person 2 must match Identity 2.
+    - ...and so on.
+    - Strictly preserve facial features and body types for each person.
+    
+    STYLING VIBE: ${vibe == 'matching' ? 'MATCHING OUTFITS. Everyone should wear coordinated clothing style.' : 'INDIVIDUAL STYLE. Each person should express their own unique style.'}
+    
+    SCENE:
+    $prompt
+    
+    COMPOSITION:
+    - Group shot, interacting naturally.
+    - High fidelity, photorealistic 4K.""";
+
+    parts.add({'text': fullPrompt});
+
+    // Use gemini-2.5-flash-image (best for multi-modal)
+    // We reuse the internal logic of _generateImageWithGemini but we need to bypass its fixed slots.
+    // So we'll call a raw helper or just duplicate the HTTP call logic for this specific advanced case.
+    return _callGeminiRaw('gemini-2.5-flash-image', parts);
+  }
+
+  Future<String> _callGeminiRaw(
+    String model,
+    List<Map<String, dynamic>> parts,
+  ) async {
+    final url = Uri.parse('$_baseUrl/$model:generateContent?key=$_apiKey');
+    final body = {
+      'contents': [
+        {'parts': parts},
+      ],
+      'generationConfig': {'temperature': 0.4},
+      'safetySettings': [
+        {'category': 'HARM_CATEGORY_HARASSMENT', 'threshold': 'BLOCK_NONE'},
+        {'category': 'HARM_CATEGORY_HATE_SPEECH', 'threshold': 'BLOCK_NONE'},
+        {
+          'category': 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+          'threshold': 'BLOCK_NONE',
+        },
+        {
+          'category': 'HARM_CATEGORY_DANGEROUS_CONTENT',
+          'threshold': 'BLOCK_NONE',
+        },
+      ],
+    };
+
+    try {
+      debugPrint('GeminiService: Calling $model (Raw Stitch Mode)...');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      debugPrint('GeminiService Stitch Response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data is Map && data.containsKey('candidates')) {
+          final candidates = data['candidates'] as List;
+          if (candidates.isNotEmpty) {
+            final candidate = candidates[0];
+            if (candidate is Map && candidate.containsKey('content')) {
+              final content = candidate['content'];
+              if (content is Map && content.containsKey('parts')) {
+                final parts = content['parts'] as List;
+                for (final part in parts) {
+                  if (part is Map && part.containsKey('inlineData')) {
+                    final inlineData = part['inlineData'];
+                    return 'data:${inlineData['mimeType']};base64,${inlineData['data']}';
+                  }
+                }
+              }
+            }
+          }
+        }
+        return 'Error: No image in response.';
+      } else {
+        return 'Error: Gemini API ${response.statusCode}';
+      }
+    } catch (e) {
+      return 'Error: $e';
+    }
   }
 }

@@ -13,6 +13,7 @@ enum PortraitPackage {
   DIGITAL_NOMAD,
   CREATIVE_DIRECTOR,
   branding,
+  STITCH,
 }
 
 class CameraRig {

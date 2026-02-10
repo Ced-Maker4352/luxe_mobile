@@ -7,6 +7,13 @@ import '../services/gemini_service.dart';
 
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
+import 'dart:typed_data';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class StudioDashboardScreen extends StatefulWidget {
   const StudioDashboardScreen({super.key});
@@ -33,6 +40,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   double _saturation = 100;
 
   // NEW: Framing Options
+  // NEW: Missing web features - Gender & Style
+  String _gender = 'female'; // 'female', 'male', 'unspecified'
+  String _styleTemperature = 'neutral'; // 'cool', 'warm', 'neutral'
   String _framingMode = 'portrait'; // 'portrait', 'full-body', 'head-to-toe'
 
   // V2 Split View State
@@ -129,7 +139,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         debugPrint('Studio: Using Single Style Prompt: $fullPrompt');
       } else {
         fullPrompt =
-            '${session.selectedPackage!.basePrompt} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""} \nFRAMING: $framingText';
+            '${session.selectedPackage!.basePrompt} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""} \nTarget Gender: $_gender \nColor Temperature: $_styleTemperature \nFRAMING: $framingText';
       }
 
       // Append Adjustment Logic to Prompt
@@ -202,8 +212,153 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           ),
         );
       }
+    }
+  }
+
+  Future<void> _pickStitchImage(SessionProvider session) async {
+    if (session.stitchImages.length >= 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Maximum 5 people allowed.')),
+      );
+      return;
+    }
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      final bytes = await image.readAsBytes();
+      session.addStitchImage(bytes);
+    }
+  }
+
+  Future<void> _generateStitch(SessionProvider session) async {
+    if (session.stitchImages.length < 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select at least 2 people for a group stitch.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    session.setGenerating(true);
+    try {
+      debugPrint('Studio: Starting Stitch Generation...');
+      final service = GeminiService();
+
+      final imagesB64 = session.stitchImages
+          .map((bytes) => base64Encode(bytes))
+          .toList();
+
+      final fullPrompt =
+          '${session.selectedPackage!.basePrompt} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""}';
+
+      final resultText = await service.generateGroupStitch(
+        identityImagesBase64: imagesB64,
+        prompt: fullPrompt,
+        vibe: session.stitchVibe,
+        backgroundImageBase64: null,
+      );
+
+      String imageUrl;
+      if (resultText.startsWith('data:image')) {
+        imageUrl = resultText;
+      } else {
+        imageUrl =
+            'data:image/jpeg;base64,${base64Encode(session.stitchImages.first)}';
+      }
+
+      session.addResult(
+        GenerationResult(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          imageUrl: imageUrl,
+          mediaType: 'image_stitch',
+          packageType: PortraitPackage.STITCH,
+          timestamp: DateTime.now().millisecondsSinceEpoch,
+        ),
+      );
+    } catch (e) {
+      debugPrint("Stitch failed: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Stitch failed: $e')));
+      }
     } finally {
       session.setGenerating(false);
+    }
+  }
+
+  Future<void> _saveToGallery() async {
+    final session = context.read<SessionProvider>();
+    if (session.results.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No image to download.')));
+      return;
+    }
+
+    final imageUrl = session.results.first.imageUrl;
+    Uint8List? bytes;
+
+    try {
+      if (imageUrl.startsWith('data:')) {
+        final base64String = imageUrl.split(',').last;
+        bytes = base64Decode(base64String);
+      }
+
+      if (bytes != null) {
+        final result = await ImageGallerySaver.saveImage(bytes);
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Saved to Gallery: $result')));
+        }
+      }
+    } catch (e) {
+      debugPrint('Save error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to save: $e')));
+      }
+    }
+  }
+
+  Future<void> _shareImage() async {
+    final session = context.read<SessionProvider>();
+    if (session.results.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No image to share.')));
+      return;
+    }
+
+    final imageUrl = session.results.first.imageUrl;
+    Uint8List? bytes;
+
+    try {
+      if (imageUrl.startsWith('data:')) {
+        final base64String = imageUrl.split(',').last;
+        bytes = base64Decode(base64String);
+      }
+
+      if (bytes != null) {
+        final tempDir = await getTemporaryDirectory();
+        final file = await File('${tempDir.path}/shared_image.png').create();
+        await file.writeAsBytes(bytes);
+
+        await Share.shareXFiles([
+          XFile(file.path),
+        ], text: 'Check out my Luxe AI portrait! ✨');
+      }
+    } catch (e) {
+      debugPrint('Share error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to share: $e')));
+      }
     }
   }
 
@@ -751,6 +906,54 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                       borderSide: const BorderSide(color: Color(0xFFD4AF37)),
                     ),
                     contentPadding: const EdgeInsets.all(14),
+                    suffixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Mic (Stub)
+                        IconButton(
+                          icon: const Icon(
+                            Icons.mic,
+                            color: Colors.white38,
+                            size: 20,
+                          ),
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Voice input coming soon!'),
+                              ),
+                            );
+                          },
+                        ),
+                        // Enhance (Stub)
+                        IconButton(
+                          icon: const Icon(
+                            Icons.auto_fix_high,
+                            color: Color(0xFFD4AF37),
+                            size: 20,
+                          ),
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('AI Enhance coming soon!'),
+                              ),
+                            );
+                          },
+                        ),
+                        // Clear (Functional)
+                        if (_promptController.text.isNotEmpty)
+                          IconButton(
+                            icon: const Icon(
+                              Icons.close,
+                              color: Colors.white38,
+                              size: 20,
+                            ),
+                            onPressed: () {
+                              _promptController.clear();
+                              setState(() => _customPrompt = '');
+                            },
+                          ),
+                      ],
+                    ),
                   ),
                   onChanged: (val) => setState(() => _customPrompt = val),
                 ),
@@ -1325,56 +1528,184 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 1. GENDER
           const Text(
-            'SKIN CORE PROTOCOLS',
+            'TARGET GENDER',
             style: TextStyle(
               color: Colors.white24,
               fontSize: 10,
               letterSpacing: 2,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: ['female', 'male', 'unspecified'].map((g) {
+              final isActive = _gender == g;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _gender = g),
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? const Color(0xFFD4AF37).withOpacity(0.15)
+                          : Colors.white.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isActive
+                            ? const Color(0xFFD4AF37)
+                            : Colors.white12,
+                      ),
+                    ),
+                    child: Text(
+                      g.toUpperCase(),
+                      style: TextStyle(
+                        color: isActive
+                            ? const Color(0xFFD4AF37)
+                            : Colors.white54,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 20),
+
+          // 2. STYLE TEMPERATURE
+          const Text(
+            'COLOR GRADING',
+            style: TextStyle(
+              color: Colors.white24,
+              fontSize: 10,
+              letterSpacing: 2,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: ['neutral', 'warm', 'cool'].map((s) {
+              final isActive = _styleTemperature == s;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _styleTemperature = s),
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? const Color(0xFFD4AF37).withOpacity(0.15)
+                          : Colors.white.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isActive
+                            ? const Color(0xFFD4AF37)
+                            : Colors.white12,
+                      ),
+                    ),
+                    child: Text(
+                      s.toUpperCase(),
+                      style: TextStyle(
+                        color: isActive
+                            ? const Color(0xFFD4AF37)
+                            : Colors.white54,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 20),
+
+          // 3. SKIN TEXTURE (Synced with constants)
+          const Text(
+            'SKIN FINISH',
+            style: TextStyle(
+              color: Colors.white24,
+              fontSize: 10,
+              letterSpacing: 2,
+              fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: ['MATTE SILK', 'DEWY GLOW', 'PORE LOCK', 'EDITORIAL'].map(
-              (label) {
-                return GestureDetector(
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Applying $label...'),
-                        duration: const Duration(seconds: 1),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: const Color(0xFFD4AF37).withOpacity(0.3),
-                      ),
-                    ),
-                    child: Text(
-                      label,
-                      style: const TextStyle(
-                        color: Colors.white54,
-                        fontSize: 10,
-                        letterSpacing: 1,
-                        fontWeight: FontWeight.bold,
-                      ),
+            children: skinTextures.map((tex) {
+              final isActive = _selectedSkinTexture.id == tex.id;
+              return GestureDetector(
+                onTap: () => setState(() => _selectedSkinTexture = tex),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? const Color(0xFFD4AF37).withOpacity(0.15)
+                        : Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isActive
+                          ? const Color(0xFFD4AF37)
+                          : Colors.white12,
                     ),
                   ),
-                );
-              },
-            ).toList(),
+                  child: Text(
+                    tex.label,
+                    style: TextStyle(
+                      color: isActive
+                          ? const Color(0xFFD4AF37)
+                          : Colors.white54,
+                      fontSize: 10,
+                      fontWeight: isActive
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
+
+          // 4. FINE TUNE SLIDERS
+          const Text(
+            'FINE TUNE',
+            style: TextStyle(
+              color: Colors.white24,
+              fontSize: 10,
+              letterSpacing: 2,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildSlider(
+            'BRIGHTNESS',
+            _brightness,
+            (v) => setState(() => _brightness = v),
+          ),
+          _buildSlider(
+            'CONTRAST',
+            _contrast,
+            (v) => setState(() => _contrast = v),
+          ),
+          _buildSlider(
+            'SATURATION',
+            _saturation,
+            (v) => setState(() => _saturation = v),
+          ),
+
+          const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -1391,7 +1722,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 ),
               ),
               child: const Text(
-                'FINALIZE',
+                'APPLY & CLOSE',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   letterSpacing: 2,
@@ -1405,61 +1736,256 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     );
   }
 
-  Widget _buildStitchDrawer() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+  Widget _buildSlider(
+    String label,
+    double value,
+    ValueChanged<double> onChanged,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(
-              Icons.collections,
-              color: const Color(0xFFD4AF37).withOpacity(0.5),
-              size: 36,
+            Text(
+              label,
+              style: const TextStyle(color: Colors.white54, fontSize: 10),
             ),
-            const SizedBox(height: 12),
-            const Text(
-              'STITCH STUDIO',
-              style: TextStyle(
-                color: Colors.white54,
-                fontSize: 11,
-                letterSpacing: 1,
+            Text(
+              '${value.toInt()}%',
+              style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 10),
+            ),
+          ],
+        ),
+        SliderTheme(
+          data: SliderThemeData(
+            activeTrackColor: const Color(0xFFD4AF37),
+            inactiveTrackColor: Colors.white10,
+            thumbColor: const Color(0xFFD4AF37),
+            trackHeight: 2,
+            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+            overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+          ),
+          child: Slider(value: value, min: 0, max: 200, onChanged: onChanged),
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  Widget _buildStitchDrawer() {
+    final session = context.watch<SessionProvider>();
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. SQUAD SELECTOR
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'STITCH SQUAD (${session.stitchImages.length}/5)',
+                style: const TextStyle(
+                  color: Colors.white24,
+                  fontSize: 10,
+                  letterSpacing: 2,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
+              if (session.stitchImages.isNotEmpty)
+                GestureDetector(
+                  onTap: () {
+                    // Quick clear
+                    // We don't have a clear method yet, stick to individual removal
+                  },
+                  child: const Text(
+                    'TAP TO REMOVE',
+                    style: TextStyle(fontSize: 8, color: Colors.white12),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 80,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                // Add Button
+                if (session.stitchImages.length < 5)
+                  GestureDetector(
+                    onTap: () => _pickStitchImage(session),
+                    child: Container(
+                      width: 70,
+                      margin: const EdgeInsets.only(right: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.white24,
+                          style: BorderStyle.solid,
+                        ),
+                      ),
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add, color: Color(0xFFD4AF37)),
+                          SizedBox(height: 4),
+                          Text(
+                            'ADD',
+                            style: TextStyle(
+                              color: Color(0xFFD4AF37),
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                // Images
+                ...session.stitchImages.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final bytes = entry.value;
+                  return Stack(
+                    children: [
+                      Container(
+                        width: 70,
+                        margin: const EdgeInsets.only(right: 12),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          image: DecorationImage(
+                            image: MemoryImage(bytes),
+                            fit: BoxFit.cover,
+                          ),
+                          border: Border.all(color: Colors.white12),
+                        ),
+                      ),
+                      Positioned(
+                        top: 0,
+                        right: 12,
+                        child: GestureDetector(
+                          onTap: () => session.removeStitchImage(index),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.black54,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              size: 12,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }),
+              ],
             ),
-            const SizedBox(height: 6),
-            const Text(
-              'Combine multiple generations into a single composition.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white24, fontSize: 10),
+          ),
+
+          const SizedBox(height: 20),
+
+          // 2. VIBE CHECK
+          const Text(
+            'GROUP VIBE',
+            style: TextStyle(
+              color: Colors.white24,
+              fontSize: 10,
+              letterSpacing: 2,
+              fontWeight: FontWeight.bold,
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Stitch feature coming soon!')),
-                );
-              },
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              // Matching Outfits
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => session.setStitchVibe('matching'),
+                  child: _buildVibeChip(
+                    'MATCHING FITS',
+                    session.stitchVibe == 'matching',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Individual
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => session.setStitchVibe('individual'),
+                  child: _buildVibeChip(
+                    'INDIVIDUAL STYLE',
+                    session.stitchVibe == 'individual',
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+          // 3. GENERATE BUTTON
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: session.isGenerating
+                  ? null
+                  : () => _generateStitch(session),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFD4AF37),
                 foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              child: const Text(
-                'START STITCH',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
-                  fontSize: 11,
-                ),
-              ),
+              child: session.isGenerating
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.black,
+                      ),
+                    )
+                  : const Text(
+                      'GENERATE GROUP PHOTO',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                        fontSize: 12,
+                      ),
+                    ),
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVibeChip(String label, bool isActive) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: isActive
+            ? const Color(0xFFD4AF37).withOpacity(0.15)
+            : Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isActive ? const Color(0xFFD4AF37) : Colors.white12,
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: isActive ? const Color(0xFFD4AF37) : Colors.white54,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
@@ -1521,9 +2047,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildDownloadOption('HIGH RES', 'PNG • 4K'),
+                _buildDownloadOption('HIGH RES', 'PNG • 4K', _saveToGallery),
                 const SizedBox(width: 12),
-                _buildDownloadOption('STANDARD', 'JPG • 1080p'),
+                _buildDownloadOption('STANDARD', 'JPG • 1080p', _saveToGallery),
               ],
             ),
           ],
@@ -1532,16 +2058,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     );
   }
 
-  Widget _buildDownloadOption(String label, String subtitle) {
+  Widget _buildDownloadOption(
+    String label,
+    String subtitle,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Downloading $label...'),
-            duration: const Duration(seconds: 1),
-          ),
-        );
-      },
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
@@ -1588,11 +2111,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildShareOption(Icons.link, 'COPY LINK'),
+                _buildShareOption(Icons.link, 'COPY LINK', _shareImage),
                 const SizedBox(width: 16),
-                _buildShareOption(Icons.camera_alt, 'INSTAGRAM'),
+                _buildShareOption(Icons.camera_alt, 'INSTAGRAM', _shareImage),
                 const SizedBox(width: 16),
-                _buildShareOption(Icons.send, 'MESSAGE'),
+                _buildShareOption(Icons.send, 'MESSAGE', _shareImage),
               ],
             ),
           ],
@@ -1601,16 +2124,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     );
   }
 
-  Widget _buildShareOption(IconData icon, String label) {
+  Widget _buildShareOption(IconData icon, String label, VoidCallback onTap) {
     return GestureDetector(
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('$label coming soon!'),
-            duration: const Duration(seconds: 1),
-          ),
-        );
-      },
+      onTap: onTap,
       child: Column(
         children: [
           Container(

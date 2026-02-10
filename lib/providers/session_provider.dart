@@ -78,4 +78,30 @@ class SessionProvider extends ChangeNotifier {
     _isSingleStyleMode = false; // Reset mode
     notifyListeners();
   }
+
+  // STITCH STUDIO STATE
+  final List<Uint8List> _stitchImages = [];
+  String _stitchVibe = 'individual'; // 'matching', 'individual'
+
+  List<Uint8List> get stitchImages => _stitchImages;
+  String get stitchVibe => _stitchVibe;
+
+  void addStitchImage(Uint8List bytes) {
+    if (_stitchImages.length < 5) {
+      _stitchImages.add(bytes);
+      notifyListeners();
+    }
+  }
+
+  void removeStitchImage(int index) {
+    if (index >= 0 && index < _stitchImages.length) {
+      _stitchImages.removeAt(index);
+      notifyListeners();
+    }
+  }
+
+  void setStitchVibe(String vibe) {
+    _stitchVibe = vibe;
+    notifyListeners();
+  }
 }
