@@ -4,7 +4,7 @@ import '../providers/session_provider.dart';
 import '../models/types.dart';
 import '../shared/constants.dart';
 import '../services/gemini_service.dart';
-import 'asset_editor_screen.dart';
+
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 
@@ -31,9 +31,6 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   double _brightness = 100;
   double _contrast = 100;
   double _saturation = 100;
-
-  // Comparisons
-  String? _comparingResultId;
 
   // NEW: Framing Options
   String _framingMode = 'portrait'; // 'portrait', 'full-body', 'head-to-toe'
@@ -222,54 +219,59 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Custom App Bar
-            _buildAppBar(),
+    return PopScope(
+      canPop: _activeControl == 'main',
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          setState(() {
+            _activeControl = 'main';
+            _focusedResult = null;
+          });
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0A0A0A),
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Custom App Bar
+              _buildAppBar(),
 
-            // 1. TOP: IMAGE AREA (Always Visible, Expanded)
-            Expanded(
-              flex: 6,
-              child: Consumer<SessionProvider>(
-                builder: (context, session, child) {
-                  if (session.isGenerating && session.results.isEmpty) {
-                    return _buildLoadingState();
-                  }
-                  // If we have a focused result (Editor Mode), show it
-                  if (_focusedResult != null) {
-                    return _buildEditorImageArea(_focusedResult!);
-                  }
-                  // Otherwise show standard preview (Uploaded or Results Grid if not empty?)
-                  // Actually, V2 implies we always show *the* image.
-                  // If we have results, we show the selection.
-                  // For now, let's keep the Empty/Grid logic but wrapped in Container.
-                  // BETTER: If results exist, show the LATEST or SELECTED one.
-                  if (session.results.isNotEmpty) {
-                    return _buildResultsViewer(session);
-                  }
-                  return _buildEmptyState();
-                },
-              ),
-            ),
-
-            // 2. BOTTOM: CONTROL CENTER (Persistent 40%)
-            Expanded(
-              flex: 4,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Color(0xFF141414),
-                  border: Border(top: BorderSide(color: Colors.white12)),
+              // 1. TOP: IMAGE AREA (Always Visible, Expanded)
+              Expanded(
+                flex: 6,
+                child: Consumer<SessionProvider>(
+                  builder: (context, session, child) {
+                    if (session.isGenerating && session.results.isEmpty) {
+                      return _buildLoadingState();
+                    }
+                    if (_focusedResult != null) {
+                      return _buildEditorImageArea(_focusedResult!);
+                    }
+                    if (session.results.isNotEmpty) {
+                      return _buildResultsViewer(session);
+                    }
+                    return _buildEmptyState();
+                  },
                 ),
-                child: _buildControlCenter(),
               ),
-            ),
 
-            // 3. BOTTOM NAV (Persistent)
-            _buildBottomNav(),
-          ],
+              // 2. BOTTOM: CONTROL CENTER (Persistent 40%)
+              Expanded(
+                flex: 4,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF141414),
+                    border: Border(top: BorderSide(color: Colors.white12)),
+                  ),
+                  child: _buildControlCenter(),
+                ),
+              ),
+
+              // 3. BOTTOM NAV (Persistent)
+              _buildBottomNav(),
+            ],
+          ),
         ),
       ),
     );
@@ -345,6 +347,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     );
   }
 
+  void _backToMain() {
+    setState(() {
+      _activeControl = 'main';
+      _focusedResult = null;
+    });
+  }
+
   Widget _buildControlCenter() {
     switch (_activeControl) {
       case 'camera':
@@ -352,20 +361,29 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       case 'backdrop':
         return _buildBackdropPicker();
       case 'prompt':
-        return _buildPromptToInline(); // Renamed from _showPromptPanel content
+        return _buildPromptToInline();
       case 'retouch':
-        return _buildRetouchDrawer(); // Reusing drawer content logic
+        return _buildDrawerWithHeader('RETOUCH LAB', _buildRetouchDrawer());
       case 'stitch':
-        return _buildStitchDrawer();
+        return _buildDrawerWithHeader('STITCH STUDIO', _buildStitchDrawer());
       case 'print':
-        return _buildPrintDrawer();
+        return _buildDrawerWithHeader('LUXE PRINT LAB', _buildPrintDrawer());
       case 'download':
-        return _buildDownloadDrawer();
+        return _buildDrawerWithHeader('DOWNLOAD', _buildDownloadDrawer());
       case 'share':
-        return _buildShareDrawer();
+        return _buildDrawerWithHeader('SHARE', _buildShareDrawer());
       default:
         return _buildMainToolbar();
     }
+  }
+
+  Widget _buildDrawerWithHeader(String title, Widget content) {
+    return Column(
+      children: [
+        _buildPickerHeader(title, _backToMain),
+        Expanded(child: content),
+      ],
+    );
   }
 
   Widget _buildMainToolbar() {
@@ -443,7 +461,12 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(6),
-                      child: Image.network(result.imageUrl, fit: BoxFit.cover),
+                      child: result.imageUrl.startsWith('data:')
+                          ? Image.memory(
+                              base64Decode(result.imageUrl.split(',')[1]),
+                              fit: BoxFit.cover,
+                            )
+                          : Image.network(result.imageUrl, fit: BoxFit.cover),
                     ),
                   ),
                 );
@@ -631,7 +654,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 diameterRatio: 1.6,
                 physics: const FixedExtentScrollPhysics(),
                 onSelectedItemChanged: (index) {
-                  setState(() => _selectedBackdrop = flatPresets[index]);
+                  setState(() {
+                    _selectedBackdrop = flatPresets[index];
+                    _customBgPrompt = flatPresets[index].name;
+                    _bgPromptController.text = flatPresets[index].name;
+                  });
                 },
                 childDelegate: ListWheelChildBuilderDelegate(
                   childCount: flatPresets.length,
@@ -780,9 +807,68 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                       }).toList(),
                 ),
                 const SizedBox(height: 14),
-                // Quick preset chips
+                // AI Prompt Presets (from promptCategories)
+                ...promptCategories.entries.map((entry) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        entry.key.toUpperCase(),
+                        style: const TextStyle(
+                          color: Colors.white24,
+                          fontSize: 9,
+                          letterSpacing: 2,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: entry.value.map((preset) {
+                          final isActive = _customPrompt == preset;
+                          return GestureDetector(
+                            onTap: () {
+                              _promptController.text = preset;
+                              setState(() => _customPrompt = preset);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isActive
+                                    ? const Color(0xFFD4AF37).withOpacity(0.15)
+                                    : Colors.white.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isActive
+                                      ? const Color(0xFFD4AF37)
+                                      : Colors.white12,
+                                ),
+                              ),
+                              child: Text(
+                                preset,
+                                style: TextStyle(
+                                  color: isActive
+                                      ? const Color(0xFFD4AF37)
+                                      : Colors.white54,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  );
+                }),
+                const SizedBox(height: 6),
+                // Location / Environment Presets
                 const Text(
-                  'QUICK PRESETS',
+                  'LOCATIONS',
                   style: TextStyle(
                     color: Colors.white24,
                     fontSize: 9,
@@ -791,43 +877,64 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   ),
                 ),
                 const SizedBox(height: 8),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children:
-                      [
-                        'Corporate headshot',
-                        'Editorial fashion',
-                        'Cinematic noir',
-                        'Natural light',
-                        'Dramatic studio',
-                      ].map((preset) {
-                        return GestureDetector(
-                          onTap: () {
-                            _promptController.text = preset;
-                            setState(() => _customPrompt = preset);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.white12),
-                            ),
-                            child: Text(
-                              preset,
-                              style: const TextStyle(
-                                color: Colors.white54,
-                                fontSize: 11,
+                ...environmentPromptTips.entries.map((entry) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Text(
+                          entry.key,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.3),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: entry.value.map((tip) {
+                          final isActive = _customBgPrompt == tip;
+                          return GestureDetector(
+                            onTap: () {
+                              _bgPromptController.text = tip;
+                              setState(() => _customBgPrompt = tip);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isActive
+                                    ? const Color(0xFFD4AF37).withOpacity(0.15)
+                                    : Colors.white.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isActive
+                                      ? const Color(0xFFD4AF37)
+                                      : Colors.white12,
+                                ),
+                              ),
+                              child: Text(
+                                tip,
+                                style: TextStyle(
+                                  color: isActive
+                                      ? const Color(0xFFD4AF37)
+                                      : Colors.white54,
+                                  fontSize: 11,
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      }).toList(),
-                ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                  );
+                }),
                 const SizedBox(height: 14),
                 // Skin texture selector
                 const Text(
@@ -1162,172 +1269,6 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     );
   }
 
-  Widget _buildResultsGrid(SessionProvider session) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: session.results.length,
-      itemBuilder: (context, index) {
-        final result = session.results[index];
-        return _buildResultCard(result);
-      },
-    );
-  }
-
-  Widget _buildResultCard(GenerationResult result) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF141414),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFD4AF37).withValues(alpha: 0.1),
-        ),
-      ),
-      child: Column(
-        children: [
-          // Image
-          GestureDetector(
-            onLongPressStart: (_) {
-              final session = context.read<SessionProvider>();
-              if (session.uploadedImageBytes != null) {
-                setState(() => _comparingResultId = result.id);
-              }
-            },
-            onLongPressEnd: (_) => setState(() => _comparingResultId = null),
-            child: Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                  child:
-                      (_comparingResultId == result.id &&
-                          context.read<SessionProvider>().uploadedImageBytes !=
-                              null)
-                      ? Image.memory(
-                          context.read<SessionProvider>().uploadedImageBytes!,
-                          fit: BoxFit.contain,
-                          width: double.infinity,
-                          height: 400,
-                        )
-                      : (result.imageUrl.startsWith('data:')
-                            ? Image.memory(
-                                base64Decode(result.imageUrl.split(',')[1]),
-                                fit: BoxFit.contain,
-                                width: double.infinity,
-                                height: 400,
-                              )
-                            : Image.network(
-                                result.imageUrl,
-                                fit: BoxFit.contain,
-                                width: double.infinity,
-                                height: 400,
-                              )),
-                ),
-                if (_comparingResultId == result.id)
-                  Positioned(
-                    top: 10,
-                    left: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.white24),
-                      ),
-                      child: const Text(
-                        "ORIGINAL",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                if (_comparingResultId != result.id)
-                  const Positioned(
-                    bottom: 10,
-                    right: 10,
-                    child: Text(
-                      "Hold to Compare",
-                      style: TextStyle(
-                        color: Colors.white38,
-                        fontSize: 10,
-                        shadows: [Shadow(blurRadius: 2, color: Colors.black)],
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          // Action Buttons
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildActionButton(Icons.auto_fix_high, 'RETOUCH', () {
-                  setState(() {
-                    _focusedResult = result;
-                    _activeControl = 'retouch';
-                  });
-                }),
-                _buildActionButton(Icons.collections, 'STITCH', () {
-                  setState(() {
-                    _focusedResult = result;
-                    _activeControl = 'stitch';
-                  });
-                }),
-                _buildActionButton(Icons.local_printshop, 'PRINT', () {
-                  setState(() {
-                    _focusedResult = result;
-                    _activeControl = 'print';
-                  });
-                }),
-                _buildActionButton(Icons.download, 'DOWNLOAD', () {
-                  setState(() {
-                    _focusedResult = result;
-                    _activeControl = 'download';
-                  });
-                }),
-                _buildActionButton(Icons.share, 'SHARE', () {
-                  setState(() {
-                    _focusedResult = result;
-                    _activeControl = 'share';
-                  });
-                }),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton(IconData icon, String label, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Icon(icon, color: const Color(0xFFD4AF37), size: 22),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white54,
-              fontSize: 9,
-              letterSpacing: 1,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // ═══════════════════════════════════════════════════════════
   // ADJUSTMENTS OVERLAY (Pre-generation)
   // ═══════════════════════════════════════════════════════════
@@ -1376,91 +1317,6 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             .toList(),
       ),
     );
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // INLINE DRAWER
-  // ═══════════════════════════════════════════════════════════
-
-  Widget _buildInlineDrawer() {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOutCubic,
-      decoration: const BoxDecoration(
-        color: Color(0xFF141414),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        border: Border(top: BorderSide(color: Color(0x33D4AF37))),
-      ),
-      constraints: const BoxConstraints(maxHeight: 280),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Drawer Header with close button
-          _buildDrawerHeader(),
-          const Divider(color: Colors.white10, height: 1),
-          // Drawer Content
-          Expanded(child: _buildDrawerContent()),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDrawerHeader() {
-    final titles = {
-      'retouch': 'RETOUCH LAB',
-      'stitch': 'STITCH STUDIO',
-      'print': 'LUXE PRINT LAB',
-      'download': 'DOWNLOAD',
-      'share': 'SHARE',
-    };
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            titles[_activeControl] ?? '',
-            style: const TextStyle(
-              color: Color(0xFFD4AF37),
-              fontSize: 11,
-              letterSpacing: 2,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          GestureDetector(
-            onTap: () => setState(() {
-              _activeControl = 'main';
-              _focusedResult = null;
-            }),
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Icon(Icons.close, color: Colors.white38, size: 18),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDrawerContent() {
-    switch (_activeControl) {
-      case 'retouch':
-        return _buildRetouchDrawer();
-      case 'stitch':
-        return _buildStitchDrawer();
-      case 'print':
-        return _buildPrintDrawer();
-      case 'download':
-        return _buildDownloadDrawer();
-      case 'share':
-        return _buildShareDrawer();
-      default:
-        return const SizedBox();
-    }
   }
 
   Widget _buildRetouchDrawer() {
