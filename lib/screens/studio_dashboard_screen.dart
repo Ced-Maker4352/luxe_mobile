@@ -55,9 +55,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         session.selectPackage(packages.first);
       }
 
-      if (session.results.isEmpty && !session.isGenerating) {
-        _generatePortrait(session);
-      }
+      // Removed auto-generation to prevent wasting credits/resources.
+      // User must explicitly click GENERATE.
     });
   }
 
@@ -120,6 +119,17 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         fullPrompt =
             '${session.selectedPackage!.basePrompt} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""}';
       }
+
+      // Append Adjustment Logic to Prompt
+      fullPrompt +=
+          """
+      
+      Adjustments:
+      - Brightness: ${_brightness.toInt()}% (Normal=100%)
+      - Contrast: ${_contrast.toInt()}% (Normal=100%)
+      - Saturation: ${_saturation.toInt()}% (Normal=100%)
+      - Skin Finish: ${_selectedSkinTexture.label}
+      """;
 
       final resultText = await service.generatePortrait(
         referenceImageBase64: base64Encode(session.uploadedImageBytes!),
@@ -1945,6 +1955,124 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   }
 
   Widget _buildEmptyState() {
+    final session = context.watch<SessionProvider>();
+
+    if (session.hasUploadedImage && session.uploadedImageBytes != null) {
+      // PREVIEW MODE with Real-time Filters
+      // Brightness matrix (offset)
+      // Brightness 0-200 => Offset -100 to +100
+      double b = (_brightness - 100) * 1.5;
+      final brightnessMatrix = <double>[
+        1,
+        0,
+        0,
+        0,
+        b,
+        0,
+        1,
+        0,
+        0,
+        b,
+        0,
+        0,
+        1,
+        0,
+        b,
+        0,
+        0,
+        0,
+        1,
+        0,
+      ];
+
+      // Contrast matrix (slope)
+      // Contrast 0-200 (100 center). 0->0, 200->2.
+      double c = _contrast / 100.0;
+      double t = 128 * (1 - c);
+      final contrastMatrix = <double>[
+        c,
+        0,
+        0,
+        0,
+        t,
+        0,
+        c,
+        0,
+        0,
+        t,
+        0,
+        0,
+        c,
+        0,
+        t,
+        0,
+        0,
+        0,
+        1,
+        0,
+      ];
+
+      // Saturation matrix
+      double s = _saturation / 100.0;
+      double lumR = 0.2126;
+      double lumG = 0.7152;
+      double lumB = 0.0722;
+      double oneMinusS = 1 - s;
+
+      final saturationMatrix = <double>[
+        (oneMinusS * lumR) + s,
+        (oneMinusS * lumG),
+        (oneMinusS * lumB),
+        0,
+        0,
+        (oneMinusS * lumR),
+        (oneMinusS * lumG) + s,
+        (oneMinusS * lumB),
+        0,
+        0,
+        (oneMinusS * lumR),
+        (oneMinusS * lumG),
+        (oneMinusS * lumB) + s,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+      ];
+
+      return Center(
+        child: Container(
+          margin: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white12),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 20),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            // Apply Filters: Saturation -> Contrast -> Brightness
+            child: ColorFiltered(
+              colorFilter: ColorFilter.matrix(brightnessMatrix),
+              child: ColorFiltered(
+                colorFilter: ColorFilter.matrix(contrastMatrix),
+                child: ColorFiltered(
+                  colorFilter: ColorFilter.matrix(saturationMatrix),
+                  child: Image.memory(
+                    session.uploadedImageBytes!,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
