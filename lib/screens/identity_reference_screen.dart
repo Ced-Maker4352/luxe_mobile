@@ -16,6 +16,7 @@ class IdentityReferenceScreen extends StatefulWidget {
 
 class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
   Uint8List? _imageBytes;
+  bool _isStitchMode = false;
   final ImagePicker _picker = ImagePicker();
 
   void _showImageSourceOptions() {
@@ -151,6 +152,30 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
     }
   }
 
+  Widget _buildModeToggle(String title, bool isStitch) {
+    final isSelected = _isStitchMode == isStitch;
+    return GestureDetector(
+      onTap: () => setState(() => _isStitchMode = isStitch),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFD4AF37) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          title,
+          style: TextStyle(
+            color: isSelected ? Colors.black : Colors.white54,
+            fontWeight: FontWeight.bold,
+            fontSize: 11,
+            letterSpacing: 1,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -171,11 +196,29 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 12),
-              const Text(
-                'Upload your baseline portrait. Our AI Rigs use this to lock your distinct facial geometry.',
+              const SizedBox(height: 24),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white10,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white12),
+                ),
+                padding: const EdgeInsets.all(4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildModeToggle('SOLO PORTRAIT', false),
+                    _buildModeToggle('GROUP STITCH', true),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                _isStitchMode
+                    ? 'Create a group photo. Upload or skip to add people inside.'
+                    : 'Upload your baseline portrait. Our AI Rigs use this to lock your distinct facial geometry.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white54,
                   fontSize: 13,
                   height: 1.5,
@@ -226,16 +269,17 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
 
               const Spacer(),
 
-              if (_imageBytes != null)
+              if (_imageBytes != null || _isStitchMode)
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.of(context).pushAndRemoveUntil(
+                      Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) => const StudioDashboardScreen(),
+                          builder: (context) => StudioDashboardScreen(
+                            startInStitchMode: _isStitchMode,
+                          ),
                         ),
-                        (route) => false,
                       );
                     },
                     style: ElevatedButton.styleFrom(
@@ -246,9 +290,11 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      'INITIATE STUDIO SESSION',
-                      style: TextStyle(
+                    child: Text(
+                      _isStitchMode
+                          ? 'ENTER STITCH STUDIO'
+                          : 'INITIATE STUDIO SESSION',
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         letterSpacing: 2,
                       ),

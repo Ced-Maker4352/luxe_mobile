@@ -16,7 +16,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class StudioDashboardScreen extends StatefulWidget {
-  const StudioDashboardScreen({super.key});
+  final bool startInStitchMode;
+  const StudioDashboardScreen({super.key, this.startInStitchMode = false});
 
   @override
   State<StudioDashboardScreen> createState() => _StudioDashboardScreenState();
@@ -53,6 +54,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   @override
   void initState() {
     super.initState();
+    if (widget.startInStitchMode) {
+      _activeControl = 'stitch';
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final session = context.read<SessionProvider>();
 
@@ -212,6 +216,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           ),
         );
       }
+    } finally {
+      session.setGenerating(false);
     }
   }
 
