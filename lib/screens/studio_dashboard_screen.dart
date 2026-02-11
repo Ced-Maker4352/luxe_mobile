@@ -13,7 +13,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class StudioDashboardScreen extends StatefulWidget {
   final bool startInStitchMode;
@@ -178,6 +177,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         backgroundImageBase64: null, // TODO: Handle background image if needed
         clothingReferenceBase64: clothingRef,
         skinTexturePrompt: _selectedSkinTexture.prompt,
+        preserveAgeAndBody: session.preserveAgeAndBody,
       );
 
       // Determine if result is an image or text fallback
@@ -314,6 +314,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         backgroundImageBase64: null,
         clothingReferenceBase64: clothingRef,
         perPersonStyles: perPersonStyles.isNotEmpty ? perPersonStyles : null,
+        preserveAgeAndBody: session.preserveAgeAndBody,
       );
 
       String imageUrl;
@@ -1708,6 +1709,59 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 0. IDENTITY PROTOCOL
+          const Text(
+            'IDENTITY PROTOCOL',
+            style: TextStyle(
+              color: Colors.white24,
+              fontSize: 10,
+              letterSpacing: 2,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.white12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'PRESERVE AGE & BODY',
+                      style: TextStyle(
+                        color: Color(0xFFD4AF37),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'Locks age and body type',
+                      style: TextStyle(color: Colors.white38, fontSize: 9),
+                    ),
+                  ],
+                ),
+                Switch(
+                  value: session.preserveAgeAndBody,
+                  onChanged: (val) => session.setPreserveAgeAndBody(val),
+                  activeColor: const Color(0xFFD4AF37),
+                  activeTrackColor: const Color(
+                    0xFFD4AF37,
+                  ).withValues(alpha: 0.3),
+                  inactiveThumbColor: Colors.white24,
+                  inactiveTrackColor: Colors.white10,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
           // 1. GENDER
           const Text(
             'TARGET GENDER',
@@ -2229,7 +2283,12 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         : <String>[];
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(
+        16,
+        8,
+        16,
+        120,
+      ), // Increased bottom padding to clear footer
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2244,48 +2303,65 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             ),
           ),
           const SizedBox(height: 8),
-          SizedBox(
-            height: 34,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: groupTypes.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 6),
-              itemBuilder: (context, index) {
-                final type = groupTypes[index];
-                final isActive = _selectedGroupType == type;
-                return GestureDetector(
-                  onTap: () => setState(() {
-                    _selectedGroupType = isActive ? '' : type;
-                    _selectedGroupStyle = '';
-                  }),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 7,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isActive
-                          ? const Color(0xFFD4AF37)
-                          : Colors.white.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(17),
-                      border: Border.all(
+          ShaderMask(
+            shaderCallback: (Rect bounds) {
+              return const LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Colors.black,
+                  Colors.black,
+                  Colors.black,
+                  Colors.transparent,
+                ],
+                stops: [0.0, 0.1, 0.9, 1.0],
+              ).createShader(bounds);
+            },
+            blendMode: BlendMode.dstIn,
+            child: SizedBox(
+              height: 38,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: groupTypes.length,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                separatorBuilder: (_, __) => const SizedBox(width: 6),
+                itemBuilder: (context, index) {
+                  final type = groupTypes[index];
+                  final isActive = _selectedGroupType == type;
+                  return GestureDetector(
+                    onTap: () => setState(() {
+                      _selectedGroupType = isActive ? '' : type;
+                      _selectedGroupStyle = '';
+                    }),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
                         color: isActive
                             ? const Color(0xFFD4AF37)
-                            : Colors.white12,
+                            : Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(19),
+                        border: Border.all(
+                          color: isActive
+                              ? const Color(0xFFD4AF37)
+                              : Colors.white12,
+                        ),
+                      ),
+                      child: Text(
+                        type.toUpperCase(),
+                        style: TextStyle(
+                          color: isActive ? Colors.black : Colors.white54,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
-                    child: Text(
-                      type.toUpperCase(),
-                      style: TextStyle(
-                        color: isActive ? Colors.black : Colors.white54,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
 
@@ -2461,77 +2537,94 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             ],
           ),
           const SizedBox(height: 8),
-          SizedBox(
-            height: 70,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                if (session.stitchImages.length < 5)
-                  GestureDetector(
-                    onTap: () => _pickStitchImage(session),
-                    child: Container(
-                      width: 60,
-                      margin: const EdgeInsets.only(right: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.white24),
-                      ),
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.add, color: Color(0xFFD4AF37), size: 20),
-                          SizedBox(height: 2),
-                          Text(
-                            'ADD',
-                            style: TextStyle(
-                              color: Color(0xFFD4AF37),
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ...session.stitchImages.asMap().entries.map((entry) {
-                  return Stack(
-                    children: [
-                      Container(
+          ShaderMask(
+            shaderCallback: (Rect bounds) {
+              return const LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Colors.black,
+                  Colors.black,
+                  Colors.black,
+                  Colors.transparent,
+                ],
+                stops: [0.0, 0.1, 0.8, 1.0],
+              ).createShader(bounds);
+            },
+            blendMode: BlendMode.dstIn,
+            child: SizedBox(
+              height: 70,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                children: [
+                  if (session.stitchImages.length < 5)
+                    GestureDetector(
+                      onTap: () => _pickStitchImage(session),
+                      child: Container(
                         width: 60,
                         margin: const EdgeInsets.only(right: 8),
                         decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(10),
-                          image: DecorationImage(
-                            image: MemoryImage(entry.value),
-                            fit: BoxFit.cover,
-                          ),
-                          border: Border.all(color: Colors.white12),
+                          border: Border.all(color: Colors.white24),
+                        ),
+                        child: const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add, color: Color(0xFFD4AF37), size: 20),
+                            SizedBox(height: 2),
+                            Text(
+                              'ADD',
+                              style: TextStyle(
+                                color: Color(0xFFD4AF37),
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Positioned(
-                        top: 0,
-                        right: 8,
-                        child: GestureDetector(
-                          onTap: () => session.removeStitchImage(entry.key),
-                          child: Container(
-                            padding: const EdgeInsets.all(3),
-                            decoration: const BoxDecoration(
-                              color: Colors.black54,
-                              shape: BoxShape.circle,
+                    ),
+                  ...session.stitchImages.asMap().entries.map((entry) {
+                    return Stack(
+                      children: [
+                        Container(
+                          width: 60,
+                          margin: const EdgeInsets.only(right: 8),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            image: DecorationImage(
+                              image: MemoryImage(entry.value),
+                              fit: BoxFit.cover,
                             ),
-                            child: const Icon(
-                              Icons.close,
-                              size: 10,
-                              color: Colors.white,
+                            border: Border.all(color: Colors.white12),
+                          ),
+                        ),
+                        Positioned(
+                          top: 0,
+                          right: 8,
+                          child: GestureDetector(
+                            onTap: () => session.removeStitchImage(entry.key),
+                            child: Container(
+                              padding: const EdgeInsets.all(3),
+                              decoration: const BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                size: 10,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  );
-                }),
-              ],
+                      ],
+                    );
+                  }),
+                ],
+              ),
             ),
           ),
 
@@ -2583,56 +2676,69 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: SizedBox(
-                        height: 26,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          children: clothingOptions.map((style) {
-                            final isActive = currentStyle == style;
-                            return GestureDetector(
-                              onTap: () => setState(() {
-                                _stitchPersonStyles[idx] = isActive
-                                    ? ''
-                                    : style;
-                              }),
-                              child: Container(
-                                margin: const EdgeInsets.only(right: 4),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isActive
-                                      ? const Color(
-                                          0xFFD4AF37,
-                                        ).withValues(alpha: 0.15)
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(13),
-                                  border: Border.all(
+                      child: ShaderMask(
+                        shaderCallback: (Rect bounds) {
+                          return const LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [
+                              Colors.black,
+                              Colors.black,
+                              Colors.black,
+                              Colors.transparent,
+                            ],
+                            stops: [0.0, 0.1, 0.8, 1.0],
+                          ).createShader(bounds);
+                        },
+                        blendMode: BlendMode.dstIn,
+                        child: SizedBox(
+                          height: 26,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            children: clothingOptions.map((style) {
+                              final isActive = currentStyle == style;
+                              return GestureDetector(
+                                onTap: () => setState(() {
+                                  _stitchPersonStyles[idx] = isActive
+                                      ? ''
+                                      : style;
+                                }),
+                                child: Container(
+                                  margin: const EdgeInsets.only(right: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
                                     color: isActive
-                                        ? const Color(0xFFD4AF37)
-                                        : Colors.white12,
+                                        ? const Color(
+                                            0xFFD4AF37,
+                                          ).withValues(alpha: 0.1)
+                                        : Colors.white.withValues(alpha: 0.05),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: isActive
+                                          ? const Color(0xFFD4AF37)
+                                          : Colors.white10,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    style.toUpperCase(),
+                                    style: TextStyle(
+                                      color: isActive
+                                          ? const Color(0xFFD4AF37)
+                                          : Colors.white38,
+                                      fontSize: 8,
+                                      fontWeight: isActive
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                    ),
                                   ),
                                 ),
-                                child: Text(
-                                  style
-                                      .split(' ')
-                                      .take(2)
-                                      .join(' ')
-                                      .toUpperCase(),
-                                  style: TextStyle(
-                                    color: isActive
-                                        ? const Color(0xFFD4AF37)
-                                        : Colors.white38,
-                                    fontSize: 8,
-                                    fontWeight: isActive
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
+                              );
+                            }).toList(),
+                          ),
                         ),
                       ),
                     ),

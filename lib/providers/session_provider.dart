@@ -11,6 +11,7 @@ class SessionProvider extends ChangeNotifier {
   bool _isGenerating = false;
   StyleOption? _selectedStyle;
   bool _isSingleStyleMode = false;
+  bool _preserveAgeAndBody = true;
 
   PackageDetails? get selectedPackage => _selectedPackage;
   CameraRig? get selectedRig => _selectedRig;
@@ -20,9 +21,15 @@ class SessionProvider extends ChangeNotifier {
   bool get isGenerating => _isGenerating;
   StyleOption? get selectedStyle => _selectedStyle;
   bool get isSingleStyleMode => _isSingleStyleMode;
+  bool get preserveAgeAndBody => _preserveAgeAndBody;
 
   void addResult(GenerationResult result) {
     _results.insert(0, result);
+    notifyListeners();
+  }
+
+  void setPreserveAgeAndBody(bool val) {
+    _preserveAgeAndBody = val;
     notifyListeners();
   }
 

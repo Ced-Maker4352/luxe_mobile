@@ -307,6 +307,7 @@ User Idea: "$draftPrompt"''',
     String? backgroundImageBase64,
     String? clothingReferenceBase64,
     String? skinTexturePrompt,
+    bool preserveAgeAndBody = true,
   }) async {
     final finalPrompt =
         """=== STRICT FACIAL CONSISTENCY MODE: ENABLED ===
@@ -321,8 +322,7 @@ IDENTITY PRIORITY HIERARCHY (follow this order strictly):
        lip shape/fullness, jawline contour, chin shape, cheekbone prominence,
        forehead shape, skin tone/texture, facial hair if present.
      - Do NOT drift toward generic, idealized, or averaged features.
-  2. BODY (second priority): Strictly preserve the subject's natural body weight, shape, and proportions.
-     Do NOT slim or alter the body type to fit fashion standards.
+  2. ${preserveAgeAndBody ? 'AGE & BODY (STRICT)' : 'BODY'} (second priority): ${preserveAgeAndBody ? "Strictly lock the subject's apparent age and natural body weight, shape, and proportions. Do NOT 'beautify', slim, or alter the body type or age." : "Strictly preserve the subject's natural body weight, shape, and proportions. Do NOT slim or alter the body type to fit fashion standards."}
   3. HAIR: Maintain exact hair color, texture, length, and style from the reference.
   4. FASHION & STYLING (lowest priority): Apply styling only AFTER identity is locked.
      This is a RE-STYLING task, not a new person generation.
@@ -510,6 +510,7 @@ DETAILS:
     String? clothingReferenceBase64,
     required String vibe,
     List<String>? perPersonStyles,
+    bool preserveAgeAndBody = true,
   }) async {
     final parts = <Map<String, dynamic>>[];
     final int count = identityImagesBase64.length;
@@ -576,7 +577,7 @@ DETAILS:
       '     - Do NOT drift toward generic or idealized features.',
     );
     promptBuffer.writeln(
-      '  2. BODY (second priority): Preserve each person\'s body type, build, and proportions from their reference.',
+      '  2. ${preserveAgeAndBody ? 'AGE & BODY (STRICT)' : 'BODY'} (second priority): ${preserveAgeAndBody ? "Strictly lock each person's apparent age and natural body weight, shape, and proportions matching their reference. Do NOT slimming, 'beautify', or alter age." : "Preserve each person's body type, build, and proportions from their reference."}',
     );
     promptBuffer.writeln(
       '  3. HAIR: Maintain each person\'s hair color, texture, length, and style.',
