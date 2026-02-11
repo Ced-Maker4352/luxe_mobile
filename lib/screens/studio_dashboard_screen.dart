@@ -1737,27 +1737,74 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           ),
 
           const SizedBox(height: 24),
+
+          // APPLY RETOUCH — triggers regeneration with current retouch settings
+          Consumer<SessionProvider>(
+            builder: (context, session, child) {
+              return SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: session.isGenerating
+                      ? null
+                      : () {
+                          // Close drawer and trigger generation with retouch settings
+                          setState(() {
+                            _activeControl = 'main';
+                            _focusedResult = null;
+                          });
+                          // Route to correct generation based on mode
+                          if (session.stitchImages.isNotEmpty) {
+                            _generateStitch(session);
+                          } else {
+                            _generatePortrait(session);
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFD4AF37),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: session.isGenerating
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.black,
+                          ),
+                        )
+                      : const Text(
+                          'APPLY RETOUCH',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 2,
+                            fontSize: 12,
+                          ),
+                        ),
+                ),
+              );
+            },
+          ),
+
+          const SizedBox(height: 8),
+
+          // CANCEL — close drawer without generating
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
+            child: TextButton(
               onPressed: () => setState(() {
                 _activeControl = 'main';
                 _focusedResult = null;
               }),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFD4AF37),
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
               child: const Text(
-                'APPLY & CLOSE',
+                'CANCEL',
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
+                  color: Colors.white38,
                   letterSpacing: 2,
-                  fontSize: 12,
+                  fontSize: 11,
                 ),
               ),
             ),
