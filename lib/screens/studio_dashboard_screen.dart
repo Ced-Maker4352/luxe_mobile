@@ -45,10 +45,18 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   String _gender = 'female'; // 'female', 'male', 'unspecified'
   String _styleTemperature = 'neutral'; // 'cool', 'warm', 'neutral'
   String _framingMode = 'portrait'; // 'portrait', 'full-body', 'head-to-toe'
+  String _selectedClothingStyle = ''; // from promptCategories['Styling & Vibe']
+  Map<int, String> _stitchPersonStyles =
+      {}; // per-person clothing styles for stitch mode
+
+  // Stitch Studio state
+  String _selectedGroupType = ''; // key from stitchGroupPresets
+  String _selectedGroupStyle = ''; // selected style variation
+  final TextEditingController _stitchPromptController = TextEditingController();
 
   // V2 Split View State
   String _activeControl =
-      'main'; // 'main', 'camera', 'backdrop', 'prompt', 'retouch', 'stitch', 'print', 'download', 'share'
+      'main'; // 'main', 'camera', 'backdrop', 'prompt', 'style', 'retouch', 'stitch', 'print', 'download', 'share'
   GenerationResult? _focusedResult;
 
   @override
@@ -79,6 +87,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   void dispose() {
     _promptController.dispose();
     _bgPromptController.dispose();
+    _stitchPromptController.dispose();
     super.dispose();
   }
 
@@ -143,7 +152,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         debugPrint('Studio: Using Single Style Prompt: $fullPrompt');
       } else {
         fullPrompt =
-            '${session.selectedPackage!.basePrompt} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""} \nTarget Gender: $_gender \nColor Temperature: $_styleTemperature \nFRAMING: $framingText';
+            '${session.selectedPackage!.basePrompt} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""} \nTarget Gender: $_gender \nColor Temperature: $_styleTemperature ${_selectedClothingStyle.isNotEmpty ? "\nClothing Style: $_selectedClothingStyle" : ""} \nFRAMING: $framingText';
       }
 
       // Append Adjustment Logic to Prompt
@@ -157,11 +166,17 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       - Skin Finish: ${_selectedSkinTexture.label}
       """;
 
+      String? clothingRef;
+      if (session.hasClothingReference) {
+        clothingRef = base64Encode(session.clothingReferenceBytes!);
+      }
+
       final resultText = await service.generatePortrait(
         referenceImageBase64: base64Encode(session.uploadedImageBytes!),
         basePrompt: fullPrompt,
         opticProtocol: session.selectedRig!.opticProtocol,
         backgroundImageBase64: null, // TODO: Handle background image if needed
+        clothingReferenceBase64: clothingRef,
         skinTexturePrompt: _selectedSkinTexture.prompt,
       );
 
@@ -256,14 +271,49 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           .map((bytes) => base64Encode(bytes))
           .toList();
 
-      final fullPrompt =
-          '${session.selectedPackage!.basePrompt} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""}';
+      // Build composite stitch prompt from: group type + style + user prompt + base prompt
+      final promptParts = <String>[];
+      if (_selectedGroupType.isNotEmpty) {
+        promptParts.add('Group type: $_selectedGroupType.');
+      }
+      if (_selectedGroupStyle.isNotEmpty) {
+        promptParts.add('Style: $_selectedGroupStyle.');
+      }
+      if (_stitchPromptController.text.trim().isNotEmpty) {
+        promptParts.add(_stitchPromptController.text.trim());
+      }
+      if (session.selectedPackage != null) {
+        promptParts.add(session.selectedPackage!.basePrompt);
+      }
+      if (_customPrompt.isNotEmpty) {
+        promptParts.add(_customPrompt);
+      }
+      if (_customBgPrompt.isNotEmpty) {
+        promptParts.add('Background: $_customBgPrompt');
+      }
+      final fullPrompt = promptParts.join(' ');
+
+      // Build per-person style descriptions
+      final perPersonStyles = <String>[];
+      for (int i = 0; i < session.stitchImages.length; i++) {
+        final style = _stitchPersonStyles[i] ?? '';
+        if (style.isNotEmpty) {
+          perPersonStyles.add('Person ${i + 1}: $style');
+        }
+      }
+
+      String? clothingRef;
+      if (session.hasClothingReference) {
+        clothingRef = base64Encode(session.clothingReferenceBytes!);
+      }
 
       final resultText = await service.generateGroupStitch(
         identityImagesBase64: imagesB64,
         prompt: fullPrompt,
         vibe: session.stitchVibe,
         backgroundImageBase64: null,
+        clothingReferenceBase64: clothingRef,
+        perPersonStyles: perPersonStyles.isNotEmpty ? perPersonStyles : null,
       );
 
       String imageUrl;
@@ -471,18 +521,63 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     );
   }
 
+  // Helper: build a color filter matrix from brightness/contrast/saturation
+  ColorFilter _buildRetouchFilter() {
+    // Normalize 0-200 range to multipliers
+    final double b = _brightness / 100.0; // 1.0 = normal
+    final double c = _contrast / 100.0;
+    final double s = _saturation / 100.0;
+
+    // Brightness offset (shift toward white or black)
+    final double bOffset = (b - 1.0) * 255;
+
+    // Contrast: scale around 0.5 midpoint
+    final double cOffset = (1.0 - c) * 128;
+
+    // Saturation: interpolate between grayscale and full color
+    final double sr = (1.0 - s) * 0.2126;
+    final double sg = (1.0 - s) * 0.7152;
+    final double sb = (1.0 - s) * 0.0722;
+
+    return ColorFilter.matrix(<double>[
+      (sr + s) * c,
+      sg * c,
+      sb * c,
+      0,
+      bOffset + cOffset,
+      sr * c,
+      (sg + s) * c,
+      sb * c,
+      0,
+      bOffset + cOffset,
+      sr * c,
+      sg * c,
+      (sb + s) * c,
+      0,
+      bOffset + cOffset,
+      0,
+      0,
+      0,
+      1,
+      0,
+    ]);
+  }
+
   Widget _buildEditorImageArea(GenerationResult result) {
     return Stack(
       children: [
         Container(
           width: double.infinity,
           height: double.infinity,
-          child: (result.imageUrl.startsWith('data:')
-              ? Image.memory(
-                  base64Decode(result.imageUrl.split(',')[1]),
-                  fit: BoxFit.contain,
-                )
-              : Image.network(result.imageUrl, fit: BoxFit.contain)),
+          child: ColorFiltered(
+            colorFilter: _buildRetouchFilter(),
+            child: (result.imageUrl.startsWith('data:')
+                ? Image.memory(
+                    base64Decode(result.imageUrl.split(',')[1]),
+                    fit: BoxFit.contain,
+                  )
+                : Image.network(result.imageUrl, fit: BoxFit.contain)),
+          ),
         ),
       ],
     );
@@ -540,6 +635,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         return _buildPromptToInline();
       case 'retouch':
         return _buildDrawerWithHeader('RETOUCH LAB', _buildRetouchDrawer());
+      case 'style':
+        return _buildDrawerWithHeader('STYLE STUDIO', _buildStyleDrawer());
       case 'stitch':
         return _buildDrawerWithHeader('STITCH STUDIO', _buildStitchDrawer());
       case 'print':
@@ -605,6 +702,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
+                _buildToolIcon(Icons.style_outlined, 'Style', 'style'),
                 _buildToolIcon(Icons.auto_fix_high, 'Retouch', 'retouch'),
                 _buildToolIcon(Icons.merge_type, 'Stitch', 'stitch'),
                 _buildToolIcon(Icons.print_outlined, 'Print', 'print'),
@@ -940,24 +1038,60 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Voice input coming soon!'),
+                                content: Text(
+                                  'VOICE PROTOCOL: V-AURA Integration Coming Soon',
+                                ),
+                                backgroundColor: Color(0xFFD4AF37),
                               ),
                             );
                           },
                         ),
-                        // Enhance (Stub)
+                        // Enhance (Live — calls GeminiService.enhancePrompt)
                         IconButton(
                           icon: const Icon(
                             Icons.auto_fix_high,
                             color: Color(0xFFD4AF37),
                             size: 20,
                           ),
-                          onPressed: () {
+                          onPressed: () async {
+                            final draft = _promptController.text.trim();
+                            if (draft.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Type a prompt to enhance.'),
+                                ),
+                              );
+                              return;
+                            }
+                            // Show loading
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('AI Enhance coming soon!'),
+                                content: Text('Enhancing prompt with AI...'),
+                                duration: Duration(seconds: 2),
                               ),
                             );
+                            try {
+                              final enhanced = await GeminiService()
+                                  .enhancePrompt(draft);
+                              if (enhanced.isNotEmpty && mounted) {
+                                setState(() {
+                                  _promptController.text = enhanced;
+                                  _customPrompt = enhanced;
+                                });
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('✨ Prompt enhanced!'),
+                                    backgroundColor: Color(0xFFD4AF37),
+                                  ),
+                                );
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Enhance failed: $e')),
+                                );
+                              }
+                            }
                           },
                         ),
                         // Clear (Functional)
@@ -1519,6 +1653,18 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         'Prompt: ${_customPrompt.length > 20 ? '${_customPrompt.substring(0, 20)}...' : _customPrompt}',
       );
     if (_selectedBackdrop != null) tags.add('BG: ${_selectedBackdrop!.name}');
+    tags.add('Gender: ${_gender.toUpperCase()}');
+    if (_styleTemperature != 'neutral')
+      tags.add('Grade: ${_styleTemperature.toUpperCase()}');
+    if (_selectedClothingStyle.isNotEmpty)
+      tags.add('Style: $_selectedClothingStyle');
+
+    // Stitch specific tags
+    final session = context.read<SessionProvider>();
+    if (session.stitchImages.isNotEmpty) {
+      if (_selectedGroupType.isNotEmpty) tags.add('Group: $_selectedGroupType');
+      tags.add('Vibe: ${session.stitchVibe.toUpperCase()}');
+    }
 
     return Positioned(
       bottom: 12,
@@ -1553,7 +1699,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     );
   }
 
-  Widget _buildRetouchDrawer() {
+  Widget _buildStyleDrawer() {
+    final clothingOptions = promptCategories['Styling & Vibe'] ?? [];
+    final session = context.watch<SessionProvider>();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
@@ -1582,8 +1731,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: isActive
-                          ? const Color(0xFFD4AF37).withOpacity(0.15)
-                          : Colors.white.withOpacity(0.05),
+                          ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
+                          : Colors.white.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: isActive
@@ -1608,7 +1757,61 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           ),
           const SizedBox(height: 20),
 
-          // 2. STYLE TEMPERATURE
+          // 2. CLOTHING STYLE
+          const Text(
+            'CLOTHING STYLE',
+            style: TextStyle(
+              color: Colors.white24,
+              fontSize: 10,
+              letterSpacing: 2,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: clothingOptions.map((style) {
+              final isActive = _selectedClothingStyle == style;
+              return GestureDetector(
+                onTap: () => setState(() {
+                  _selectedClothingStyle = isActive ? '' : style;
+                }),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
+                        : Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isActive
+                          ? const Color(0xFFD4AF37)
+                          : Colors.white12,
+                    ),
+                  ),
+                  child: Text(
+                    style.toUpperCase(),
+                    style: TextStyle(
+                      color: isActive
+                          ? const Color(0xFFD4AF37)
+                          : Colors.white54,
+                      fontSize: 10,
+                      fontWeight: isActive
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 20),
+
+          // 3. COLOR GRADING
           const Text(
             'COLOR GRADING',
             style: TextStyle(
@@ -1631,8 +1834,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: isActive
-                          ? const Color(0xFFD4AF37).withOpacity(0.15)
-                          : Colors.white.withOpacity(0.05),
+                          ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
+                          : Colors.white.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: isActive
@@ -1655,9 +1858,176 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               );
             }).toList(),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
-          // 3. SKIN TEXTURE (Synced with constants)
+          // 4. VIRTUAL TRY-ON
+          const Text(
+            'VIRTUAL TRY-ON',
+            style: TextStyle(
+              color: Colors.white24,
+              fontSize: 10,
+              letterSpacing: 2,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white10),
+            ),
+            child: Column(
+              children: [
+                if (session.hasClothingReference)
+                  Stack(
+                    alignment: Alignment.topRight,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.memory(
+                          session.clothingReferenceBytes!,
+                          height: 120,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.cancel, color: Colors.white),
+                        onPressed: () => session.clearClothingReference(),
+                      ),
+                    ],
+                  )
+                else
+                  GestureDetector(
+                    onTap: _pickClothingReference,
+                    child: Container(
+                      height: 60,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: const Color(0xFFD4AF37),
+                          width: 1,
+                          style: BorderStyle.solid,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.add_photo_alternate_outlined,
+                            color: Color(0xFFD4AF37),
+                            size: 20,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            "ADD CLOTHING PHOTO",
+                            style: TextStyle(
+                              color: Color(0xFFD4AF37),
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 8),
+                const Text(
+                  "Upload a photo of a garment to apply it to your generation.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white38, fontSize: 9),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          const SizedBox(height: 24),
+
+          // APPLY STYLE — triggers regeneration
+          Consumer<SessionProvider>(
+            builder: (context, session, child) {
+              return SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: session.isGenerating
+                      ? null
+                      : () {
+                          setState(() {
+                            _activeControl = 'main';
+                            _focusedResult = null;
+                          });
+                          if (session.stitchImages.isNotEmpty) {
+                            _generateStitch(session);
+                          } else {
+                            _generatePortrait(session);
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFD4AF37),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: session.isGenerating
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.black,
+                          ),
+                        )
+                      : const Text(
+                          'APPLY STYLE',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 2,
+                            fontSize: 12,
+                          ),
+                        ),
+                ),
+              );
+            },
+          ),
+
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: () => setState(() {
+                _activeControl = 'main';
+                _focusedResult = null;
+              }),
+              child: const Text(
+                'CANCEL',
+                style: TextStyle(
+                  color: Colors.white38,
+                  letterSpacing: 2,
+                  fontSize: 11,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRetouchDrawer() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. SKIN TEXTURE (Synced with constants)
           const Text(
             'SKIN FINISH',
             style: TextStyle(
@@ -1853,12 +2223,224 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
   Widget _buildStitchDrawer() {
     final session = context.watch<SessionProvider>();
+    final groupTypes = stitchGroupPresets.keys.toList();
+    final styleVariations = _selectedGroupType.isNotEmpty
+        ? (stitchGroupPresets[_selectedGroupType] ?? [])
+        : <String>[];
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. SQUAD SELECTOR
+          // ── 1. GROUP TYPE ──
+          const Text(
+            'GROUP TYPE',
+            style: TextStyle(
+              color: Colors.white24,
+              fontSize: 10,
+              letterSpacing: 2,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 34,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: groupTypes.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 6),
+              itemBuilder: (context, index) {
+                final type = groupTypes[index];
+                final isActive = _selectedGroupType == type;
+                return GestureDetector(
+                  onTap: () => setState(() {
+                    _selectedGroupType = isActive ? '' : type;
+                    _selectedGroupStyle = '';
+                  }),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? const Color(0xFFD4AF37)
+                          : Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(17),
+                      border: Border.all(
+                        color: isActive
+                            ? const Color(0xFFD4AF37)
+                            : Colors.white12,
+                      ),
+                    ),
+                    child: Text(
+                      type.toUpperCase(),
+                      style: TextStyle(
+                        color: isActive ? Colors.black : Colors.white54,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // ── 2. STYLE VARIATIONS (shown when a group type is selected) ──
+          if (styleVariations.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Text(
+              '${_selectedGroupType.toUpperCase()} STYLES',
+              style: const TextStyle(
+                color: Colors.white24,
+                fontSize: 10,
+                letterSpacing: 2,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: styleVariations.map((style) {
+                final isActive = _selectedGroupStyle == style;
+                return GestureDetector(
+                  onTap: () => setState(() {
+                    _selectedGroupStyle = isActive ? '' : style;
+                  }),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
+                          : Colors.white.withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isActive
+                            ? const Color(0xFFD4AF37)
+                            : Colors.white10,
+                      ),
+                    ),
+                    child: Text(
+                      style.split(',').first.toUpperCase(),
+                      style: TextStyle(
+                        color: isActive
+                            ? const Color(0xFFD4AF37)
+                            : Colors.white38,
+                        fontSize: 9,
+                        fontWeight: isActive
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+
+          const SizedBox(height: 16),
+          const Divider(color: Colors.white10, height: 1),
+          const SizedBox(height: 12),
+
+          // ── 3. STITCH PROMPT ──
+          const Text(
+            'GROUP PROMPT',
+            style: TextStyle(
+              color: Colors.white24,
+              fontSize: 10,
+              letterSpacing: 2,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.white10),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _stitchPromptController,
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    maxLines: 2,
+                    minLines: 1,
+                    decoration: const InputDecoration(
+                      hintText: 'Add scene details, mood, location...',
+                      hintStyle: TextStyle(color: Colors.white24, fontSize: 11),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                    ),
+                  ),
+                ),
+                // Enhance
+                IconButton(
+                  icon: const Icon(
+                    Icons.auto_fix_high,
+                    color: Color(0xFFD4AF37),
+                    size: 18,
+                  ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                  onPressed: () async {
+                    final draft = _stitchPromptController.text.trim();
+                    if (draft.isEmpty) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Enhancing...'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                    try {
+                      final enhanced = await GeminiService().enhancePrompt(
+                        draft,
+                      );
+                      if (enhanced.isNotEmpty && mounted) {
+                        setState(() => _stitchPromptController.text = enhanced);
+                      }
+                    } catch (_) {}
+                  },
+                ),
+                // Clear
+                if (_stitchPromptController.text.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(
+                      Icons.clear,
+                      color: Colors.white24,
+                      size: 16,
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                    onPressed: () =>
+                        setState(() => _stitchPromptController.clear()),
+                  ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+          const Divider(color: Colors.white10, height: 1),
+          const SizedBox(height: 12),
+
+          // ── 4. SQUAD SELECTOR ──
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -1872,49 +2454,39 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 ),
               ),
               if (session.stitchImages.isNotEmpty)
-                GestureDetector(
-                  onTap: () {
-                    // Quick clear
-                    // We don't have a clear method yet, stick to individual removal
-                  },
-                  child: const Text(
-                    'TAP TO REMOVE',
-                    style: TextStyle(fontSize: 8, color: Colors.white12),
-                  ),
+                const Text(
+                  'TAP TO REMOVE',
+                  style: TextStyle(fontSize: 8, color: Colors.white12),
                 ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           SizedBox(
-            height: 80,
+            height: 70,
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
-                // Add Button
                 if (session.stitchImages.length < 5)
                   GestureDetector(
                     onTap: () => _pickStitchImage(session),
                     child: Container(
-                      width: 70,
-                      margin: const EdgeInsets.only(right: 12),
+                      width: 60,
+                      margin: const EdgeInsets.only(right: 8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.white24,
-                          style: BorderStyle.solid,
-                        ),
+                        color: Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white24),
                       ),
                       child: const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add, color: Color(0xFFD4AF37)),
-                          SizedBox(height: 4),
+                          Icon(Icons.add, color: Color(0xFFD4AF37), size: 20),
+                          SizedBox(height: 2),
                           Text(
                             'ADD',
                             style: TextStyle(
                               color: Color(0xFFD4AF37),
-                              fontSize: 9,
+                              fontSize: 8,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -1922,19 +2494,16 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                       ),
                     ),
                   ),
-                // Images
                 ...session.stitchImages.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final bytes = entry.value;
                   return Stack(
                     children: [
                       Container(
-                        width: 70,
-                        margin: const EdgeInsets.only(right: 12),
+                        width: 60,
+                        margin: const EdgeInsets.only(right: 8),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(10),
                           image: DecorationImage(
-                            image: MemoryImage(bytes),
+                            image: MemoryImage(entry.value),
                             fit: BoxFit.cover,
                           ),
                           border: Border.all(color: Colors.white12),
@@ -1942,18 +2511,18 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                       ),
                       Positioned(
                         top: 0,
-                        right: 12,
+                        right: 8,
                         child: GestureDetector(
-                          onTap: () => session.removeStitchImage(index),
+                          onTap: () => session.removeStitchImage(entry.key),
                           child: Container(
-                            padding: const EdgeInsets.all(4),
+                            padding: const EdgeInsets.all(3),
                             decoration: const BoxDecoration(
                               color: Colors.black54,
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
                               Icons.close,
-                              size: 12,
+                              size: 10,
                               color: Colors.white,
                             ),
                           ),
@@ -1966,38 +2535,133 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             ),
           ),
 
-          const SizedBox(height: 20),
-
-          // 2. VIBE CHECK
-          const Text(
-            'GROUP VIBE',
-            style: TextStyle(
-              color: Colors.white24,
-              fontSize: 10,
-              letterSpacing: 2,
-              fontWeight: FontWeight.bold,
+          // ── 5. PER-PERSON STYLING ──
+          if (session.stitchImages.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Text(
+              'PER-PERSON STYLE',
+              style: TextStyle(
+                color: Colors.white24,
+                fontSize: 10,
+                letterSpacing: 2,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
+            const SizedBox(height: 6),
+            ...session.stitchImages.asMap().entries.map((entry) {
+              final idx = entry.key;
+              final bytes = entry.value;
+              final currentStyle = _stitchPersonStyles[idx] ?? '';
+              final clothingOptions = promptCategories['Styling & Vibe'] ?? [];
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.03),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.memory(
+                        bytes,
+                        width: 28,
+                        height: 28,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'P${idx + 1}',
+                      style: const TextStyle(
+                        color: Colors.white54,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: SizedBox(
+                        height: 26,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: clothingOptions.map((style) {
+                            final isActive = currentStyle == style;
+                            return GestureDetector(
+                              onTap: () => setState(() {
+                                _stitchPersonStyles[idx] = isActive
+                                    ? ''
+                                    : style;
+                              }),
+                              child: Container(
+                                margin: const EdgeInsets.only(right: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isActive
+                                      ? const Color(
+                                          0xFFD4AF37,
+                                        ).withValues(alpha: 0.15)
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(13),
+                                  border: Border.all(
+                                    color: isActive
+                                        ? const Color(0xFFD4AF37)
+                                        : Colors.white12,
+                                  ),
+                                ),
+                                child: Text(
+                                  style
+                                      .split(' ')
+                                      .take(2)
+                                      .join(' ')
+                                      .toUpperCase(),
+                                  style: TextStyle(
+                                    color: isActive
+                                        ? const Color(0xFFD4AF37)
+                                        : Colors.white38,
+                                    fontSize: 8,
+                                    fontWeight: isActive
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+
           const SizedBox(height: 12),
+
+          // ── 6. VIBE CHECK ──
           Row(
             children: [
-              // Matching Outfits
               Expanded(
                 child: GestureDetector(
                   onTap: () => session.setStitchVibe('matching'),
                   child: _buildVibeChip(
-                    'MATCHING FITS',
+                    'MATCHING',
                     session.stitchVibe == 'matching',
                   ),
                 ),
               ),
               const SizedBox(width: 8),
-              // Individual
               Expanded(
                 child: GestureDetector(
                   onTap: () => session.setStitchVibe('individual'),
                   child: _buildVibeChip(
-                    'INDIVIDUAL STYLE',
+                    'INDIVIDUAL',
                     session.stitchVibe == 'individual',
                   ),
                 ),
@@ -2005,8 +2669,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             ],
           ),
 
-          const SizedBox(height: 20),
-          // 3. GENERATE BUTTON
+          const SizedBox(height: 16),
+
+          // ── 7. GENERATE ──
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -2290,5 +2955,15 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         ],
       ),
     );
+  }
+
+  Future<void> _pickClothingReference() async {
+    final session = context.read<SessionProvider>();
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      final bytes = await image.readAsBytes();
+      session.uploadClothingReference(bytes, image.name);
+    }
   }
 }

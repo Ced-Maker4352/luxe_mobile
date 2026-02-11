@@ -305,6 +305,7 @@ User Idea: "$draftPrompt"''',
     required String basePrompt,
     required String opticProtocol,
     String? backgroundImageBase64,
+    String? clothingReferenceBase64,
     String? skinTexturePrompt,
   }) async {
     final finalPrompt =
@@ -312,6 +313,8 @@ User Idea: "$draftPrompt"''',
 
 TASK: Generate a high-fidelity professional studio portrait of the SPECIFIC PERSON provided in the reference image.
 
+${clothingReferenceBase64 != null ? 'VIRTUAL TRY-ON: Match the garment shown in the clothing reference image exactly.' : ''}
+    
 IDENTITY PRIORITY HIERARCHY (follow this order strictly):
   1. FACE (highest priority): The face MUST match the reference image exactly.
      - Lock: exact facial bone structure, eye shape/color/spacing, nose bridge/tip profile,
@@ -504,10 +507,20 @@ DETAILS:
     required List<String> identityImagesBase64,
     required String prompt,
     String? backgroundImageBase64,
+    String? clothingReferenceBase64,
     required String vibe,
+    List<String>? perPersonStyles,
   }) async {
     final parts = <Map<String, dynamic>>[];
     final int count = identityImagesBase64.length;
+
+    // Virtual Try-On Reference
+    if (clothingReferenceBase64 != null && clothingReferenceBase64.isNotEmpty) {
+      parts.add(_getDataPart(clothingReferenceBase64));
+      parts.add({
+        'text': 'CLOTHING REFERENCE IMAGE — Use this garment for the subjects.',
+      });
+    }
 
     // ── PHASE 1: IDENTITY ANCHORING ──
     // Each reference image gets a detailed identity lock label.
@@ -582,7 +595,18 @@ DETAILS:
     }
     promptBuffer.writeln('');
 
-    // Styling vibe
+    // Per-person clothing styles (if specified)
+    if (perPersonStyles != null && perPersonStyles.isNotEmpty) {
+      promptBuffer.writeln('PER-PERSON CLOTHING DIRECTIONS:');
+      for (final style in perPersonStyles) {
+        promptBuffer.writeln('  - $style');
+      }
+      promptBuffer.writeln(
+        '  Apply these clothing styles to the matching persons while preserving facial identity.',
+      );
+      promptBuffer.writeln('');
+    }
+
     promptBuffer.writeln(
       'STYLING VIBE: ${vibe == 'matching' ? 'COORDINATED — All subjects wear matching or complementary outfits. Keep clothing style harmonized but DO NOT let outfit changes affect facial features.' : 'INDIVIDUAL — Each person expresses their own unique style. Outfit variety is encouraged but DO NOT let styling alter any facial features.'}',
     );

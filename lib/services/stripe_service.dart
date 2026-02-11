@@ -27,8 +27,9 @@ class StripeService {
 
   static Future<bool> handlePayment(
     String packageId,
-    String customerEmail,
-  ) async {
+    String customerEmail, {
+    String? promoCode,
+  }) async {
     try {
       // On web, use payment links instead of native PaymentSheet
       if (kIsWeb) {
@@ -45,6 +46,7 @@ class StripeService {
         body: jsonEncode({
           'packageId': packageId,
           'customerEmail': customerEmail,
+          'promoCode': promoCode,
         }),
       );
 
@@ -85,7 +87,7 @@ class StripeService {
     }
   }
 
-  static String? getPaymentLink(String packageId) {
+  static String? getPaymentLink(String packageId, {String? promoCode}) {
     // These match the test links in your web app's paymentLinks.ts
     const links = {
       'INDEPENDENT_ARTIST':
@@ -106,7 +108,19 @@ class StripeService {
       'CREATIVE_DIRECTOR':
           'https://buy.stripe.com/test_fZucMXfSW9Uf8Bj2u47N605',
       'branding': 'https://buy.stripe.com/test_eVq5kv36ac2naJrfgQ7N601',
+      // Budget Tiers
+      'tier_3': 'https://buy.stripe.com/test_28E5kv5eigiD04N0lW7N600',
+      'tier_5': 'https://buy.stripe.com/test_eVq5kv36ac2naJrfgQ7N601',
+      'tier_10': 'https://buy.stripe.com/test_5kQ9AL7mqc2n04N5Gg7N603',
+      'tier_15': 'https://buy.stripe.com/test_fZubIT0Y2eavaJrecM7N604',
+      'tier_20': 'https://buy.stripe.com/test_fZucMXfSW9Uf8Bj2u47N605',
     };
-    return links[packageId];
+
+    String? baseUrl = links[packageId];
+    if (baseUrl != null && promoCode != null && promoCode.isNotEmpty) {
+      // In a real app, you'd apply the promo code to the link or backend
+      debugPrint('Stripe: Applying promo code $promoCode to $packageId');
+    }
+    return baseUrl;
   }
 }

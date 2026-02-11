@@ -155,7 +155,14 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
   Widget _buildModeToggle(String title, bool isStitch) {
     final isSelected = _isStitchMode == isStitch;
     return GestureDetector(
-      onTap: () => setState(() => _isStitchMode = isStitch),
+      onTap: () => setState(() {
+        _isStitchMode = isStitch;
+        // Clear solo upload when switching to stitch to prevent confusion
+        if (isStitch && _imageBytes != null) {
+          _imageBytes = null;
+          context.read<SessionProvider>().clearUploadedImage();
+        }
+      }),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -226,9 +233,55 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
               ),
               const Spacer(),
 
-              GestureDetector(
-                onTap: _showImageSourceOptions,
-                child: Container(
+              // Show upload area only in solo mode; stitch mode skips to Studio
+              if (!_isStitchMode)
+                GestureDetector(
+                  onTap: _showImageSourceOptions,
+                  child: Container(
+                    height: 300,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF141414),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: _imageBytes != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(24),
+                            child: Image.memory(
+                              _imageBytes!,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.add_a_photo_outlined,
+                                color: const Color(
+                                  0xFFD4AF37,
+                                ).withValues(alpha: 0.5),
+                                size: 48,
+                              ),
+                              const SizedBox(height: 10),
+                              const Text(
+                                'DRAG OR TAP TO UPLOAD',
+                                style: TextStyle(
+                                  color: Colors.white24,
+                                  letterSpacing: 2,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
+                ),
+
+              // Stitch mode: show info panel instead of single upload
+              if (_isStitchMode)
+                Container(
                   height: 300,
                   width: double.infinity,
                   decoration: BoxDecoration(
@@ -238,34 +291,40 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                       color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
                     ),
                   ),
-                  child: _imageBytes != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(24),
-                          child: Image.memory(_imageBytes!, fit: BoxFit.cover),
-                        )
-                      : Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.add_a_photo_outlined,
-                              color: const Color(
-                                0xFFD4AF37,
-                              ).withValues(alpha: 0.5),
-                              size: 48,
-                            ),
-                            const SizedBox(height: 10),
-                            const Text(
-                              'DRAG OR TAP TO UPLOAD',
-                              style: TextStyle(
-                                color: Colors.white24,
-                                letterSpacing: 2,
-                                fontSize: 10,
-                              ),
-                            ),
-                          ],
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.group_outlined,
+                        color: const Color(0xFFD4AF37).withValues(alpha: 0.6),
+                        size: 56,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'ADD PEOPLE IN STITCH STUDIO',
+                        style: TextStyle(
+                          color: Color(0xFFD4AF37),
+                          letterSpacing: 2,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
                         ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 32),
+                        child: Text(
+                          'Tap below to enter the Studio, then add 2–5 identity photos from the Stitch panel.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white38,
+                            fontSize: 11,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
               const Spacer(),
 
@@ -303,19 +362,20 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                 ),
 
               const SizedBox(height: 16),
-              TextButton(
-                onPressed: _showImageSourceOptions,
-                child: Text(
-                  _imageBytes == null
-                      ? 'HOW TO CHOOSE THE BEST PHOTO'
-                      : 'CHANGE REFERENCE IMAGE',
-                  style: const TextStyle(
-                    color: Colors.white38,
-                    fontSize: 11,
-                    letterSpacing: 1,
+              if (!_isStitchMode)
+                TextButton(
+                  onPressed: _showImageSourceOptions,
+                  child: Text(
+                    _imageBytes == null
+                        ? 'HOW TO CHOOSE THE BEST PHOTO'
+                        : 'CHANGE REFERENCE IMAGE',
+                    style: const TextStyle(
+                      color: Colors.white38,
+                      fontSize: 11,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ),

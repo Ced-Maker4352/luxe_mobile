@@ -68,6 +68,13 @@ class SessionProvider extends ChangeNotifier {
   /// Check if we have a valid image uploaded
   bool get hasUploadedImage => _uploadedImageBytes != null;
 
+  /// Clear only the uploaded solo portrait image (without clearing entire session)
+  void clearUploadedImage() {
+    _uploadedImageBytes = null;
+    _uploadedImageName = null;
+    notifyListeners();
+  }
+
   /// Clear the current session
   void clearSession() {
     _uploadedImageBytes = null;
@@ -83,8 +90,15 @@ class SessionProvider extends ChangeNotifier {
   final List<Uint8List> _stitchImages = [];
   String _stitchVibe = 'individual'; // 'matching', 'individual'
 
+  // VIRTUAL TRY-ON STATE
+  Uint8List? _clothingReferenceBytes;
+  String? _clothingReferenceName;
+
   List<Uint8List> get stitchImages => _stitchImages;
   String get stitchVibe => _stitchVibe;
+  Uint8List? get clothingReferenceBytes => _clothingReferenceBytes;
+  String? get clothingReferenceName => _clothingReferenceName;
+  bool get hasClothingReference => _clothingReferenceBytes != null;
 
   void addStitchImage(Uint8List bytes) {
     if (_stitchImages.length < 5) {
@@ -102,6 +116,18 @@ class SessionProvider extends ChangeNotifier {
 
   void setStitchVibe(String vibe) {
     _stitchVibe = vibe;
+    notifyListeners();
+  }
+
+  void uploadClothingReference(Uint8List bytes, String name) {
+    _clothingReferenceBytes = bytes;
+    _clothingReferenceName = name;
+    notifyListeners();
+  }
+
+  void clearClothingReference() {
+    _clothingReferenceBytes = null;
+    _clothingReferenceName = null;
     notifyListeners();
   }
 }

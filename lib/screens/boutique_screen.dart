@@ -22,6 +22,13 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
   // Default to the first package
   late PackageDetails _selectedPackage;
   bool _isProcessing = false;
+  final TextEditingController _promoController = TextEditingController();
+
+  @override
+  void dispose() {
+    _promoController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -29,7 +36,10 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
     _selectedPackage = packages.first;
   }
 
-  Future<void> _handlePackageSelection(PackageDetails pkg) async {
+  Future<void> _handlePackageSelection(
+    PackageDetails pkg, {
+    String? tierId,
+  }) async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null || user.email == null) {
       if (mounted) {
@@ -40,9 +50,15 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
       return;
     }
 
+    final promoCode = _promoController.text.trim();
+    final paymentTargetId = tierId ?? pkg.id.name;
+
     setState(() => _isProcessing = true);
     if (kIsWeb) {
-      final link = StripeService.getPaymentLink(pkg.id.name);
+      final link = StripeService.getPaymentLink(
+        paymentTargetId,
+        promoCode: promoCode,
+      );
       if (link != null) {
         final uri = Uri.parse(link);
         if (await canLaunchUrl(uri)) {
@@ -96,7 +112,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                   'id': user.id,
                   'email': user.email,
                   'is_subscribed': true,
-                  'subscription_tier': pkg.id.name,
+                  'subscription_tier': paymentTargetId,
                   'updated_at': DateTime.now().toIso8601String(),
                 });
               } catch (dbError) {
@@ -139,8 +155,9 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
     try {
       // Proceed with Stripe Payment using authenticated email
       final success = await StripeService.handlePayment(
-        pkg.id.name,
+        paymentTargetId,
         user.email!,
+        promoCode: promoCode,
       );
 
       if (success && mounted) {
@@ -150,7 +167,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
             'id': user.id,
             'email': user.email,
             'is_subscribed': true,
-            'subscription_tier': pkg.id.name,
+            'subscription_tier': paymentTargetId,
             'updated_at': DateTime.now().toIso8601String(),
           });
         } catch (dbError) {
@@ -402,6 +419,42 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Promo Code Panel
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black26,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: const Color(0xFFD4AF37).withOpacity(0.3),
+                          ),
+                        ),
+                        child: TextField(
+                          controller: _promoController,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                          ),
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            hintText: "ENTER PROMO CODE (e.g. LUXE100)",
+                            hintStyle: TextStyle(
+                              color: Colors.white24,
+                              fontSize: 10,
+                              letterSpacing: 1,
+                            ),
+                            icon: Icon(
+                              Icons.confirmation_number_outlined,
+                              color: Color(0xFFD4AF37),
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ),
                       // Dynamic Image + Title Row
                       Row(
                         children: [
@@ -697,7 +750,10 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                     : null,
                 onTap: () {
                   Navigator.pop(context);
-                  // TODO: Navigate to payment for budget tier
+                  _handlePackageSelection(
+                    _selectedPackage,
+                    tierId: 'tier_${tier.amount}',
+                  );
                 },
               ),
             ),
