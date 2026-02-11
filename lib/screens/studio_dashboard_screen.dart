@@ -381,13 +381,22 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: _activeControl == 'main',
+      canPop: false,
       onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) {
+        if (didPop) return;
+        if (_activeControl != 'main') {
+          // Close any open drawer first
           setState(() {
             _activeControl = 'main';
             _focusedResult = null;
           });
+        } else {
+          // We're on main — navigate back safely
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          } else {
+            Navigator.pushReplacementNamed(context, '/boutique');
+          }
         }
       },
       child: Scaffold(
@@ -486,7 +495,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           GestureDetector(
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              } else {
+                Navigator.pushReplacementNamed(context, '/boutique');
+              }
+            },
             child: const Icon(
               Icons.arrow_back_ios,
               color: Colors.white54,
@@ -1275,7 +1290,17 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
   Widget _buildGenerateButton(SessionProvider session) {
     return GestureDetector(
-      onTap: session.isGenerating ? null : () => _generatePortrait(session),
+      onTap: session.isGenerating
+          ? null
+          : () {
+              // Route to stitch generation if user has stitch images loaded
+              if (session.stitchImages.isNotEmpty ||
+                  _activeControl == 'stitch') {
+                _generateStitch(session);
+              } else {
+                _generatePortrait(session);
+              }
+            },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
