@@ -308,12 +308,21 @@ User Idea: "$draftPrompt"''',
     String? skinTexturePrompt,
   }) async {
     final finalPrompt =
-        """TASK: Generate a high-fidelity professional studio portrait of the SPECIFIC PERSON provided in the reference image.
+        """=== STRICT FACIAL CONSISTENCY MODE: ENABLED ===
 
-SUBJECT IDENTITY & STRUCTURE:
-- The face must match the reference image exactly (Maintain facial structure, key features, and likeness).
-- BODY STRUCTURE: Strictly preserve the subject's natural body weight, shape, and proportions. Do not slim or alter the body type.
-- This is a RE-STYLING task, not a new person generation.
+TASK: Generate a high-fidelity professional studio portrait of the SPECIFIC PERSON provided in the reference image.
+
+IDENTITY PRIORITY HIERARCHY (follow this order strictly):
+  1. FACE (highest priority): The face MUST match the reference image exactly.
+     - Lock: exact facial bone structure, eye shape/color/spacing, nose bridge/tip profile,
+       lip shape/fullness, jawline contour, chin shape, cheekbone prominence,
+       forehead shape, skin tone/texture, facial hair if present.
+     - Do NOT drift toward generic, idealized, or averaged features.
+  2. BODY (second priority): Strictly preserve the subject's natural body weight, shape, and proportions.
+     Do NOT slim or alter the body type to fit fashion standards.
+  3. HAIR: Maintain exact hair color, texture, length, and style from the reference.
+  4. FASHION & STYLING (lowest priority): Apply styling only AFTER identity is locked.
+     This is a RE-STYLING task, not a new person generation.
 
 SCENE & STYLE CONTEXT:
 $basePrompt
@@ -324,6 +333,8 @@ TECHNICAL DETAILS:
 - Lighting: Professional studio lighting matching the requested mood.
 
 ${backgroundImageBase64 != null ? 'SETTING: Place the subject in the provided background environment naturally.' : ''}
+
+FINAL CHECK: Before outputting, verify the face matches the reference image. If any facial feature has drifted, correct it before finalizing.
 
 Output: Photorealistic 4K photograph.""";
 
@@ -496,44 +507,112 @@ DETAILS:
     required String vibe,
   }) async {
     final parts = <Map<String, dynamic>>[];
+    final int count = identityImagesBase64.length;
 
-    // 1. Add all Identity Images
-    for (int i = 0; i < identityImagesBase64.length; i++) {
+    // ── PHASE 1: IDENTITY ANCHORING ──
+    // Each reference image gets a detailed identity lock label.
+    // Research shows labeling with explicit facial descriptors improves fidelity.
+    for (int i = 0; i < count; i++) {
       parts.add(_getDataPart(identityImagesBase64[i]));
-      parts.add({'text': 'REFERENCE IDENTITY ${i + 1} (Image above)'});
+      parts.add({
+        'text':
+            'IDENTITY ANCHOR ${i + 1} OF $count — Study this face carefully. '
+            'Lock the following from this reference: exact facial bone structure, '
+            'eye shape and spacing, nose profile, lip shape and fullness, '
+            'jawline contour, skin tone and texture, hairline shape, '
+            'ear placement, and overall face proportions. '
+            'This person MUST be recognizable as the same individual in the output.',
+      });
     }
 
-    // 2. Background (Optional)
+    // ── PHASE 2: BACKGROUND (Optional) ──
     if (backgroundImageBase64 != null && backgroundImageBase64.isNotEmpty) {
       parts.add(_getDataPart(backgroundImageBase64));
-      parts.add({'text': 'REFERENCE BACKGROUND (Image above)'});
+      parts.add({
+        'text': 'REFERENCE BACKGROUND — Use this as the scene backdrop.',
+      });
     }
 
-    // 3. Prompt
-    final fullPrompt =
-        """TASK: Create a realistic GROUP PHOTO of ${identityImagesBase64.length} distinctive people based on the reference identities provided above.
-    
-    IDENTITIES:
-    - You must generate exactly ${identityImagesBase64.length} people.
-    - Person 1 must match Identity 1.
-    - Person 2 must match Identity 2.
-    - ...and so on.
-    - Strictly preserve facial features and body types for each person.
-    
-    STYLING VIBE: ${vibe == 'matching' ? 'MATCHING OUTFITS. Everyone should wear coordinated clothing style.' : 'INDIVIDUAL STYLE. Each person should express their own unique style.'}
-    
-    SCENE:
-    $prompt
-    
-    COMPOSITION:
-    - Group shot, interacting naturally.
-    - High fidelity, photorealistic 4K.""";
+    // ── PHASE 3: STRICT IDENTITY-FIRST PROMPT ──
+    final StringBuffer promptBuffer = StringBuffer();
 
-    parts.add({'text': fullPrompt});
+    promptBuffer.writeln('=== STRICT FACIAL CONSISTENCY MODE: ENABLED ===');
+    promptBuffer.writeln('');
+    promptBuffer.writeln(
+      'TASK: Generate a photorealistic GROUP PHOTO of exactly $count people.',
+    );
+    promptBuffer.writeln('');
 
-    // Use gemini-2.5-flash-image (best for multi-modal)
-    // We reuse the internal logic of _generateImageWithGemini but we need to bypass its fixed slots.
-    // So we'll call a raw helper or just duplicate the HTTP call logic for this specific advanced case.
+    // Identity Priority Hierarchy
+    promptBuffer.writeln(
+      'IDENTITY PRIORITY HIERARCHY (follow this order strictly):',
+    );
+    promptBuffer.writeln(
+      '  1. FACE (highest priority): Each person\'s facial features MUST match their Identity Anchor exactly.',
+    );
+    promptBuffer.writeln(
+      '     - Preserve: bone structure, eye shape/color/spacing, nose bridge/tip, lip shape/fullness,',
+    );
+    promptBuffer.writeln(
+      '       jawline, chin shape, cheekbone prominence, forehead shape, skin tone/texture, facial hair if present.',
+    );
+    promptBuffer.writeln(
+      '     - Do NOT average, blend, or synthesize faces across identities.',
+    );
+    promptBuffer.writeln(
+      '     - Do NOT drift toward generic or idealized features.',
+    );
+    promptBuffer.writeln(
+      '  2. BODY (second priority): Preserve each person\'s body type, build, and proportions from their reference.',
+    );
+    promptBuffer.writeln(
+      '  3. HAIR: Maintain each person\'s hair color, texture, length, and style.',
+    );
+    promptBuffer.writeln(
+      '  4. FASHION (lowest priority): Apply styling only AFTER identity is locked.',
+    );
+    promptBuffer.writeln('');
+
+    // Per-person mapping
+    promptBuffer.writeln('PERSON-TO-IDENTITY MAPPING:');
+    for (int i = 0; i < count; i++) {
+      promptBuffer.writeln(
+        '  - Person ${i + 1} in the output = Identity Anchor ${i + 1}. No exceptions.',
+      );
+    }
+    promptBuffer.writeln('');
+
+    // Styling vibe
+    promptBuffer.writeln(
+      'STYLING VIBE: ${vibe == 'matching' ? 'COORDINATED — All subjects wear matching or complementary outfits. Keep clothing style harmonized but DO NOT let outfit changes affect facial features.' : 'INDIVIDUAL — Each person expresses their own unique style. Outfit variety is encouraged but DO NOT let styling alter any facial features.'}',
+    );
+    promptBuffer.writeln('');
+
+    // Scene
+    promptBuffer.writeln('SCENE DIRECTION:');
+    promptBuffer.writeln(prompt);
+    promptBuffer.writeln('');
+
+    // Technical requirements
+    promptBuffer.writeln('TECHNICAL REQUIREMENTS:');
+    promptBuffer.writeln(
+      '  - Photorealistic, 4K resolution, cinematic lighting.',
+    );
+    promptBuffer.writeln('  - Natural group interaction and body language.');
+    promptBuffer.writeln(
+      '  - Each face must be clearly visible and unobstructed.',
+    );
+    promptBuffer.writeln('  - Consistent lighting across all subjects.');
+    promptBuffer.writeln(
+      '  - If a face cannot be preserved with high fidelity, slightly adjust the pose to show the face more clearly rather than compromising identity.',
+    );
+    promptBuffer.writeln('');
+    promptBuffer.writeln(
+      'FINAL CHECK: Before outputting, verify each person\'s face matches their Identity Anchor. If any face has drifted, regenerate that face to match the reference.',
+    );
+
+    parts.add({'text': promptBuffer.toString()});
+
     return _callGeminiRaw('gemini-2.5-flash-image', parts);
   }
 
@@ -546,7 +625,7 @@ DETAILS:
       'contents': [
         {'parts': parts},
       ],
-      'generationConfig': {'temperature': 0.4},
+      'generationConfig': {'temperature': 0.2},
       'safetySettings': [
         {'category': 'HARM_CATEGORY_HARASSMENT', 'threshold': 'BLOCK_NONE'},
         {'category': 'HARM_CATEGORY_HATE_SPEECH', 'threshold': 'BLOCK_NONE'},
