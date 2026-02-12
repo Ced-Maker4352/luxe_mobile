@@ -141,10 +141,8 @@ class GeminiService {
 
   Future<String> _callGeminiWithFallback(
     List<String> models,
-    List<Map<String, dynamic>> parts, {
-    String aspectRatio = '3:4',
-    String? imageSize,
-  }) async {
+    List<Map<String, dynamic>> parts,
+  ) async {
     for (final model in models) {
       final url = Uri.parse('$_baseUrl/$model:generateContent?key=$_apiKey');
 
@@ -152,13 +150,7 @@ class GeminiService {
         'contents': [
           {'parts': parts},
         ],
-        'generationConfig': {
-          'temperature': 0.4,
-          if (imageSize != null) 'imageSize': imageSize,
-          // 'aspectRatio' is often in 'imageConfig' for some models,
-          // but for general generateContent it varies.
-          // Standardizing on what web app uses.
-        },
+        'generationConfig': {'temperature': 0.4},
         'safetySettings': [
           {'category': 'HARM_CATEGORY_HARASSMENT', 'threshold': 'BLOCK_NONE'},
           {'category': 'HARM_CATEGORY_HATE_SPEECH', 'threshold': 'BLOCK_NONE'},
@@ -172,14 +164,6 @@ class GeminiService {
           },
         ],
       };
-
-      // Add imageConfig if it's a model that supports it (like 3-pro-image-preview)
-      if (model.contains('image')) {
-        body['imageConfig'] = {
-          'aspectRatio': aspectRatio,
-          if (imageSize != null) 'imageSize': imageSize,
-        };
-      }
 
       try {
         debugPrint('GeminiService: Attempting $model...');
@@ -336,17 +320,13 @@ Output: Photorealistic 4K photograph.""";
 
     final models = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
 
-    final result = await _callGeminiWithFallback(
-      models,
-      parts,
-      imageSize: '4K',
-    );
+    final result = await _callGeminiWithFallback(models, parts);
 
     if (result.isNotEmpty) return result;
 
-    // Last resort fallback to Imagen
+    // Last resort fallback to Imagen (using known stable model name)
     return _generateImageWithImagen(
-      'imagen-4.0-fast-generate-001',
+      'imagen-3.0-generate-001',
       finalPrompt,
       referenceImageBase64: referenceImageBase64,
     );
