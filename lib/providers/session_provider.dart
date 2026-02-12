@@ -7,72 +7,41 @@ import '../services/auth_service.dart';
 class SessionProvider extends ChangeNotifier {
   PackageDetails? _selectedPackage;
   CameraRig? _selectedRig;
-  Uint8List? _uploadedImageBytes;
+  // IDENTITY LOCK STATE (Multi-Image Support)
+  final List<Uint8List> _identityImages = [];
+
+  // Backward compatibility: Returns the first image or null
+  Uint8List? get uploadedImageBytes =>
+      _identityImages.isNotEmpty ? _identityImages.first : null;
+  // We can't easily support a single name for multiple images, so we return a placeholder or first name if we tracked it per image.
+  // For now, let's just keep _uploadedImageName as a general label or remove it if unused.
   String? _uploadedImageName;
-  final List<GenerationResult> _results = [];
-  bool _isGenerating = false;
-  StyleOption? _selectedStyle;
-  bool _isSingleStyleMode = false;
-  bool _preserveAgeAndBody = true;
-  String _soloGender = 'female'; // Default to female
-
-  PackageDetails? get selectedPackage => _selectedPackage;
-  CameraRig? get selectedRig => _selectedRig;
-  Uint8List? get uploadedImageBytes => _uploadedImageBytes;
   String? get uploadedImageName => _uploadedImageName;
-  List<GenerationResult> get results => _results;
-  bool get isGenerating => _isGenerating;
-  StyleOption? get selectedStyle => _selectedStyle;
-  bool get isSingleStyleMode => _isSingleStyleMode;
-  bool get preserveAgeAndBody => _preserveAgeAndBody;
-  String get soloGender => _soloGender;
 
-  void addResult(GenerationResult result) {
-    _results.insert(0, result);
-    notifyListeners();
-  }
+  List<Uint8List> get identityImages => _identityImages;
 
-  void setPreserveAgeAndBody(bool val) {
-    _preserveAgeAndBody = val;
-    notifyListeners();
-  }
-
-  void setSoloGender(String gender) {
-    _soloGender = gender;
-    notifyListeners();
-  }
-
-  void setGenerating(bool val) {
-    _isGenerating = val;
-    notifyListeners();
-  }
-
-  void setSingleStyleMode(bool val) {
-    _isSingleStyleMode = val;
-    notifyListeners();
-  }
-
-  void selectPackage(PackageDetails package) {
-    _selectedPackage = package;
-    notifyListeners();
-  }
-
-  void selectRig(CameraRig rig) {
-    _selectedRig = rig;
-    notifyListeners();
-  }
-
-  void selectStyle(StyleOption style) {
-    _selectedStyle = style;
-    _isSingleStyleMode = true;
-    notifyListeners();
-  }
-
-  /// Store image bytes directly (works on web and mobile)
+  /// Store a single image (Legacy / First Image) - clears existing list
   void uploadImageBytes(Uint8List bytes, String name) {
-    _uploadedImageBytes = bytes;
+    _identityImages.clear();
+    _identityImages.add(bytes);
     _uploadedImageName = name;
     notifyListeners();
+  }
+
+  /// Add an image to the identity lock list (Max 5)
+  void addIdentityImage(Uint8List bytes) {
+    if (_identityImages.length < 5) {
+      _identityImages.add(bytes);
+      notifyListeners();
+    }
+  }
+
+  /// Remove an image from the identity lock list
+  void removeIdentityImage(int index) {
+    if (index >= 0 && index < _identityImages.length) {
+      _identityImages.removeAt(index);
+      notifyListeners();
+    }
   }
 
   /// Legacy method for compatibility - stores name only
@@ -81,19 +50,19 @@ class SessionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Check if we have a valid image uploaded
-  bool get hasUploadedImage => _uploadedImageBytes != null;
+  /// Check if we have at least one valid identity image
+  bool get hasUploadedImage => _identityImages.isNotEmpty;
 
-  /// Clear only the uploaded solo portrait image (without clearing entire session)
+  /// Clear only the uploaded solo portrait images
   void clearUploadedImage() {
-    _uploadedImageBytes = null;
+    _identityImages.clear();
     _uploadedImageName = null;
     notifyListeners();
   }
 
   /// Clear the current session
   void clearSession() {
-    _uploadedImageBytes = null;
+    _identityImages.clear();
     _uploadedImageName = null;
     _results.clear();
     _isGenerating = false;

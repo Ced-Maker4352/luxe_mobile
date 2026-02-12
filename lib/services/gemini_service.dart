@@ -269,7 +269,7 @@ User Idea: "$draftPrompt"''',
   }
 
   Future<String> generatePortrait({
-    required String referenceImageBase64,
+    required List<String> referenceImagesBase64, // CHANGED: List of images
     required String basePrompt,
     required String opticProtocol,
     String? backgroundImageBase64,
@@ -277,46 +277,95 @@ User Idea: "$draftPrompt"''',
     String? skinTexturePrompt,
     bool preserveAgeAndBody = true,
   }) async {
-    final finalPrompt =
-        """=== STRICT FACIAL CONSISTENCY MODE: ENABLED ===
+    final StringBuffer promptBuffer = StringBuffer();
+    promptBuffer.writeln("=== STRICT FACIAL CONSISTENCY MODE: ENABLED ===");
+    promptBuffer.writeln("");
+    promptBuffer.writeln(
+      "TASK: Generate a high-fidelity professional studio portrait of the SPECIFIC PERSON using ${referenceImagesBase64.length} Identity Anchors.",
+    );
 
-TASK: Generate a high-fidelity professional studio portrait of the SPECIFIC PERSON provided in the reference image.
+    if (clothingReferenceBase64 != null) {
+      promptBuffer.writeln(
+        "VIRTUAL TRY-ON: Match the garment shown in the clothing reference image exactly.",
+      );
+    }
 
-${clothingReferenceBase64 != null ? 'VIRTUAL TRY-ON: Match the garment shown in the clothing reference image exactly.' : ''}
-    
-IDENTITY PRIORITY HIERARCHY (follow this order strictly):
-  1. FACE (highest priority): The face MUST match the reference image exactly.
-     - Lock: exact facial bone structure, eye shape/color/spacing, nose bridge/tip profile,
-       lip shape/fullness, jawline contour, chin shape, cheekbone prominence,
-       forehead shape, skin tone/texture, facial hair if present.
-     - Do NOT drift toward generic, idealized, or averaged features.
-  2. ${preserveAgeAndBody ? 'AGE & BODY (STRICT)' : 'BODY'} (second priority): ${preserveAgeAndBody ? "Strictly lock the subject's apparent age and natural body weight, shape, and proportions. Do NOT 'beautify', slim, or alter the body type or age." : "Strictly preserve the subject's natural body weight, shape, and proportions. Do NOT slim or alter the body type to fit fashion standards."}
-  3. HAIR: Maintain exact hair color, texture, length, and style from the reference.
-  4. FASHION & STYLING (lowest priority): Apply styling only AFTER identity is locked.
-     This is a RE-STYLING task, not a new person generation.
+    promptBuffer.writeln("");
+    promptBuffer.writeln(
+      "IDENTITY PRIORITY HIERARCHY (follow this order strictly):",
+    );
+    promptBuffer.writeln(
+      "  1. FACE (highest priority): The face MUST match the Identity Anchors exactly.",
+    );
+    promptBuffer.writeln(
+      "     - Lock: exact facial bone structure, eye shape/color/spacing, nose bridge/tip profile,",
+    );
+    promptBuffer.writeln(
+      "       lip shape/fullness, jawline contour, chin shape, cheekbone prominence,",
+    );
+    promptBuffer.writeln(
+      "       forehead shape, skin tone/texture, facial hair if present.",
+    );
+    promptBuffer.writeln(
+      "     - Synthesize a consistent 3D representation from the provided angles.",
+    );
+    promptBuffer.writeln(
+      "     - Do NOT drift toward generic, idealized, or averaged features.",
+    );
 
-SCENE & STYLE CONTEXT:
-$basePrompt
+    promptBuffer.writeln(
+      "  2. ${preserveAgeAndBody ? 'AGE & BODY (STRICT)' : 'BODY'} (second priority): ${preserveAgeAndBody ? "Strictly lock the subject's apparent age and natural body weight, shape, and proportions. Do NOT 'beautify', slim, or alter the body type or age." : "Strictly preserve the subject's natural body weight, shape, and proportions. Do NOT slim or alter the body type to fit fashion standards."}",
+    );
+    promptBuffer.writeln(
+      "  3. HAIR: Maintain exact hair color, texture, length, and style from the references.",
+    );
+    promptBuffer.writeln(
+      "  4. FASHION & STYLING (lowest priority): Apply styling only AFTER identity is locked.",
+    );
+    promptBuffer.writeln(
+      "     This is a RE-STYLING task, not a new person generation.",
+    );
 
-TECHNICAL DETAILS:
-- Skin: ${skinTexturePrompt ?? 'Natural, realistic texture with visible pores (avoid plastic smoothing)'}.
-- Camera: $opticProtocol
-- Lighting: Professional studio lighting matching the requested mood.
+    promptBuffer.writeln("");
+    promptBuffer.writeln("SCENE & STYLE CONTEXT:");
+    promptBuffer.writeln(basePrompt);
 
-${backgroundImageBase64 != null ? 'SETTING: Place the subject in the provided background environment naturally.' : ''}
+    promptBuffer.writeln("");
+    promptBuffer.writeln("TECHNICAL DETAILS:");
+    promptBuffer.writeln(
+      "- Skin: ${skinTexturePrompt ?? 'Natural, realistic texture with visible pores (avoid plastic smoothing)'}.",
+    );
+    promptBuffer.writeln("- Camera: $opticProtocol");
+    promptBuffer.writeln(
+      "- Lighting: Professional studio lighting matching the requested mood.",
+    );
 
-FINAL CHECK: Before outputting, verify the face matches the reference image. If any facial feature has drifted, correct it before finalizing.
+    if (backgroundImageBase64 != null) {
+      promptBuffer.writeln(
+        "SETTING: Place the subject in the provided background environment naturally.",
+      );
+    }
 
-Output: Photorealistic 4K photograph.""";
+    promptBuffer.writeln("");
+    promptBuffer.writeln(
+      "FINAL CHECK: Before outputting, verify the face matches the Identity Anchors. If any facial feature has drifted, correct it before finalizing.",
+    );
+    promptBuffer.writeln("");
+    promptBuffer.writeln("Output: Photorealistic 4K photograph.");
 
     final parts = <Map<String, dynamic>>[];
-    parts.add(_getDataPart(referenceImageBase64));
+
+    // Add Identity Anchors
+    for (int i = 0; i < referenceImagesBase64.length; i++) {
+      parts.add(_getDataPart(referenceImagesBase64[i]));
+      parts.add({'text': 'IDENTITY ANCHOR ${i + 1}'});
+    }
 
     if (backgroundImageBase64 != null) {
       parts.add(_getDataPart(backgroundImageBase64));
     }
 
-    parts.add({'text': finalPrompt});
+    parts.add({'text': promptBuffer.toString()});
 
     final models = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
 
@@ -325,10 +374,13 @@ Output: Photorealistic 4K photograph.""";
     if (result.isNotEmpty) return result;
 
     // Last resort fallback to Imagen (using known stable model name)
+    // Imagen typically supports single reference image
     return _generateImageWithImagen(
       'imagen-3.0-generate-001',
-      finalPrompt,
-      referenceImageBase64: referenceImageBase64,
+      promptBuffer.toString(),
+      referenceImageBase64: referenceImagesBase64.isNotEmpty
+          ? referenceImagesBase64.first
+          : null,
     );
   }
 

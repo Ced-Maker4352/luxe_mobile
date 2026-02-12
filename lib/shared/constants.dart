@@ -68,58 +68,59 @@ const List<SkinTexture> skinTextures = [
   ),
 ];
 
-// === FILTER PRESETS (From Web AssetEditor) ===
-class FilterPreset {
+// === RETOUCH PRESETS ===
+class RetouchPreset {
   final String id;
-  final String name;
+  final String label;
   final double brightness;
   final double contrast;
   final double saturation;
-  final double grayscale;
-  final double sepia;
+  final double temperature;
+  final double tint;
+  final double vignette;
 
-  const FilterPreset({
+  const RetouchPreset({
     required this.id,
-    required this.name,
+    required this.label,
     this.brightness = 100,
     this.contrast = 100,
     this.saturation = 100,
-    this.grayscale = 0,
-    this.sepia = 0,
+    this.temperature = 0,
+    this.tint = 0,
+    this.vignette = 0,
   });
 }
 
-const List<FilterPreset> filterPresets = [
-  FilterPreset(id: 'none', name: 'Studio'),
-  FilterPreset(
-    id: 'noir',
-    name: 'Noir',
-    grayscale: 100,
-    contrast: 120,
-    brightness: 110,
-  ),
-  FilterPreset(id: 'vivid', name: 'Vivid', saturation: 140, contrast: 110),
-  FilterPreset(
-    id: 'warm',
-    name: 'Warm',
-    sepia: 30,
-    brightness: 105,
-    saturation: 110,
-  ),
-  FilterPreset(id: 'cool', name: 'Cool', brightness: 105, contrast: 105),
-  FilterPreset(
-    id: 'matte',
-    name: 'Matte',
-    contrast: 90,
-    brightness: 110,
+const List<RetouchPreset> retouchPresets = [
+  RetouchPreset(id: 'natural', label: 'Natural'),
+  RetouchPreset(
+    id: 'editorial',
+    label: 'Editorial',
+    contrast: 115,
     saturation: 90,
+    temperature: -0.1,
   ),
-  FilterPreset(
-    id: 'drama',
-    name: 'Drama',
+  RetouchPreset(
+    id: 'noir',
+    label: 'Noir',
+    saturation: 0,
     contrast: 130,
+    vignette: 0.4,
+  ),
+  RetouchPreset(
+    id: 'golden',
+    label: 'Golden Hour',
+    temperature: 0.3,
+    tint: 0.05,
+    vignette: 0.2,
+  ),
+  RetouchPreset(id: 'vivid', label: 'Vivid', saturation: 125, contrast: 110),
+  RetouchPreset(
+    id: 'muted',
+    label: 'Muted',
     saturation: 80,
-    brightness: 90,
+    contrast: 90,
+    temperature: -0.05,
   ),
 ];
 

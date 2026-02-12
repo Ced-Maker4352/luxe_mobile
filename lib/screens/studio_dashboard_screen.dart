@@ -35,10 +35,17 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   String _customBgPrompt = '';
   final TextEditingController _bgPromptController = TextEditingController();
 
-  // Adjustment sliders state (Using ValueNotifier for 60fps real-time updates)
+  // Adjustment sliders state (Using ValueNotifier for 60fps real-time updates) // Retouch State
   final ValueNotifier<double> _brightness = ValueNotifier<double>(100);
   final ValueNotifier<double> _contrast = ValueNotifier<double>(100);
   final ValueNotifier<double> _saturation = ValueNotifier<double>(100);
+  final ValueNotifier<double> _temperature = ValueNotifier<double>(
+    0,
+  ); // -1.0 to 1.0
+  final ValueNotifier<double> _tint = ValueNotifier<double>(0); // -1.0 to 1.0
+  final ValueNotifier<double> _vignette = ValueNotifier<double>(
+    0,
+  ); // 0.0 to 1.0
 
   // NEW: Framing Options
   // NEW: Missing web features - Gender & Style
@@ -198,8 +205,12 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         clothingRef = base64Encode(session.clothingReferenceBytes!);
       }
 
+      final identityImagesB64 = session.identityImages
+          .map((bytes) => base64Encode(bytes))
+          .toList();
+
       final resultText = await service.generatePortrait(
-        referenceImageBase64: base64Encode(session.uploadedImageBytes!),
+        referenceImagesBase64: identityImagesB64,
         basePrompt: fullPrompt,
         opticProtocol: session.selectedRig!.opticProtocol,
         backgroundImageBase64: null, // TODO: Handle background image if needed
@@ -605,29 +616,34 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     );
   }
 
-  // Helper: build a color filter matrix from brightness/contrast/saturation
+  // Helper: build a color filter matrix from inputs
   ColorFilter _buildRetouchFilter(
     double brightness,
     double contrast,
     double saturation,
+    double temp, // -1.0 to 1.0 (Blue <-> Orange)
+    double tint, // -1.0 to 1.0 (Green <-> Magenta)
   ) {
-    // Normalize 0-200 range to multipliers
-    final double b = brightness / 100.0; // 1.0 = normal
+    // 1. Brightness / Contrast / Saturation (Standard)
+    final double b = brightness / 100.0;
     final double c = contrast / 100.0;
     final double s = saturation / 100.0;
 
-    // Brightness offset (shift toward white or black)
     final double bOffset = (b - 1.0) * 255;
-
-    // Contrast: scale around 0.5 midpoint
     final double cOffset = (1.0 - c) * 128;
 
-    // Saturation: interpolate between grayscale and full color
-    final double sr = (1.0 - s) * 0.2126;
-    final double sg = (1.0 - s) * 0.7152;
-    final double sb = (1.0 - s) * 0.0722;
+    // Saturation coefficients
+    final double lumR = 0.2126;
+    final double lumG = 0.7152;
+    final double lumB = 0.0722;
 
-    return ColorFilter.matrix(<double>[
+    final double sr = (1.0 - s) * lumR;
+    final double sg = (1.0 - s) * lumG;
+    final double sb = (1.0 - s) * lumB;
+
+    // BCS Matrix
+    // [R, G, B, A, Offset]
+    final List<double> matrixBCS = [
       (sr + s) * c,
       sg * c,
       sb * c,
@@ -648,6 +664,56 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       0,
       1,
       0,
+    ];
+
+    // 2. Temperature & Tint Matrix
+    // Temp > 0 => Warmer (More R, Less B)
+    // Temp < 0 => Cooler (Less R, More B)
+    // Tint > 0 => Magenta (More R/B, Less G)
+    // Tint < 0 => Green (Less R/B, More G)
+
+    double rScale = 1.0;
+    double gScale = 1.0;
+    double bScale = 1.0;
+
+    // Temp Logic
+    if (temp > 0) {
+      rScale += temp * 0.2; // Warmer
+      bScale -= temp * 0.2;
+    } else {
+      rScale += temp * 0.2; // Cooler (temp is negative)
+      bScale -= temp * 0.2;
+    }
+
+    // Tint Logic
+    if (tint > 0) {
+      gScale -= tint * 0.2; // Magenta (Less Green)
+    } else {
+      gScale -= tint * 0.2; // Green (More green, tint negative)
+    }
+
+    // Combined scaling matrix (simplified multiplication)
+    return ColorFilter.matrix([
+      matrixBCS[0] * rScale,
+      matrixBCS[1] * rScale,
+      matrixBCS[2] * rScale,
+      0,
+      matrixBCS[4] * rScale,
+      matrixBCS[5] * gScale,
+      matrixBCS[6] * gScale,
+      matrixBCS[7] * gScale,
+      0,
+      matrixBCS[9] * gScale,
+      matrixBCS[10] * bScale,
+      matrixBCS[11] * bScale,
+      matrixBCS[12] * bScale,
+      0,
+      matrixBCS[14] * bScale,
+      0,
+      0,
+      0,
+      1,
+      0,
     ]);
   }
 
@@ -657,27 +723,70 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         Container(
           width: double.infinity,
           height: double.infinity,
-          child: ValueListenableBuilder<double>(
-            valueListenable: _brightness,
-            builder: (context, b, _) => ValueListenableBuilder<double>(
-              valueListenable: _contrast,
-              builder: (context, c, _) => ValueListenableBuilder<double>(
-                valueListenable: _saturation,
-                builder: (context, s, _) => ColorFiltered(
-                  colorFilter: _buildRetouchFilter(b, c, s),
-                  child: _decodedImageBytes != null
-                      ? Image.memory(_decodedImageBytes!, fit: BoxFit.contain)
-                      : (result.imageUrl.startsWith('data:')
-                            ? Image.memory(
-                                base64Decode(result.imageUrl.split(',')[1]),
-                                fit: BoxFit.contain,
-                              )
-                            : Image.network(
-                                result.imageUrl,
-                                fit: BoxFit.contain,
-                              )),
-                ),
-              ),
+          child: AnimatedBuilder(
+            animation: Listenable.merge([
+              _brightness,
+                _contrast,
+                _saturation,
+                _temperature,
+                _tint,
+                _vignette,
+              ]),
+              builder: (context, _) {
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ColorFiltered(
+                      colorFilter: _buildRetouchFilter(
+                        _brightness.value,
+                        _contrast.value,
+                        _saturation.value,
+                        _temperature.value,
+                        _tint.value,
+                      ),
+                      child: _decodedImageBytes != null
+                          ? Image.memory(
+                              _decodedImageBytes!,
+                              fit: BoxFit.contain,
+                            )
+                          : (result.imageUrl.startsWith('data:')
+                                ? Image.memory(
+                                    base64Decode(result.imageUrl.split(',')[1]),
+                                    fit: BoxFit.contain,
+                                  )
+                                : Image.network(
+                                    result.imageUrl,
+                                    fit: BoxFit.contain,
+                                  )),
+                    ),
+                    // Vignette Overlay
+                    if (_vignette.value > 0)
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: RadialGradient(
+                                center: Alignment.center,
+                                radius:
+                                    1.2, // Slightly larger than screen to soften edges
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black.withValues(
+                                    alpha: _vignette.value * 0.9,
+                                  ), // Max 90% opacity
+                                ],
+                                stops: const [
+                                  0.3,
+                                  1.0,
+                                ], // Start darkening at 30% out
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
           ),
         ),
@@ -2423,17 +2532,23 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: filterPresets.map((bg) {
+            children: retouchPresets.map((preset) {
               final isMatch =
-                  _brightness.value == bg.brightness &&
-                  _contrast.value == bg.contrast &&
-                  _saturation.value == bg.saturation;
+                  _brightness.value == preset.brightness &&
+                  _contrast.value == preset.contrast &&
+                  _saturation.value == preset.saturation &&
+                  _temperature.value == preset.temperature &&
+                  _tint.value == preset.tint &&
+                  _vignette.value == preset.vignette;
 
               return GestureDetector(
                 onTap: () {
-                  _brightness.value = bg.brightness;
-                  _contrast.value = bg.contrast;
-                  _saturation.value = bg.saturation;
+                  _brightness.value = preset.brightness;
+                  _contrast.value = preset.contrast;
+                  _saturation.value = preset.saturation;
+                  _temperature.value = preset.temperature;
+                  _tint.value = preset.tint;
+                  _vignette.value = preset.vignette;
                   setState(() {});
                 },
                 child: Container(
@@ -2451,7 +2566,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     ),
                   ),
                   child: Text(
-                    bg.name,
+                    preset.label,
                     style: TextStyle(
                       color: isMatch ? const Color(0xFFD4AF37) : Colors.white54,
                       fontSize: 10,
@@ -2464,7 +2579,41 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           ),
           const SizedBox(height: 20),
 
-          // 4. FINE TUNE SLIDERS (ValueNotifier driven for performance)
+          // SLIDERS SECTIONS
+          _buildDivider(),
+          
+          // COLOR BALANCE
+          const Text(
+            'COLOR BALANCE',
+            style: TextStyle(
+              color: Colors.white24,
+              fontSize: 10,
+              letterSpacing: 2,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildSlider('TEMPERATURE', _temperature, min: -1.0, max: 1.0, isPercentage: false),
+          _buildSlider('TINT', _tint, min: -1.0, max: 1.0, isPercentage: false),
+          
+          const SizedBox(height: 12),
+          
+          // EFFECTS
+          const Text(
+            'EFFECTS',
+            style: TextStyle(
+              color: Colors.white24,
+              fontSize: 10,
+              letterSpacing: 2,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildSlider('VIGNETTE', _vignette, min: 0.0, max: 1.0, isPercentage: true),
+          
+          const SizedBox(height: 12),
+
+          // FINE TUNE
           const Text(
             'FINE TUNE',
             style: TextStyle(
@@ -2475,13 +2624,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             ),
           ),
           const SizedBox(height: 12),
-          _buildSlider('BRIGHTNESS', _brightness),
-          _buildSlider('CONTRAST', _contrast),
-          _buildSlider('SATURATION', _saturation),
+          _buildSlider('BRIGHTNESS', _brightness, min: 0, max: 200),
+          _buildSlider('CONTRAST', _contrast, min: 0, max: 200),
+          _buildSlider('SATURATION', _saturation, min: 0, max: 200),
 
           const SizedBox(height: 24),
 
-          // APPLY RETOUCH — triggers regeneration with current retouch settings
+          // APPLY RETOUCH
           Consumer<SessionProvider>(
             builder: (context, session, child) {
               return SizedBox(
@@ -2537,10 +2686,23 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     );
   }
 
-  Widget _buildSlider(String label, ValueNotifier<double> notifier) {
+  Widget _buildSlider(
+    String label, 
+    ValueNotifier<double> notifier, {
+    double min = 0,
+    double max = 200,
+    bool isPercentage = true,
+  }) {
     return ValueListenableBuilder<double>(
       valueListenable: notifier,
       builder: (context, value, _) {
+        String valueText;
+        if (isPercentage) {
+          valueText = '${(value * (max == 1.0 ? 100 : 1)).toInt()}%';
+        } else {
+          valueText = value.toStringAsFixed(1);
+        }
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -2552,7 +2714,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   style: const TextStyle(color: Colors.white54, fontSize: 10),
                 ),
                 Text(
-                  '${value.toInt()}%',
+                  valueText,
                   style: const TextStyle(
                     color: Color(0xFFD4AF37),
                     fontSize: 10,
@@ -2571,8 +2733,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               ),
               child: Slider(
                 value: value,
-                min: 0,
-                max: 200,
+                min: min,
+                max: max,
                 onChanged: (v) => notifier.value = v,
               ),
             ),

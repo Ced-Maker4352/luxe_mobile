@@ -19,7 +19,7 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
   bool _isStitchMode = false;
   final ImagePicker _picker = ImagePicker();
 
-  void _showImageSourceOptions() {
+  Future<void> _pickImageSource() async {
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF1A1A1A),
@@ -42,7 +42,7 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
               ),
               const SizedBox(height: 24),
               const Text(
-                'SELECT IMAGE SOURCE',
+                'ADD IDENTITY ANCHOR',
                 style: TextStyle(
                   color: Colors.white,
                   letterSpacing: 2,
@@ -71,7 +71,7 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                   ),
                 ),
                 subtitle: const Text(
-                  'Use your camera to capture a portrait',
+                  'Capture a new selfie',
                   style: TextStyle(color: Colors.white38, fontSize: 12),
                 ),
                 onTap: () {
@@ -100,7 +100,7 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                   ),
                 ),
                 subtitle: const Text(
-                  'Select an existing photo from your device',
+                  'Select up to 5 photos',
                   style: TextStyle(color: Colors.white38, fontSize: 12),
                 ),
                 onTap: () {
@@ -118,38 +118,95 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
 
   Future<void> _pickImage({required bool fromCamera}) async {
     try {
-      final XFile? pickedFile = await _picker.pickImage(
-        source: fromCamera ? ImageSource.camera : ImageSource.gallery,
-        maxWidth: 1920,
-        maxHeight: 1920,
-        imageQuality: 85,
-        preferredCameraDevice: CameraDevice.front,
-      );
+      final session = context.read<SessionProvider>();
+      if (session.identityImages.length >= 5) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Maximum 5 identity anchors allowed.')),
+        );
+        return;
+      }
 
-      if (pickedFile != null) {
-        final bytes = await pickedFile.readAsBytes();
-        setState(() {
-          _imageBytes = bytes;
-        });
-        if (mounted) {
-          // Store bytes directly in SessionProvider (works on web and mobile)
-          context.read<SessionProvider>().uploadImageBytes(
-            bytes,
-            pickedFile.name,
-          );
+      if (fromCamera) {
+        final XFile? pickedFile = await _picker.pickImage(
+          source: ImageSource.camera,
+          maxWidth: 1920,
+          maxHeight: 1920,
+          imageQuality: 85,
+          preferredCameraDevice: CameraDevice.front,
+        );
+        if (pickedFile != null) {
+          final bytes = await pickedFile.readAsBytes();
+          session.addIdentityImage(bytes);
+        }
+      } else {
+        // Multi-image picker from gallery
+        final List<XFile> pickedFiles = await _picker.pickMultiImage(
+          maxWidth: 1920,
+          maxHeight: 1920,
+          imageQuality: 85,
+        );
+
+        for (var file in pickedFiles) {
+          if (session.identityImages.length >= 5) break;
+          final bytes = await file.readAsBytes();
+          session.addIdentityImage(bytes);
         }
       }
     } catch (e) {
       debugPrint('Error picking image: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to pick image: ${e.toString()}'),
-            backgroundColor: Colors.red.shade700,
-          ),
-        );
-      }
     }
+  }
+
+  // Widget to display an individual identity slot
+  Widget _buildIdentitySlot(
+    BuildContext context,
+    int index,
+    Uint8List? imageBytes,
+  ) {
+    return Stack(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF141414),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: imageBytes != null
+                  ? const Color(0xFFD4AF37)
+                  : Colors.white10,
+              width: imageBytes != null ? 1 : 1,
+            ),
+          ),
+          child: imageBytes != null
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.memory(
+                    imageBytes,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: double.infinity,
+                  ),
+                )
+              : Center(child: Icon(Icons.add, color: Colors.white24, size: 24)),
+        ),
+        if (imageBytes != null)
+          Positioned(
+            top: 4,
+            right: 4,
+            child: GestureDetector(
+              onTap: () =>
+                  context.read<SessionProvider>().removeIdentityImage(index),
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Colors.black54,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, size: 14, color: Colors.white),
+              ),
+            ),
+          ),
+      ],
+    );
   }
 
   Widget _buildModeToggle(String title, bool isStitch) {
@@ -157,11 +214,7 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
     return GestureDetector(
       onTap: () => setState(() {
         _isStitchMode = isStitch;
-        // Clear solo upload when switching to stitch to prevent confusion
-        if (isStitch && _imageBytes != null) {
-          _imageBytes = null;
-          context.read<SessionProvider>().clearUploadedImage();
-        }
+        // Don't clear images when switching modes anymore
       }),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -189,21 +242,26 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
       backgroundColor: const Color(0xFF0A0A0A),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 20),
+
+              // Header
               const Text(
-                'IDENTITY REFERENCE',
+                'IDENTITY STUDIO™',
                 style: TextStyle(
                   color: Colors.white,
                   letterSpacing: 4,
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
+
               const SizedBox(height: 24),
+
+              // Mode Toggle
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white10,
@@ -214,16 +272,19 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildModeToggle('SOLO PORTRAIT', false),
-                    _buildModeToggle('GROUP STITCH', true),
+                    _buildModeToggle('IDENTITY LOCK', false),
+                    _buildModeToggle('GROUP MODE', true),
                   ],
                 ),
               ),
+
               const SizedBox(height: 24),
+
+              // Description
               Text(
                 _isStitchMode
-                    ? 'Create a group photo. Upload or skip to add people inside.'
-                    : 'Upload your baseline portrait. Our AI Rigs use this to lock your distinct facial geometry.',
+                    ? 'Create group photos with multiple people.'
+                    : 'Upload 1-5 selfies to lock in your identity logic. More photos = higher facial fidelity.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.white54,
@@ -231,154 +292,182 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                   height: 1.5,
                 ),
               ),
-              const Spacer(),
 
-              // Show upload area only in solo mode; stitch mode skips to Studio
-              if (!_isStitchMode)
-                GestureDetector(
-                  onTap: _showImageSourceOptions,
-                  child: Container(
-                    height: 300,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF141414),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
-                      ),
-                    ),
-                    child: _imageBytes != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(24),
-                            child: Image.memory(
-                              _imageBytes!,
-                              fit: BoxFit.cover,
-                            ),
-                          )
-                        : Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+              const SizedBox(height: 24),
+
+              // Main Content Area
+              Expanded(
+                child: _isStitchMode
+                    ? _buildStitchModePlaceholder(context)
+                    : Consumer<SessionProvider>(
+                        builder: (context, session, _) {
+                          final images = session.identityImages;
+                          return Column(
                             children: [
-                              Icon(
-                                Icons.add_a_photo_outlined,
-                                color: const Color(
-                                  0xFFD4AF37,
-                                ).withValues(alpha: 0.5),
-                                size: 48,
-                              ),
-                              const SizedBox(height: 10),
-                              const Text(
-                                'DRAG OR TAP TO UPLOAD',
-                                style: TextStyle(
-                                  color: Colors.white24,
-                                  letterSpacing: 2,
-                                  fontSize: 10,
+                              // Grid of Identities
+                              Expanded(
+                                child: GridView.builder(
+                                  itemCount: 5, // Always show 5 slots
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2, // 2 columns
+                                        childAspectRatio: 1,
+                                        crossAxisSpacing: 12,
+                                        mainAxisSpacing: 12,
+                                      ),
+                                  itemBuilder: (context, index) {
+                                    final img = index < images.length
+                                        ? images[index]
+                                        : null;
+                                    // Make empty slots tappable to add
+                                    if (img == null) {
+                                      if (index == images.length) {
+                                        // Next available slot
+                                        return GestureDetector(
+                                          onTap: _pickImageSource,
+                                          child: _buildIdentitySlot(
+                                            context,
+                                            index,
+                                            null,
+                                          ),
+                                        );
+                                      } else {
+                                        // Future slots (disabled look)
+                                        return Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.white10.withOpacity(
+                                              0.05,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              16,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.white10,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                    return _buildIdentitySlot(
+                                      context,
+                                      index,
+                                      img,
+                                    );
+                                  },
                                 ),
                               ),
+
+                              if (images.isNotEmpty) ...[
+                                const SizedBox(height: 16),
+                                const Text(
+                                  "Photos locked. AI will triangulate features.",
+                                  style: TextStyle(
+                                    color: Color(0xFFD4AF37),
+                                    fontSize: 12,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ],
                             ],
-                          ),
-                  ),
-                ),
-
-              // Stitch mode: show info panel instead of single upload
-              if (_isStitchMode)
-                Container(
-                  height: 300,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF141414),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.group_outlined,
-                        color: const Color(0xFFD4AF37).withValues(alpha: 0.6),
-                        size: 56,
+                          );
+                        },
                       ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'ADD PEOPLE IN STITCH STUDIO',
-                        style: TextStyle(
-                          color: Color(0xFFD4AF37),
-                          letterSpacing: 2,
-                          fontSize: 11,
+              ),
+
+              const SizedBox(height: 24),
+
+              // Action Button
+              Consumer<SessionProvider>(
+                builder: (context, session, _) {
+                  final hasImages = session.identityImages.isNotEmpty;
+                  final ready = _isStitchMode || hasImages;
+
+                  return SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: ready
+                          ? () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => StudioDashboardScreen(
+                                    startInStitchMode: _isStitchMode,
+                                  ),
+                                ),
+                              );
+                            }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFD4AF37),
+                        foregroundColor: Colors.black,
+                        disabledBackgroundColor: Colors.white10,
+                        disabledForegroundColor: Colors.white38,
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        _isStitchMode
+                            ? 'ENTER GROUP STUDIO'
+                            : 'INITIATE SESSION (${session.identityImages.length}/5)',
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
+                          letterSpacing: 2,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 32),
-                        child: Text(
-                          'Tap below to enter the Studio, then add 2–5 identity photos from the Stitch panel.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white38,
-                            fontSize: 11,
-                            height: 1.5,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-              const Spacer(),
-
-              if (_imageBytes != null || _isStitchMode)
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => StudioDashboardScreen(
-                            startInStitchMode: _isStitchMode,
-                          ),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD4AF37),
-                      foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 20),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
                     ),
-                    child: Text(
-                      _isStitchMode
-                          ? 'ENTER STITCH STUDIO'
-                          : 'INITIATE STUDIO SESSION',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 2,
-                      ),
-                    ),
-                  ),
-                ),
-
-              const SizedBox(height: 16),
-              if (!_isStitchMode)
-                TextButton(
-                  onPressed: _showImageSourceOptions,
-                  child: Text(
-                    _imageBytes == null
-                        ? 'HOW TO CHOOSE THE BEST PHOTO'
-                        : 'CHANGE REFERENCE IMAGE',
-                    style: const TextStyle(
-                      color: Colors.white38,
-                      fontSize: 11,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
+                  );
+                },
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildStitchModePlaceholder(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFF141414),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.group_outlined,
+            color: const Color(0xFFD4AF37).withValues(alpha: 0.6),
+            size: 56,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'ADD PEOPLE IN STUDIO',
+            style: TextStyle(
+              color: Color(0xFFD4AF37),
+              letterSpacing: 2,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              'Tap below to enter the Studio, then add up to 5 different identity photos for your group.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white38,
+                fontSize: 11,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
