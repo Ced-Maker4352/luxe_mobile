@@ -1,6 +1,8 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../models/types.dart';
+import '../models/user_profile.dart';
+import '../services/auth_service.dart';
 
 class SessionProvider extends ChangeNotifier {
   PackageDetails? _selectedPackage;
@@ -150,5 +152,28 @@ class SessionProvider extends ChangeNotifier {
     _clothingReferenceBytes = null;
     _clothingReferenceName = null;
     notifyListeners();
+  }
+
+  // USER PROFILE & CREDITS
+  UserProfile? _userProfile;
+  UserProfile? get userProfile => _userProfile;
+
+  Future<void> fetchUserProfile() async {
+    final data = await AuthService().getUserProfile();
+    if (data != null) {
+      _userProfile = UserProfile.fromJson(data);
+      notifyListeners();
+    }
+  }
+
+  // Call this after successful generation to decrement locally or refresh
+  Future<void> decrementCredit(String type) async {
+    if (_userProfile == null) return;
+
+    // Call service to update DB
+    await AuthService().decrementUserCredit(type);
+
+    // Refresh local state to match server
+    fetchUserProfile();
   }
 }

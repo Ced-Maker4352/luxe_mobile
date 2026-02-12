@@ -127,4 +127,45 @@ class AuthService {
       return false; // Fail safe to not granting access
     }
   }
+
+  Future<void> decrementUserCredit(String type) async {
+    try {
+      final user = currentUser;
+      if (user == null) return;
+
+      // 1. Get current count
+      final data = await getUserProfile();
+      if (data == null) return;
+
+      final key = type == 'video' ? 'video_generations' : 'photo_generations';
+      int current = data[key] ?? 0;
+      if (current > 0) {
+        // 2. Decrement
+        await _supabase
+            .from('profiles')
+            .update({key: current - 1})
+            .eq('id', user.id);
+      }
+    } catch (e) {
+      debugPrint('Error decrementing credit: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>?> getUserProfile() async {
+    try {
+      final user = currentUser;
+      if (user == null) return null;
+
+      final data = await _supabase
+          .from('profiles')
+          .select()
+          .eq('id', user.id)
+          .maybeSingle();
+
+      return data;
+    } catch (e) {
+      debugPrint('Error fetching user profile: $e');
+      return null;
+    }
+  }
 }

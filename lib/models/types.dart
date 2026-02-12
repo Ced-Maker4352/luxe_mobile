@@ -6,12 +6,12 @@ enum PortraitPackage {
   CINEMATIC_NOIR,
   BIRTHDAY_LUXE,
   MOTION,
-  INDEPENDENT_ARTIST,
+  SOCIAL_QUICK,
+  CREATOR_PACK,
+  PROFESSIONAL_SHOOT,
+  AGENCY_MASTER,
   SNAPSHOT_DAILY,
   SNAPSHOT_STYLE,
-  STUDIO_PRO,
-  VISIONARY_CREATOR,
-  MASTER_PACKAGE,
   DIGITAL_NOMAD,
   CREATIVE_DIRECTOR,
   branding,
@@ -123,6 +123,7 @@ class PackageDetails {
   final String basePrompt;
   final String exampleImage;
   final List<StyleOption> styles;
+  final String buttonLabel;
 
   PackageDetails({
     required this.id,
@@ -136,6 +137,7 @@ class PackageDetails {
     required this.basePrompt,
     required this.exampleImage,
     required this.styles,
+    this.buttonLabel = 'SELECT PACKAGE',
   });
 }
 

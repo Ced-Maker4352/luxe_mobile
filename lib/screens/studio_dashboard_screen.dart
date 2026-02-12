@@ -98,7 +98,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       // Sync local gender with session
       _gender = session.soloGender;
 
+      // Fetch user profile for credits
+      session.fetchUserProfile();
+
       // Removed auto-generation to prevent wasting credits/resources.
+      // User must explicitly click GENERATE.
       // User must explicitly click GENERATE.
     });
   }
@@ -235,6 +239,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       }
       debugPrint('Studio: Generated with rig: ${session.selectedRig!.name}');
       debugPrint('Studio: API Response length: ${resultText.length}');
+
+      // Decrement credits
+      session.decrementCredit('image');
     } catch (e) {
       debugPrint("Generation failed: $e");
       if (mounted) {
@@ -371,6 +378,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         });
         _decodeFocusedImage();
       }
+
+      // Decrement credits (stitch counts as image)
+      session.decrementCredit('image');
     } catch (e) {
       debugPrint("Stitch failed: $e");
       if (mounted) {
@@ -675,6 +685,32 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     );
   }
 
+  Widget _buildCreditBadge(IconData icon, int count) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white10,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white24),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: const Color(0xFFD4AF37)),
+          const SizedBox(width: 4),
+          Text(
+            '$count',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildAppBar() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -704,7 +740,20 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(width: 20),
+          Consumer<SessionProvider>(
+            builder: (context, session, _) {
+              final p = session.userProfile?.photoGenerations ?? 0;
+              final v = session.userProfile?.videoGenerations ?? 0;
+              return Row(
+                children: [
+                  _buildCreditBadge(Icons.camera_alt, p),
+                  const SizedBox(width: 8),
+                  _buildCreditBadge(Icons.videocam, v),
+                ],
+              );
+            },
+          ),
+          const SizedBox(width: 8),
         ],
       ),
     );
@@ -3337,10 +3386,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildNavIcon(Icons.grid_view_rounded, 'GALLERY', true, () {}),
-          _buildNavIcon(Icons.layers_outlined, 'PORTFOLIO', false, () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Portfolio coming soon!')),
-            );
+          _buildNavIcon(Icons.diamond_outlined, 'BRAND', false, () {
+            Navigator.pushNamed(context, '/brand_studio');
           }),
           _buildNavIcon(Icons.shopping_bag_outlined, 'BOUTIQUE', false, () {
             Navigator.pushNamed(context, '/boutique');
@@ -3457,6 +3504,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       } else {
         throw Exception(videoUri);
       }
+
+      // Decrement credits
+      session.decrementCredit('video');
     } catch (e) {
       debugPrint("Video generation error: $e");
       if (mounted) {

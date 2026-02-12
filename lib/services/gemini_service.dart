@@ -689,4 +689,81 @@ DETAILS:
       return 'Error: Network request failed - $e';
     }
   }
+
+  // ═══════════════════════════════════════════════════════════
+  // BRANDING STATION (Restoration)
+  // ═══════════════════════════════════════════════════════════
+
+  Future<Map<String, dynamic>> generateBrandStrategy(String imageBase64) async {
+    if (_apiKey.isEmpty) return {};
+
+    final prompt =
+        "Analyze this portrait. Extract a luxury 5-color palette (hex codes) that complements the subject's skin tone and wardrobe. "
+        "Suggest 2 luxury fonts (Primary Display, Secondary Body). "
+        "Create a 3-word high-end personal branding slogan. "
+        "Identify the visual aesthetic (e.g., 'Minimalist Noir', 'Vibrant Opulence'). "
+        "Return ONLY raw JSON in this format: { \"colors\": [\"#hex\", ...], \"fonts\": {\"primary\": \"name\", \"secondary\": \"name\"}, \"slogan\": \"text\", \"aesthetic\": \"description\" }";
+
+    final parts = <Map<String, dynamic>>[];
+    parts.add(_getDataPart(imageBase64));
+    parts.add({'text': prompt});
+
+    final models = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+
+    for (final model in models) {
+      final txt = await _generateTextContent(model, [
+        {'parts': parts},
+      ]);
+      if (txt.isNotEmpty && !txt.startsWith('Error')) {
+        try {
+          final jsonStr = txt
+              .replaceAll('```json', '')
+              .replaceAll('```', '')
+              .trim();
+          return jsonDecode(jsonStr);
+        } catch (e) {
+          debugPrint('JSON Parse Error: $e');
+        }
+      }
+    }
+
+    // Fallback if parsing fails or all models fail
+    return {
+      "colors": ["#000000", "#FFFFFF", "#D4AF37", "#333333", "#808080"],
+      "fonts": {"primary": "Playfair Display", "secondary": "Inter"},
+      "slogan": "Defined By Excellence",
+      "aesthetic": "Timeless Luxury",
+    };
+  }
+
+  Future<String> generateBrandLogo(String stylePrompt, String brandName) async {
+    final nameInstruction = brandName.isNotEmpty
+        ? 'Incorporate the brand name "$brandName" elegantly into the design as a monogram, wordmark, or stylized letterform.'
+        : '';
+    final logoPrompt =
+        'Design a high-end, minimalist luxury vector logo mark. $stylePrompt. $nameInstruction '
+        'The design should feature a sleek black base refined with subtle iridescent accents (holographic silver, pearl, or faint prism gradients) that suggest a light-shifting metallic finish. '
+        'Pure white background. Sharp, geometric, scalable vector aesthetics. Corporate identity style.';
+
+    final parts = [
+      {'text': logoPrompt},
+    ];
+    final models = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
+
+    return _callGeminiWithFallback(models, parts);
+  }
+
+  Future<String> removeBackgroundForLogo(String imageBase64) async {
+    final prompt =
+        "Isolate the logo mark on a TRANSPARENT background. "
+        "Keep the logo colors valid. Remove only the white/solid background. "
+        "Output: PNG image with alpha channel.";
+
+    final parts = <Map<String, dynamic>>[];
+    parts.add(_getDataPart(imageBase64));
+    parts.add({'text': prompt});
+
+    final models = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
+    return _callGeminiWithFallback(models, parts);
+  }
 }

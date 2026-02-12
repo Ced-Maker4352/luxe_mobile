@@ -9,7 +9,6 @@ import '../providers/session_provider.dart';
 import 'access_granted_screen.dart';
 import 'package:provider/provider.dart';
 import '../widgets/hero_carousel.dart';
-import 'single_style_selection_screen.dart';
 
 class BoutiqueScreen extends StatefulWidget {
   const BoutiqueScreen({super.key});
@@ -48,6 +47,49 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
     PackageDetails pkg, {
     String? tierId,
   }) async {
+    // --- 1. UPGRADE TRIGGERS (AOV OPTIMIZATION) ---
+    if (tierId == null) {
+      if (pkg.id == PortraitPackage.SOCIAL_QUICK) {
+        final upgrade = await _showUpgradeModal(
+          title: "WAIT! UPGRADE & SAVE",
+          content:
+              "For just \$24 more, unlock 6x more images, commercial rights, and studio styles.",
+          confirmText: "YES, UPGRADE TO CREATOR (\$29)",
+          cancelText: "NO, I'LL STICK TO BASIC",
+          savings: "BEST VALUE",
+        );
+        if (upgrade) {
+          final creatorPkg = packages.firstWhere(
+            (p) => p.id == PortraitPackage.CREATOR_PACK,
+          );
+          if (mounted) {
+            setState(() => _selectedPackage = creatorPkg);
+            _handlePackageSelection(creatorPkg);
+          }
+          return;
+        }
+      } else if (pkg.id == PortraitPackage.CREATOR_PACK) {
+        final upgrade = await _showUpgradeModal(
+          title: "UNLOCK PROFESSIONAL STUDIO",
+          content:
+              "Upgrade to Professional for 4K exports, cinematic lighting, and 80 high-res photos.",
+          confirmText: "VIEW PROFESSIONAL SHOOT (\$99)",
+          cancelText: "CONTINUE WITH CREATOR",
+          savings: "MOST POPULAR",
+        );
+        if (upgrade) {
+          final proPkg = packages.firstWhere(
+            (p) => p.id == PortraitPackage.PROFESSIONAL_SHOOT,
+          );
+          if (mounted) {
+            setState(() => _selectedPackage = proPkg);
+            _handlePackageSelection(proPkg);
+          }
+          return;
+        }
+      }
+    }
+
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null || user.email == null) {
       if (mounted) {
@@ -65,7 +107,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
 
     // --- PROMO BYPASS LOGIC ---
     if (_bypassCodes.contains(promoCode)) {
-      debugPrint('Stripe: Bypass code detected: $promoCode. Granting access.');
+      debugPrint('Stripe: Bypass code detected: \$promoCode. Granting access.');
       // 1. Update Supabase Profile (Bypass)
       try {
         await Supabase.instance.client.from('profiles').upsert({
@@ -76,7 +118,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
           'updated_at': DateTime.now().toIso8601String(),
         });
       } catch (dbError) {
-        debugPrint('Error updating profile: $dbError');
+        debugPrint('Error updating profile: \$dbError');
       }
 
       // 2. Grant Access Directly
@@ -157,7 +199,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                   'updated_at': DateTime.now().toIso8601String(),
                 });
               } catch (dbError) {
-                debugPrint('Error updating profile: $dbError');
+                debugPrint('Error updating profile: \$dbError');
               }
 
               // 2. Grant Access
@@ -212,7 +254,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
             'updated_at': DateTime.now().toIso8601String(),
           });
         } catch (dbError) {
-          debugPrint('Error updating profile: $dbError');
+          debugPrint('Error updating profile: \$dbError');
           // We continue granting access since payment succeeded
         }
 
@@ -231,7 +273,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Payment failed: $e'),
+            content: Text('Payment failed: \$e'),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -266,12 +308,13 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withOpacity(0.4),
+                          Colors.black.withValues(alpha: 0.4),
                           Colors.transparent,
-                          Colors.black.withOpacity(0.6),
+                          Colors.black.withValues(alpha: 0.8),
                         ],
                       ),
                     ),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -294,14 +337,32 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                             ],
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        Text(
+                          "Your Vision. Professionally Realized.",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.95),
+                            fontSize: 16,
+                            letterSpacing: 1.2,
+                            fontWeight: FontWeight.w600,
+                            shadows: const [
+                              Shadow(
+                                blurRadius: 4.0,
+                                color: Colors.black,
+                                offset: Offset(1.0, 1.0),
+                              ),
+                            ],
+                          ),
+                        ),
                         const SizedBox(height: 8),
                         Text(
-                          "YOUR VISION, AMPLIFIED",
+                          "Upload once. Create unlimited campaigns.\nFrom social content to executive portraits.",
+                          textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
-                            fontSize: 14,
-                            letterSpacing: 3.0,
-                            fontWeight: FontWeight.w500,
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 12,
+                            height: 1.4,
                             shadows: const [
                               Shadow(
                                 blurRadius: 4.0,
@@ -324,63 +385,141 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: GridView.builder(
-                  physics: const NeverScrollableScrollPhysics(), // No scrolling
+                  physics: const NeverScrollableScrollPhysics(),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    childAspectRatio: 1.1,
+                    crossAxisCount: 2,
+                    childAspectRatio: 1.4,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
                   ),
                   itemCount: packages.length,
+                  itemCount: packages.length,
                   itemBuilder: (context, index) {
                     final pkg = packages[index];
                     final isSelected = pkg.id == _selectedPackage.id;
+                    final isPro = pkg.id == PortraitPackage.PROFESSIONAL_SHOOT;
+
+                    // AOV Highlight: Pro tier gets subtle glow and badge
                     return GestureDetector(
                       onTap: () => setState(() => _selectedPackage = pkg),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? const Color(0xFFD4AF37).withValues(alpha: 0.2)
-                              : Colors.transparent,
-                          border: Border.all(
-                            color: isSelected
-                                ? const Color(0xFFD4AF37)
-                                : const Color(
-                                    0xFFD4AF37,
-                                  ).withValues(alpha: 0.5),
-                            width: 1.5,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        alignment: Alignment.center,
-                        padding: const EdgeInsets.all(8),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              _getPackageIcon(pkg.id),
-                              color: const Color(0xFFD4AF37),
-                              size: 24,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              pkg.name
-                                  .replaceAll("The ", "")
-                                  .replaceAll("Package", "")
-                                  .trim()
-                                  .toUpperCase(),
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: Color(0xFFD4AF37),
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.0,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(
+                                      0xFFD4AF37,
+                                    ).withValues(alpha: 0.15)
+                                  : (isPro
+                                        ? const Color(
+                                            0xFFD4AF37,
+                                          ).withValues(alpha: 0.05)
+                                        : Colors.transparent),
+                              border: Border.all(
+                                color: isSelected
+                                    ? const Color(0xFFD4AF37)
+                                    : (isPro
+                                          ? const Color(
+                                              0xFFD4AF37,
+                                            ).withValues(alpha: 0.2)
+                                          : const Color(
+                                              0xFFD4AF37,
+                                            ).withValues(alpha: 0.1)),
+                                width: isSelected ? 2.0 : (isPro ? 1.5 : 0.5),
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: isPro && isSelected
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(
+                                          0xFFD4AF37,
+                                        ).withValues(alpha: 0.2),
+                                        blurRadius: 10,
+                                        spreadRadius: 2,
+                                      ),
+                                    ]
+                                  : null,
                             ),
-                          ],
-                        ),
+                            alignment: Alignment.center,
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  _getPackageIcon(pkg.id),
+                                  color: isSelected
+                                      ? const Color(0xFFD4AF37)
+                                      : (isPro
+                                            ? const Color(0xFFD4AF37)
+                                            : Colors.white54),
+                                  size: 28,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  pkg.name.toUpperCase(),
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? const Color(0xFFD4AF37)
+                                        : Colors.white70,
+                                    fontSize: 11,
+                                    fontWeight: isPro
+                                        ? FontWeight.w900
+                                        : FontWeight.bold,
+                                    letterSpacing: 1.0,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  pkg.price,
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // MOST POPULAR BADGE
+                          if (isPro)
+                            Positioned(
+                              top: -10,
+                              right: 0,
+                              left: 0,
+                              child: Center(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFD4AF37),
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Colors.black45,
+                                        blurRadius: 4,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Text(
+                                    "MOST POPULAR",
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     );
                   },
@@ -388,57 +527,41 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
               ),
             ),
 
-            // === SNAPSHOT OPTIONS SECTION (Centered Row) ===
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+            // === SUBSCRIPTION SECTION ===
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Column(
                 children: [
-                  _buildSnapshotCard(
-                    title: "DAILY SNAPSHOT",
-                    price: "\$0.99",
-                    icon: Icons.camera_alt_outlined,
-                    onTap: () {
-                      final snapshotPackage = packages.firstWhere(
-                        (p) => p.id == PortraitPackage.SNAPSHOT_DAILY,
-                      );
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => SingleStyleSelectionScreen(
-                            package: snapshotPackage,
-                          ),
-                        ),
-                      );
-                    },
+                  const Text(
+                    "STUDIO MEMBERSHIP",
+                    style: TextStyle(
+                      color: Colors.white54,
+                      fontSize: 10,
+                      letterSpacing: 1.5,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  const SizedBox(width: 12),
-                  _buildSnapshotCard(
-                    title: "STYLE REFRESH",
-                    price: "\$1.99",
-                    icon: Icons.auto_awesome_outlined,
-                    isPremium: true,
-                    onTap: () {
-                      final snapshotPackage = packages.firstWhere(
-                        (p) => p.id == PortraitPackage.SNAPSHOT_STYLE,
-                      );
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => SingleStyleSelectionScreen(
-                            package: snapshotPackage,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 12),
-                  _buildSnapshotCard(
-                    title: "BUDGET TIERS",
-                    price: "FROM \$3",
-                    icon: Icons.savings_outlined,
-                    onTap: _showBudgetTiersModal,
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      _buildSubscriptionButton(
+                        "STARTER",
+                        "\$19/mo",
+                        "sub_monthly_19",
+                      ),
+                      const SizedBox(width: 8),
+                      _buildSubscriptionButton(
+                        "PRO",
+                        "\$49/mo",
+                        "sub_monthly_49",
+                      ),
+                      const SizedBox(width: 8),
+                      _buildSubscriptionButton(
+                        "UNLIMITED",
+                        "\$99/mo",
+                        "sub_monthly_99",
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -450,91 +573,51 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
               flex: 3,
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
                 decoration: const BoxDecoration(
                   color: Color(0xFF141824),
                   borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 20,
+                      offset: Offset(0, -5),
+                    ),
+                  ],
                 ),
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Promo Code Panel
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black26,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: const Color(0xFFD4AF37).withOpacity(0.3),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _promoController,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                ),
-                                decoration: const InputDecoration(
-                                  border: InputBorder.none,
-                                  hintText: "ENTER PROMO CODE (e.g. LUXE100)",
-                                  hintStyle: TextStyle(
-                                    color: Colors.white24,
-                                    fontSize: 10,
-                                    letterSpacing: 1,
-                                  ),
-                                  icon: Icon(
-                                    Icons.confirmation_number_outlined,
-                                    color: Color(0xFFD4AF37),
-                                    size: 16,
-                                  ),
-                                ),
-                                onSubmitted: (_) =>
-                                    _handlePackageSelection(_selectedPackage),
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () =>
-                                  _handlePackageSelection(_selectedPackage),
-                              style: TextButton.styleFrom(
-                                foregroundColor: const Color(0xFFD4AF37),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                ),
-                              ),
-                              child: const Text(
-                                "APPLY",
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                       // Dynamic Image + Title Row
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              _selectedPackage.exampleImage,
-                              width: 70,
-                              height: 70,
-                              fit: BoxFit.cover,
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFFD4AF37,
+                                  ).withValues(alpha: 0.2),
+                                  blurRadius: 10,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                _selectedPackage.exampleImage,
+                                width: 80,
+                                height: 100,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 16),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -543,20 +626,27 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                                   _selectedPackage.name.toUpperCase(),
                                   style: const TextStyle(
                                     color: Color(0xFFD4AF37),
-                                    fontSize: 16,
+                                    fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 1.0,
                                   ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(height: 2),
+                                const SizedBox(height: 4),
                                 Text(
                                   _selectedPackage.price,
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 18,
+                                    fontSize: 24,
                                     fontWeight: FontWeight.w300,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _selectedPackage.description,
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                    height: 1.4,
                                   ),
                                 ),
                               ],
@@ -564,49 +654,143 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      // Description
-                      Text(
-                        _selectedPackage.description,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                          height: 1.3,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 20),
+
                       // Features
-                      ..._selectedPackage.features
-                          .take(2)
-                          .map(
-                            (f) => Padding(
-                              padding: const EdgeInsets.only(bottom: 6),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.check_circle_outline,
-                                    color: Color(0xFFD4AF37),
-                                    size: 14,
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _selectedPackage.features.map((f) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.white12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.check,
+                                  color: Color(0xFFD4AF37),
+                                  size: 12,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  f,
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
                                   ),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      f,
-                                      style: const TextStyle(
-                                        color: Colors.white60,
-                                        fontSize: 11,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+
+                      // Missing Features (AOV - Loss Aversion)
+                      if (_selectedPackage.id !=
+                              PortraitPackage.AGENCY_MASTER &&
+                          _selectedPackage.id !=
+                              PortraitPackage.PROFESSIONAL_SHOOT) ...[
+                        const SizedBox(height: 12),
+                        const Text(
+                          "MISSING IN THIS TIER:",
+                          style: TextStyle(
+                            color: Colors.white24,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children:
+                              [
+                                if (_selectedPackage.id ==
+                                        PortraitPackage.SOCIAL_QUICK ||
+                                    _selectedPackage.id ==
+                                        PortraitPackage.CREATOR_PACK)
+                                  "4K Export (Pro Only)",
+                                if (_selectedPackage.id ==
+                                        PortraitPackage.SOCIAL_QUICK ||
+                                    _selectedPackage.id ==
+                                        PortraitPackage.CREATOR_PACK)
+                                  "Studio Lighting (Pro Only)",
+                                if (_selectedPackage.id !=
+                                    PortraitPackage.AGENCY_MASTER)
+                                  "Group Mode (Agency Only)",
+                              ].map((f) {
+                                return Text(
+                                  "• \$f",
+                                  style: const TextStyle(
+                                    color: Colors.white24, // Grayed out
+                                    fontSize: 10,
                                   ),
-                                ],
-                              ),
+                                );
+                              }).toList(),
+                        ),
+                      ],
+
+                      // Price Anchoring Text
+                      if (_selectedPackage.id ==
+                          PortraitPackage.PROFESSIONAL_SHOOT) ...[
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(
+                              0xFFD4AF37,
+                            ).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: const Color(0xFFD4AF37).withOpacity(0.3),
                             ),
                           ),
-                      const SizedBox(height: 16),
+                          child: const Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                color: Color(0xFFD4AF37),
+                                size: 14,
+                              ),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  "Standard studio session value: \$500–\$1,200",
+                                  style: TextStyle(
+                                    color: Color(0xFFD4AF37),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      if (_selectedPackage.id ==
+                          PortraitPackage.AGENCY_MASTER) ...[
+                        const SizedBox(height: 16),
+                        const Text(
+                          "Equivalent to a multi-day studio production (\$5,000+ value)",
+                          style: TextStyle(
+                            color: Colors.white54,
+                            fontSize: 11,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: 24),
+
                       // Action Button
                       SizedBox(
                         width: double.infinity,
@@ -616,16 +800,19 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFD4AF37),
                             foregroundColor: Colors.black,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             elevation: 5,
+                            shadowColor: const Color(
+                              0xFFD4AF37,
+                            ).withValues(alpha: 0.4),
                           ),
                           child: _isProcessing
                               ? const SizedBox(
-                                  height: 18,
-                                  width: 18,
+                                  height: 20,
+                                  width: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     valueColor: AlwaysStoppedAnimation<Color>(
@@ -633,14 +820,41 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                                     ),
                                   ),
                                 )
-                              : const Text(
-                                  'SELECT COLLECTION',
-                                  style: TextStyle(
-                                    fontSize: 12,
+                              : Text(
+                                  _selectedPackage.buttonLabel,
+                                  style: const TextStyle(
+                                    fontSize: 14,
                                     fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.0,
+                                    letterSpacing: 1.5,
                                   ),
                                 ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+                      // Micro-copy Reassurance
+                      const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "No photographer. No studio rental. No reshoots.",
+                            style: TextStyle(
+                              color: Colors.white30,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 12),
+                      Center(
+                        child: Text(
+                          "SECURE PAYMENT VIA STRIPE",
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            fontSize: 10,
+                            letterSpacing: 1.0,
+                          ),
                         ),
                       ),
                     ],
@@ -654,77 +868,33 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
     );
   }
 
-  IconData _getPackageIcon(PortraitPackage id) {
-    switch (id) {
-      case PortraitPackage.INDEPENDENT_ARTIST:
-        return Icons.person;
-      case PortraitPackage.STUDIO_PRO:
-        return Icons.camera_alt;
-      case PortraitPackage.VISIONARY_CREATOR:
-        return Icons.visibility;
-      case PortraitPackage.MASTER_PACKAGE:
-        return Icons.diamond;
-      case PortraitPackage.DIGITAL_NOMAD:
-        return Icons.laptop_mac;
-      case PortraitPackage.CREATIVE_DIRECTOR:
-        return Icons.movie_creation;
-      default:
-        return Icons.star;
-    }
-  }
-
-  Widget _buildSnapshotCard({
-    required String title,
-    required String price,
-    required IconData icon,
-    bool isPremium = false,
-    required VoidCallback onTap,
-  }) {
-    return Flexible(
+  Widget _buildSubscriptionButton(String label, String price, String tierId) {
+    return Expanded(
       child: GestureDetector(
-        onTap: onTap,
+        onTap: () => _handlePackageSelection(_selectedPackage, tierId: tierId),
         child: Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isPremium
-                ? const Color(0xFFD4AF37).withValues(alpha: 0.1)
-                : Colors.white.withValues(alpha: 0.05),
-            border: Border.all(
-              color: isPremium
-                  ? const Color(0xFFD4AF37)
-                  : Colors.white.withValues(alpha: 0.1),
-            ),
-            borderRadius: BorderRadius.circular(12),
+            color: Colors.white.withValues(alpha: 0.05),
+            border: Border.all(color: Colors.white24),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                color: isPremium ? const Color(0xFFD4AF37) : Colors.white70,
-                size: 20,
-              ),
-              const SizedBox(height: 8),
               Text(
-                title,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: isPremium ? const Color(0xFFD4AF37) : Colors.white,
-                  fontSize: 8,
+                label,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 10,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.5,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text(
                 price,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: isPremium ? const Color(0xFFD4AF37) : Colors.white70,
+                style: const TextStyle(
+                  color: Color(0xFFD4AF37),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -736,98 +906,115 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
     );
   }
 
-  void _showBudgetTiersModal() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF141824),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "SELECT BUDGET TIER",
-              style: TextStyle(
-                fontFamily: 'Serif',
-                fontSize: 18,
-                color: Color(0xFFD4AF37),
-                letterSpacing: 1.0,
-              ),
-            ),
-            const SizedBox(height: 24),
-            ...budgetTiers.map(
-              (tier) => ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: tier.bestValue
-                        ? const Color(0xFFD4AF37).withValues(alpha: 0.2)
-                        : Colors.white.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    "\$${tier.amount}",
-                    style: TextStyle(
-                      color: tier.bestValue
-                          ? const Color(0xFFD4AF37)
-                          : Colors.white,
-                      fontWeight: FontWeight.bold,
+  IconData _getPackageIcon(PortraitPackage id) {
+    switch (id) {
+      case PortraitPackage.SOCIAL_QUICK:
+        return Icons.rocket_launch_outlined;
+      case PortraitPackage.CREATOR_PACK:
+        return Icons.camera_enhance_outlined;
+      case PortraitPackage.PROFESSIONAL_SHOOT:
+        return Icons.business_center_outlined;
+      case PortraitPackage.AGENCY_MASTER:
+        return Icons.diamond_outlined;
+      default:
+        return Icons.star_outline;
+    }
+  }
+
+  Future<bool> _showUpgradeModal({
+    required String title,
+    required String content,
+    required String confirmText,
+    required String cancelText,
+    required String savings,
+  }) async {
+    return await showModalBottomSheet<bool>(
+          context: context,
+          backgroundColor: const Color(0xFF141824),
+          isScrollControlled: true,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          builder: (context) => Container(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Badge
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD4AF37),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      savings,
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 10,
+                      ),
                     ),
                   ),
                 ),
-                title: Text(
-                  tier.label,
+                const SizedBox(height: 20),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: Colors.white,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  content,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white70,
                     fontSize: 14,
+                    height: 1.5,
                   ),
                 ),
-                subtitle: Text(
-                  tier.description,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5),
-                    fontSize: 12,
+                const SizedBox(height: 30),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFD4AF37),
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    confirmText,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.0,
+                    ),
                   ),
                 ),
-                trailing: tier.bestValue
-                    ? Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFD4AF37),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          "BEST VALUE",
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      )
-                    : null,
-                onTap: () {
-                  Navigator.pop(context);
-                  _handlePackageSelection(
-                    _selectedPackage,
-                    tierId: 'tier_${tier.amount}',
-                  );
-                },
-              ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text(
+                    cancelText,
+                    style: const TextStyle(color: Colors.white30),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
             ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
+          ),
+        ) ??
+        false;
   }
 }

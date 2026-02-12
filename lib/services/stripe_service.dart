@@ -90,30 +90,17 @@ class StripeService {
   static String? getPaymentLink(String packageId, {String? promoCode}) {
     // These match the test links in your web app's paymentLinks.ts
     const links = {
-      'INDEPENDENT_ARTIST':
-          'https://buy.stripe.com/test_28E5kv5eigiD04N0lW7N600',
-      'EXECUTIVE': 'https://buy.stripe.com/test_eVq5kv36ac2naJrfgQ7N601',
-      'BIRTHDAY_LUXE': 'https://buy.stripe.com/test_8x24gr2263vR04N9Ww7N602',
-      'CINEMATIC_NOIR': 'https://buy.stripe.com/test_5kQ9AL7mqc2n04N5Gg7N603',
-      'ENTERTAINER': 'https://buy.stripe.com/test_fZubIT0Y2eavaJrecM7N604',
-      'MOTION': 'https://buy.stripe.com/test_fZucMXfSW9Uf8Bj2u47N605',
-      // Mapped missing packages to existing test links for demo purposes
-      'SNAPSHOT_DAILY': 'https://buy.stripe.com/test_28E5kv5eigiD04N0lW7N600',
-      'SNAPSHOT_STYLE': 'https://buy.stripe.com/test_28E5kv5eigiD04N0lW7N600',
-      'STUDIO_PRO': 'https://buy.stripe.com/test_eVq5kv36ac2naJrfgQ7N601',
-      'VISIONARY_CREATOR':
+      'SOCIAL_QUICK': 'https://buy.stripe.com/test_28E5kv5eigiD04N0lW7N600',
+      'CREATOR_PACK': 'https://buy.stripe.com/test_eVq5kv36ac2naJrfgQ7N601',
+      'PROFESSIONAL_SHOOT':
           'https://buy.stripe.com/test_5kQ9AL7mqc2n04N5Gg7N603',
-      'MASTER_PACKAGE': 'https://buy.stripe.com/test_fZubIT0Y2eavaJrecM7N604',
-      'DIGITAL_NOMAD': 'https://buy.stripe.com/test_eVq5kv36ac2naJrfgQ7N601',
-      'CREATIVE_DIRECTOR':
-          'https://buy.stripe.com/test_fZucMXfSW9Uf8Bj2u47N605',
+      'AGENCY_MASTER': 'https://buy.stripe.com/test_fZubIT0Y2eavaJrecM7N604',
+      // Subscriptions
+      'sub_monthly_19': 'https://buy.stripe.com/test_28E5kv5eigiD04N0lW7N600',
+      'sub_monthly_49': 'https://buy.stripe.com/test_eVq5kv36ac2naJrfgQ7N601',
+      'sub_monthly_99': 'https://buy.stripe.com/test_5kQ9AL7mqc2n04N5Gg7N603',
+      // Legacy / Fallback
       'branding': 'https://buy.stripe.com/test_eVq5kv36ac2naJrfgQ7N601',
-      // Budget Tiers
-      'tier_3': 'https://buy.stripe.com/test_28E5kv5eigiD04N0lW7N600',
-      'tier_5': 'https://buy.stripe.com/test_eVq5kv36ac2naJrfgQ7N601',
-      'tier_10': 'https://buy.stripe.com/test_5kQ9AL7mqc2n04N5Gg7N603',
-      'tier_15': 'https://buy.stripe.com/test_fZubIT0Y2eavaJrecM7N604',
-      'tier_20': 'https://buy.stripe.com/test_fZucMXfSW9Uf8Bj2u47N605',
     };
 
     String? baseUrl = links[packageId];

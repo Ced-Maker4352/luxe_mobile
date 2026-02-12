@@ -1,4 +1,4 @@
-import '../models/types.dart';
+﻿import '../models/types.dart';
 
 class BackgroundPreset {
   final String id;
@@ -594,7 +594,7 @@ final List<PrintProduct> printProducts = [
   ),
   PrintProduct(
     id: 'fine-art-print',
-    name: "Hahnemühle Photo Rag",
+    name: "HahnemÃ¼hle Photo Rag",
     material: "308gsm Matte Cotton",
     price: 89.0,
     description:
@@ -611,7 +611,7 @@ final List<CameraRig> cameraRigs = [
     name: "Sony A7R V | G-Master Protocol",
     description:
         "Ultra-high 61MP resolution with surgical eye-autofocus. Perfect for crisp, clinical executive clarity.",
-    icon: "📸",
+    icon: "ðŸ“¸",
     opticProtocol:
         "SENSOR: 61.0MP Full-frame Exmor R BSI CMOS. LENS: Sony FE 85mm f/1.2 G-Master. OPTICS: Nano AR Coating II to eliminate flare. FOCUS: AI-driven real-time eye-tracking locked to the iris. RENDERING: Ultra-high micro-contrast, 10-bit 4:2:2 color depth, smooth G-Master bokeh fall-off, sharp texture reconstruction of skin pores and fabric weave.",
     specs: CameraRigSpecs(
@@ -625,7 +625,7 @@ final List<CameraRig> cameraRigs = [
     name: "Phase One XF | Medium Format Titan",
     description:
         "The peak of commercial photography. 150MP back for unparalleled depth and billboard-scale detail.",
-    icon: "💎",
+    icon: "ðŸ’Ž",
     opticProtocol:
         "SENSOR: IQ4 150MP Trichromatic Medium Format. LENS: Schneider Kreuznach 80mm f/2.8 Blue Ring. OPTICS: Leaf shutter synchronization for perfect strobe control. RENDERING: 16-bit linear color for perfect skin gradations, massive dynamic range, zero digital noise, organic highlight roll-off, physically accurate depth-of-field.",
     specs: CameraRigSpecs(
@@ -639,7 +639,7 @@ final List<CameraRig> cameraRigs = [
     name: "RED Komodo-X | Cinematic Narrative",
     description:
         "Hollywood motion-picture grade aesthetics. Portraits that feel like a high-budget film frame.",
-    icon: "🎥",
+    icon: "ðŸŽ¥",
     opticProtocol:
         "SENSOR: 6K S35 Global Shutter. LENS: Cooke Panchro/i Classic Prime (i Technology). OPTICS: Anamorphic-style oval bokeh, subtle highlight bloom. RENDERING: Cinematic film-stock grain, IPP2 color pipeline, soft and naturalistic skin-tone science, Hollywood 'glow' in the highlights, dramatic cinematic contrast.",
     specs: CameraRigSpecs(
@@ -653,7 +653,7 @@ final List<CameraRig> cameraRigs = [
     name: "Fujifilm GFX 100II | Analog Heritage",
     description:
         "Large format sensor depth meets legendary film simulations. The choice for a soulful, organic look.",
-    icon: "🎞️",
+    icon: "ðŸŽžï¸",
     opticProtocol:
         "SENSOR: 102MP High-Speed Large Format. LENS: Fujinon GF 110mm f/2 R LM WR. OPTICS: High-precision weather-sealed glass. RENDERING: Provia/Standard film simulation base, incredible 3D subject separation, buttery smooth tonal transitions, rich deep shadows, textured organic feel without artificial sharpening.",
     specs: CameraRigSpecs(
@@ -666,277 +666,133 @@ final List<CameraRig> cameraRigs = [
 
 final List<PackageDetails> packages = [
   PackageDetails(
-    id: PortraitPackage.INDEPENDENT_ARTIST,
-    name: "Independent Artist",
-    price: "\$79",
-    payAsYouGoPrice: "\$5.00",
+    id: PortraitPackage.CREATOR_PACK,
+    name: "The Creator Pack",
+    price: "\$29",
+    payAsYouGoPrice: "\$29.00",
     category: 'premium',
-    assetCount: 5,
-    description:
-        "Raw, authentic aesthetic for musicians, painters, and creators.",
+    assetCount: 30,
+    description: "Ideal for influencers and personal brands needing variety.",
     features: [
-      "5 Portfolio Assets",
-      "Natural Light Simulation",
-      "Social Media Crops",
+      "30 High-Res Photos",
+      "Commercial Rights",
+      "3 Locations",
+      "Social Media Optimization",
     ],
-    exampleImage: "assets/images/independent_artist.jpg",
-    basePrompt:
-        "IDENTITY INTEGRITY: 1:1 facial identity. COMPOSITION: Candid, artistic portrait.",
-    styles: [
-      StyleOption(
-        id: "artist_studio",
-        name: "The Loft Studio",
-        description: "Natural north-facing window light.",
-        icon: "🎨",
-        image:
-            "https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&q=80&w=400",
-        promptAddition:
-            "BACKGROUND: Blurred paint canvases. LIGHTING: Soft, diffused daylight.",
-      ),
-    ],
-  ),
-  PackageDetails(
-    id: PortraitPackage.STUDIO_PRO,
-    name: "Studio Pro",
-    price: "\$149",
-    payAsYouGoPrice: "\$7.00",
-    category: 'premium',
-    assetCount: 10,
-    description: "Polished, high-fidelity studio portraits for professionals.",
-    features: ["10 Studio Assets", "Advanced Lighting", "Commercial Usage"],
     exampleImage:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=800&h=1000",
+        "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=800&h=1000",
     basePrompt:
         "IDENTITY INTEGRITY: 1:1 facial identity. COMPOSITION: Professional studio portrait.",
+    buttonLabel: "UPGRADE YOUR LOOK",
     styles: [
       StyleOption(
-        id: "studio_clean",
-        name: "Clean Studio",
-        description: "Crisp, white background professional look.",
+        id: "creator_studio",
+        name: "Modern Studio",
+        description: "Polished and professional.",
         icon: "📸",
         image:
-            "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400",
-        promptAddition:
-            "BACKGROUND: Pure white cyclorama. LIGHTING: Butterfly lighting.",
+            "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=400",
+        promptAddition: "LIGHTING: Studio strobe. BACKGROUND: Grey seamless.",
       ),
     ],
   ),
   PackageDetails(
-    id: PortraitPackage.VISIONARY_CREATOR,
-    name: "Visionary Creator",
-    price: "\$199",
-    payAsYouGoPrice: "\$9.00",
-    category: 'premium',
-    assetCount: 12,
-    description: "Avant-garde styles for boundary-pushing personal brands.",
+    id: PortraitPackage.PROFESSIONAL_SHOOT,
+    name: "Professional Shoot",
+    price: "\$99",
+    payAsYouGoPrice: "\$99.00",
+    category: 'business',
+    assetCount: 80,
+    description:
+        "Replacing traditional photography. The complete studio experience.",
     features: [
-      "12 Creative Assets",
-      "Cinematic Color Grading",
-      "Artistic Direction",
+      "80 Pro-Grade Photos",
+      "4K Export Quality",
+      "Studio Lighting (Cinematic)",
+      "Priority Processing",
+      "Commercial License Included",
+      "Value: \$800+",
     ],
     exampleImage:
         "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=800&h=1000",
     basePrompt:
-        "IDENTITY INTEGRITY: 1:1 facial identity. COMPOSITION: Artistic, moody portrait.",
+        "IDENTITY INTEGRITY: 1:1 facial identity. COMPOSITION: High-end editorial.",
+    buttonLabel: "GET PROFESSIONAL RESULTS",
     styles: [
       StyleOption(
-        id: "vis_neon",
-        name: "Neon Noir",
-        description: "Blade Runner style colors.",
-        icon: "🌃",
+        id: "pro_executive",
+        name: "Executive",
+        description: "Leadership presence.",
+        icon: "💼",
         image:
-            "https://images.unsplash.com/photo-1581337204873-ef36aa186caa?auto=format&fit=crop&q=80&w=400",
-        promptAddition:
-            "LIGHTING: Cyan and Magenta gels. BACKGROUND: Dark rainy street.",
+            "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400",
+        promptAddition: "LIGHTING: Window light. BACKGROUND: Modern office.",
       ),
     ],
   ),
   PackageDetails(
-    id: PortraitPackage.MASTER_PACKAGE,
-    name: "Master Package",
+    id: PortraitPackage.AGENCY_MASTER,
+    name: "Agency / Master",
     price: "\$299",
-    payAsYouGoPrice: "\$12.00",
-    category: 'premium',
-    assetCount: 20,
-    description: "The complete collection. Every style, maximum resolution.",
-    features: ["20 Premium Assets", "All Style Access", "Priority Processing"],
+    payAsYouGoPrice: "\$299.00",
+    category: 'elite',
+    assetCount: 200,
+    description: "For teams, agencies, and high-volume professionals.",
+    features: [
+      "200 Master Assets",
+      "Identity Lock™ (Consistency)",
+      "Group Mode (Multi-Person)",
+      "Corporate Team Generator",
+      "White-Label Resale Rights",
+    ],
     exampleImage:
         "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=800&h=1000",
     basePrompt:
-        "IDENTITY INTEGRITY: 1:1 facial identity. COMPOSITION: High-end editorial.",
+        "IDENTITY INTEGRITY: 1:1 facial identity. COMPOSITION: Masterpiece quality portrait.",
+    buttonLabel: "SCALE YOUR BRAND",
     styles: [
       StyleOption(
-        id: "master_editorial",
-        name: "Vogue Cover",
-        description: "High-fashion magazine aesthetic.",
-        icon: "📰",
+        id: "master_luxury",
+        name: "Luxury Lifestyle",
+        description: "Peak aspiration.",
+        icon: "💎",
         image:
-            "https://images.unsplash.com/photo-1534030347209-7147fd69a3f2?auto=format&fit=crop&q=80&w=400",
-        promptAddition: "LIGHTING: Large softbox. BACKGROUND: Painted canvas.",
+            "https://images.unsplash.com/photo-1566492031773-4f4e44671857?auto=format&fit=crop&q=80&w=400",
+        promptAddition: "LIGHTING: Golden hour. BACKGROUND: Private estate.",
       ),
     ],
   ),
   PackageDetails(
-    id: PortraitPackage.DIGITAL_NOMAD,
-    name: "Digital Nomad",
-    price: "\$129",
+    id: PortraitPackage.SOCIAL_QUICK,
+    name: "Social Quick",
+    price: "\$5",
     payAsYouGoPrice: "\$5.00",
-    category: 'premium',
-    assetCount: 8,
-    description: "Lifestyle photography set in iconic global destinations.",
-    features: ["8 Lifestyle Assets", "Global Locations", "Natural Lighting"],
-    exampleImage:
-        "https://images.unsplash.com/photo-1528698827591-e19ccd7bc23d?auto=format&fit=crop&q=80&w=800&h=1000",
+    category: 'standard',
+    assetCount: 5,
+    description: "Perfect for profile updates and fast content refreshes.",
+    features: [
+      "5 HD images",
+      "1 style category",
+      "2 lighting variations",
+      "1 aspect ratio",
+      "24-hour storage",
+      "No watermark",
+    ],
+    exampleImage: "assets/images/independent_artist.jpg",
     basePrompt:
-        "IDENTITY INTEGRITY: 1:1 facial identity. COMPOSITION: Environmental portrait.",
+        "IDENTITY INTEGRITY: 1:1 facial identity. COMPOSITION: Candid, clear social media portrait.",
+    buttonLabel: "TRY IT OUT",
     styles: [
       StyleOption(
-        id: "nomad_bali",
-        name: "Bali Villa",
-        description: "Tropical workspace vibe.",
-        icon: "🌴",
+        id: "social_clean",
+        name: "Clean Profile",
+        description: "Crisp and engaging.",
+        icon: "✨",
         image:
-            "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&q=80&w=400",
+            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400",
         promptAddition:
-            "BACKGROUND: Lush tropical plants, open air villa. LIGHTING: Natural diffusing sunlight.",
+            "LIGHTING: Natural soft light. BACKGROUND: Blurred city cafe.",
       ),
     ],
-  ),
-  PackageDetails(
-    id: PortraitPackage.CREATIVE_DIRECTOR,
-    name: "Creative Director",
-    price: "\$249",
-    payAsYouGoPrice: "\$15.00",
-    category: 'premium',
-    assetCount: 15,
-    description: "Sophisticated, high-concept imagery for industry leaders.",
-    features: ["15 Executive Assets", "Minimalist Aesthetics", "Brand-Aligned"],
-    exampleImage:
-        "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=800&h=1000",
-    basePrompt:
-        "IDENTITY INTEGRITY: 1:1 facial identity. COMPOSITION: Modern architecture backdrop.",
-    styles: [
-      StyleOption(
-        id: "cd_minimal",
-        name: "Architectural",
-        description: "Clean lines and modern spaces.",
-        icon: "building",
-        image:
-            "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=400",
-        promptAddition:
-            "BACKGROUND: Concrete and glass architecture. LIGHTING: Sharp shadows, high contrast.",
-      ),
-    ],
-  ),
-  PackageDetails(
-    id: PortraitPackage.SNAPSHOT_DAILY,
-    name: "Express Daily Snapshot",
-    price: "\$0.99",
-    payAsYouGoPrice: "\$0.99",
-    category: 'snapshot',
-    assetCount: 1,
-    description:
-        "One high-fidelity AI portrait. Fast, simple, and perfect for a daily refresh.",
-    features: ["1 Master Shot", "Standard Rig", "Auto-Style Protocol"],
-    exampleImage:
-        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=800&h=1000",
-    basePrompt:
-        "IDENTITY INTEGRITY: 1:1 facial accuracy. COMPOSITION: Professional headshot. LIGHTING: Soft studio light. TEXTURE: Realistic skin details.",
-    styles: [
-      StyleOption(
-        id: "daily_clean",
-        name: "Clean Studio",
-        description: "Pure, neutral studio look.",
-        icon: "⚪",
-        image:
-            "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400",
-        promptAddition:
-            "BACKGROUND: Minimalist grey studio. LIGHTING: Bright, even butterfly lighting.",
-      ),
-    ],
-  ),
-  PackageDetails(
-    id: PortraitPackage.SNAPSHOT_STYLE,
-    name: "Style Refresh Mini",
-    price: "\$1.99",
-    payAsYouGoPrice: "\$1.99",
-    category: 'snapshot',
-    assetCount: 1,
-    description:
-        "One premium stylized generation. Cinematic quality for an entry-level price.",
-    features: ["1 Stylized Shot", "Cinematic Rig", "Custom Style Target"],
-    exampleImage:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=800&h=1000",
-    basePrompt:
-        "IDENTITY INTEGRITY: 1:1 facial accuracy. COMPOSITION: Cinematic portrait. TEXTURE: Film-grade grain and depth.",
-    styles: [
-      StyleOption(
-        id: "style_film",
-        name: "35mm Film",
-        description: "Classic analog aesthetic.",
-        icon: "🎞️",
-        image:
-            "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=400",
-        promptAddition:
-            "BACKGROUND: Out of focus urban lights. LIGHTING: Natural light with subtle halation. MOOD: Moody, organic.",
-      ),
-    ],
-  ),
-];
-
-class BudgetTier {
-  final int amount;
-  final int shots;
-  final int videos;
-  final String label;
-  final String description;
-  final bool bestValue;
-
-  BudgetTier({
-    required this.amount,
-    required this.shots,
-    required this.videos,
-    required this.label,
-    required this.description,
-    this.bestValue = false,
-  });
-}
-
-final List<BudgetTier> budgetTiers = [
-  BudgetTier(
-    amount: 3,
-    shots: 3,
-    videos: 1,
-    label: '\$3 Starter',
-    description: '3 Snapshots + 1 Video',
-  ),
-  BudgetTier(
-    amount: 5,
-    shots: 6,
-    videos: 2,
-    label: '\$5 Basic',
-    description: '6 Snapshots + 2 Videos',
-  ),
-  BudgetTier(
-    amount: 10,
-    shots: 13,
-    videos: 5,
-    label: '\$10 Pro',
-    description: '13 Snapshots + 5 Videos',
-  ),
-  BudgetTier(
-    amount: 15,
-    shots: 20,
-    videos: 10,
-    label: '\$15 Studio',
-    description: '20 Snapshots + 10 Videos',
-  ),
-  BudgetTier(
-    amount: 20,
-    shots: 30,
-    videos: 15,
-    label: '\$20 Elite',
-    description: '30 Snapshots + 15 Videos',
-    bestValue: true,
   ),
 ];

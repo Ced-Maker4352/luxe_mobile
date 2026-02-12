@@ -1,0 +1,491 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
+import '../providers/session_provider.dart';
+import '../services/gemini_service.dart';
+
+class BrandStudioScreen extends StatefulWidget {
+  const BrandStudioScreen({super.key});
+
+  @override
+  State<BrandStudioScreen> createState() => _BrandStudioScreenState();
+}
+
+class _BrandStudioScreenState extends State<BrandStudioScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  // Strategy State
+  Map<String, dynamic>? _brandStrategy;
+  bool _isLoadingStrategy = false;
+
+  // Logo State
+  final TextEditingController _brandNameController = TextEditingController();
+  final TextEditingController _logoStyleController = TextEditingController();
+  String? _vectorLogoImage; // Simulation or same image
+  bool _isGeneratingLogo = false;
+
+  // Assets State (Simple list of last generated)
+  List<String> _logoHistory = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _brandNameController.dispose();
+    _logoStyleController.dispose();
+    super.dispose();
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // ACTIONS
+  // ═══════════════════════════════════════════════════════════
+
+  Future<void> _generateStrategy() async {
+    final session = context.read<SessionProvider>();
+    if (!session.hasUploadedImage) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please upload a portrait in Studio first.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoadingStrategy = true);
+    try {
+      final service = GeminiService();
+      final base64Image = base64Encode(session.uploadedImageBytes!);
+      final strategy = await service.generateBrandStrategy(base64Image);
+      setState(() {
+        _brandStrategy = strategy;
+      });
+      // Pre-fill logo prompt
+      if (strategy.containsKey('aesthetic')) {
+        _logoStyleController.text = strategy['aesthetic'];
+      }
+      if (strategy.containsKey('slogan')) {
+        // Maybe use slogan?
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Strategy failed: $e')));
+    } finally {
+      setState(() => _isLoadingStrategy = false);
+    }
+  }
+
+  Future<void> _generateLogo() async {
+    if (_logoStyleController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please describe the logo style.')),
+      );
+      return;
+    }
+
+    // Check credits? (Optional, implementing free for now as restoration)
+
+    setState(() => _isGeneratingLogo = true);
+    try {
+      final service = GeminiService();
+      final logo = await service.generateBrandLogo(
+        _logoStyleController.text,
+        _brandNameController.text,
+      );
+
+      if (logo.startsWith('Error')) throw Exception(logo);
+
+      setState(() {
+        _logoHistory.insert(0, logo);
+        _tabController.animateTo(2); // Go to Assets/Result
+      });
+
+      // Auto-generate Clearback version
+      _generateClearback(logo);
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Logo generation failed: $e')));
+    } finally {
+      setState(() => _isGeneratingLogo = false);
+    }
+  }
+
+  Future<void> _generateClearback(String logoImage) async {
+    try {
+      final service = GeminiService();
+      final clearback = await service.removeBackgroundForLogo(logoImage);
+      if (!clearback.startsWith('Error')) {
+        setState(() {
+          _vectorLogoImage = clearback;
+          // In a real app we might store this associated with the original
+          // For now, adding to history if distinct
+          _logoHistory.insert(0, clearback);
+        });
+      }
+    } catch (e) {
+      debugPrint("Clearback failed: $e");
+    }
+  }
+
+  Future<void> _downloadImage(String imageUrl) async {
+    try {
+      final bytes = base64Decode(imageUrl.split(',')[1]);
+      final result = await ImageGallerySaver.saveImage(bytes);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Saved: $result')));
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Download failed: $e')));
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // UI BUILDERS
+  // ═══════════════════════════════════════════════════════════
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0A0A),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'BRAND STUDIO',
+          style: TextStyle(
+            color: Colors.white,
+            letterSpacing: 3,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: const Color(0xFFD4AF37),
+          labelColor: const Color(0xFFD4AF37),
+          unselectedLabelColor: Colors.white38,
+          labelStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1,
+          ),
+          tabs: const [
+            Tab(text: 'STRATEGY'),
+            Tab(text: 'LOGO LAB'),
+            Tab(text: 'ASSETS'),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [_buildStrategyTab(), _buildLogoTab(), _buildAssetsTab()],
+      ),
+    );
+  }
+
+  Widget _buildStrategyTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'IDENTITY ARCHITECT',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontFamily: 'Serif',
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'AI-powered brand analysis based on your portrait style.',
+            style: TextStyle(color: Colors.white54, fontSize: 12),
+          ),
+          const SizedBox(height: 24),
+
+          if (_isLoadingStrategy)
+            const Center(
+              child: CircularProgressIndicator(color: Color(0xFFD4AF37)),
+            )
+          else if (_brandStrategy != null) ...[
+            _buildInfoCard('AESTHETIC', _brandStrategy!['aesthetic']),
+            const SizedBox(height: 12),
+            _buildInfoCard('SLOGAN', _brandStrategy!['slogan']),
+            const SizedBox(height: 12),
+            _buildColorsPreview(_brandStrategy!['colors']),
+            const SizedBox(height: 12),
+            _buildInfoCard(
+              'FONTS',
+              "Primary: ${_brandStrategy!['fonts']['primary']}\nSecondary: ${_brandStrategy!['fonts']['secondary']}",
+            ),
+          ] else
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white12),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  const Icon(Icons.psychology, color: Colors.white24, size: 48),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Analyze your vibe',
+                    style: TextStyle(color: Colors.white54),
+                  ),
+                ],
+              ),
+            ),
+
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: _generateStrategy,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD4AF37),
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+            child: const Text(
+              'GENERATE BRAND STRATEGY',
+              style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLogoTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'LOGO CREATION',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontFamily: 'Serif',
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          TextField(
+            controller: _brandNameController,
+            style: const TextStyle(color: Colors.white),
+            decoration: const InputDecoration(
+              labelText: 'BRAND NAME',
+              labelStyle: TextStyle(color: Colors.white54),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.white24),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFFD4AF37)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _logoStyleController,
+            maxLines: 3,
+            style: const TextStyle(color: Colors.white),
+            decoration: const InputDecoration(
+              labelText: 'VISUAL STYLE / PROMPT',
+              hintText:
+                  'e.g. Minimalist monogram, intertwining letters, gold foil texture...',
+              hintStyle: TextStyle(color: Colors.white12),
+              labelStyle: TextStyle(color: Colors.white54),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.white24),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Color(0xFFD4AF37)),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 32),
+          if (_isGeneratingLogo)
+            const Center(
+              child: CircularProgressIndicator(color: Color(0xFFD4AF37)),
+            )
+          else
+            ElevatedButton(
+              onPressed: _generateLogo,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD4AF37),
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              child: const Text(
+                'CREATE LOGO',
+                style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAssetsTab() {
+    if (_logoHistory.isEmpty) {
+      return const Center(
+        child: Text(
+          'No assets yet.\nCreate a logo to get started.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white38),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(24),
+      itemCount: _logoHistory.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 24),
+      itemBuilder: (context, index) {
+        final image = _logoHistory[index];
+        final isVectorLike =
+            image == _vectorLogoImage; // Identify clearback vs original
+
+        // Detect if it is clearback by assuming odd index or matching reference
+        // A simple heuristic:
+        final label = isVectorLike ? 'VECTOR / CLEARBACK' : 'ORIGINAL CONCEPTS';
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'ASSET ${index + 1} • $label',
+              style: const TextStyle(
+                color: Colors.white54,
+                fontSize: 10,
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              height: 300,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white, // White bg to see logo clearly
+                borderRadius: BorderRadius.circular(12),
+                image: DecorationImage(
+                  image: MemoryImage(base64Decode(image.split(',')[1])),
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.download, size: 16),
+                    label: const Text('PNG (HD)'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white24),
+                    ),
+                    onPressed: () => _downloadImage(image),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.code, size: 16),
+                    label: const Text('VECTOR (SVG)'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFD4AF37),
+                      side: const BorderSide(color: Color(0xFFD4AF37)),
+                    ),
+                    onPressed: () {
+                      // Simulate vector download (user explicit request)
+                      // For now downloading PNG but naming it vector-like/high-res
+                      _downloadImage(image);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Vector format simulated (Hi-Res PNG saved). True SVG conversion requires external tool.',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildInfoCard(String label, String value) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white10,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFFD4AF37),
+              fontSize: 10,
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontFamily: 'Serif',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildColorsPreview(List<dynamic> colors) {
+    return Container(
+      height: 60,
+      child: Row(
+        children: colors.map<Widget>((c) {
+          final color = _parseColor(c.toString());
+          return Expanded(child: Container(color: color));
+        }).toList(),
+      ),
+    );
+  }
+
+  Color _parseColor(String hex) {
+    try {
+      return Color(int.parse(hex.replaceFirst('#', '0xFF')));
+    } catch (_) {
+      return Colors.grey;
+    }
+  }
+}

@@ -11,6 +11,7 @@ import 'services/stripe_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/auth_gate.dart';
 import 'screens/login_screen.dart';
+import 'screens/brand_studio_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,6 +50,7 @@ class MainApp extends StatelessWidget {
         '/camera': (context) => const CameraSelectionScreen(),
         '/identity': (context) => const IdentityReferenceScreen(),
         '/studio': (context) => const StudioDashboardScreen(),
+        '/brand_studio': (context) => const BrandStudioScreen(),
         '/auth': (context) => const AuthGate(),
         '/login': (context) => const LoginScreen(),
       },
