@@ -595,17 +595,6 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     );
   }
 
-  Future<void> _generateCinematicVideo(
-    SessionProvider session,
-    GenerationResult result,
-  ) async {
-    // Placeholder for video generation logic
-    debugPrint('Generating cinematic video for result: ${result.id}');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Video generation not yet implemented.')),
-    );
-  }
-
   // Helper: build a color filter matrix from brightness/contrast/saturation
   ColorFilter _buildRetouchFilter(
     double brightness,
@@ -3404,7 +3393,6 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       final bytes = await image.readAsBytes();
       session.uploadClothingReference(bytes, image.name);
     }
-  }
   }
 
   Future<void> _generateCinematicVideo(
