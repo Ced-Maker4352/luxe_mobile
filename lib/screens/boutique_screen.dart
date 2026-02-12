@@ -24,6 +24,14 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
   bool _isProcessing = false;
   final TextEditingController _promoController = TextEditingController();
 
+  // 100% Discount / Admin Bypass Codes
+  final List<String> _bypassCodes = [
+    'LUXEFREE',
+    'CCDN_APPS',
+    'LUXE_ADMIN_FREE',
+    'LUXE100',
+  ];
+
   @override
   void dispose() {
     _promoController.dispose();
@@ -50,10 +58,43 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
       return;
     }
 
-    final promoCode = _promoController.text.trim();
+    final promoCode = _promoController.text.trim().toUpperCase();
     final paymentTargetId = tierId ?? pkg.id.name;
 
     setState(() => _isProcessing = true);
+
+    // --- PROMO BYPASS LOGIC ---
+    if (_bypassCodes.contains(promoCode)) {
+      debugPrint('Stripe: Bypass code detected: $promoCode. Granting access.');
+      // 1. Update Supabase Profile (Bypass)
+      try {
+        await Supabase.instance.client.from('profiles').upsert({
+          'id': user.id,
+          'email': user.email,
+          'is_subscribed': true,
+          'subscription_tier': paymentTargetId,
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+      } catch (dbError) {
+        debugPrint('Error updating profile: $dbError');
+      }
+
+      // 2. Grant Access Directly
+      if (mounted) {
+        final session = Provider.of<SessionProvider>(context, listen: false);
+        session.selectPackage(pkg);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                AccessGrantedScreen(package: pkg, isPromoCode: true),
+          ),
+        );
+      }
+      setState(() => _isProcessing = false);
+      return;
+    }
+
     if (kIsWeb) {
       final link = StripeService.getPaymentLink(
         paymentTargetId,
@@ -433,26 +474,52 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                             color: const Color(0xFFD4AF37).withOpacity(0.3),
                           ),
                         ),
-                        child: TextField(
-                          controller: _promoController,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                          ),
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            hintText: "ENTER PROMO CODE (e.g. LUXE100)",
-                            hintStyle: TextStyle(
-                              color: Colors.white24,
-                              fontSize: 10,
-                              letterSpacing: 1,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _promoController,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                ),
+                                decoration: const InputDecoration(
+                                  border: InputBorder.none,
+                                  hintText: "ENTER PROMO CODE (e.g. LUXE100)",
+                                  hintStyle: TextStyle(
+                                    color: Colors.white24,
+                                    fontSize: 10,
+                                    letterSpacing: 1,
+                                  ),
+                                  icon: Icon(
+                                    Icons.confirmation_number_outlined,
+                                    color: Color(0xFFD4AF37),
+                                    size: 16,
+                                  ),
+                                ),
+                                onSubmitted: (_) =>
+                                    _handlePackageSelection(_selectedPackage),
+                              ),
                             ),
-                            icon: Icon(
-                              Icons.confirmation_number_outlined,
-                              color: Color(0xFFD4AF37),
-                              size: 16,
+                            TextButton(
+                              onPressed: () =>
+                                  _handlePackageSelection(_selectedPackage),
+                              style: TextButton.styleFrom(
+                                foregroundColor: const Color(0xFFD4AF37),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
+                              ),
+                              child: const Text(
+                                "APPLY",
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1,
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
                       // Dynamic Image + Title Row
