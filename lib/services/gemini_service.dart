@@ -612,4 +612,81 @@ DETAILS:
 
     return _callGeminiWithFallback(models, parts);
   }
+  // ═══════════════════════════════════════════════════════════
+  // VIDEO GENERATION (Veo Protocol)
+  // ═══════════════════════════════════════════════════════════
+
+  Future<String> generateCinematicVideo(
+    String imageBase64,
+    String prompt,
+    String opticProtocol,
+  ) async {
+    if (_apiKey.isEmpty) return 'Error: API Key missing';
+
+    // Using the generateContent endpoint for Veo (mapped to LRO internally by some gateways, or sync)
+    // Note: If Veo requires specific endpoint, we use :generateContent with specific config.
+    // However, the Node SDK uses :generateVideos. We'll try a flexible approach with :generateContent first.
+    // If that fails, we might need a dedicated endpoint.
+    final url = Uri.parse(
+      'https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-fast-generate-preview:generateContent?key=$_apiKey',
+    );
+
+    final finalVideoPrompt =
+        "$prompt. Maintain the look of: $opticProtocol. Motion: subtle, elegant cinematic dolly-in. Ultra-realistic skin rendering, 1080p.";
+
+    final parts = <Map<String, dynamic>>[];
+    parts.add(_getDataPart(imageBase64));
+    parts.add({'text': finalVideoPrompt});
+
+    final body = {
+      'contents': [
+        {'parts': parts},
+      ],
+      'generationConfig': {
+        'responseModalities': ['VIDEO'], // Request Video output
+      },
+    };
+
+    try {
+      debugPrint('GeminiService: Requesting Cinematic Video...');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+
+      debugPrint('GeminiService Video Response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // Check for immediate content (Video URI in inlineData or File URI)
+        if (data is Map && data.containsKey('candidates')) {
+          final candidates = data['candidates'] as List;
+          if (candidates.isNotEmpty) {
+            final parts = candidates[0]['content']['parts'] as List;
+            for (final part in parts) {
+              // Check for fileUri or inlineData with video mime
+              if (part.containsKey('fileData')) {
+                return part['fileData']['fileUri'];
+              }
+              if (part.containsKey('inlineData')) {
+                return 'data:${part['inlineData']['mimeType']};base64,${part['inlineData']['data']}';
+              }
+              if (part.containsKey('videoMetadata')) {
+                // Sometimes returned metadata has the URI
+                return part['videoMetadata']['videoUri'] ?? '';
+              }
+            }
+          }
+        }
+        return 'Error: No video data found in response.';
+      } else {
+        debugPrint('Gemini API Error (Video): ${response.body}');
+        return 'Error: API returned ${response.statusCode}';
+      }
+    } catch (e) {
+      debugPrint('Gemini Video Error: $e');
+      return 'Error: Network request failed - $e';
+    }
+  }
 }

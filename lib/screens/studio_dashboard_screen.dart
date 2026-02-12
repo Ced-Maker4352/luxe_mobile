@@ -4,6 +4,7 @@ import '../providers/session_provider.dart';
 import '../models/types.dart';
 import '../shared/constants.dart';
 import '../services/gemini_service.dart';
+import '../widgets/comparison_slider.dart';
 
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
@@ -54,6 +55,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   final TextEditingController _stitchPromptController = TextEditingController();
 
   // V2 Split View State
+  bool _isComparing = false;
+  String _selectedWardrobeCategory = 'Classic';
   String _activeControl =
       'main'; // 'main', 'camera', 'backdrop', 'prompt', 'style', 'retouch', 'stitch', 'print', 'download', 'share'
   GenerationResult? _focusedResult;
@@ -533,26 +536,73 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   }
 
   Widget _buildResultsViewer(SessionProvider session) {
-    // Show the most recent result or the one clicked
     final result = _focusedResult ?? session.results.last;
+    final isDataUrl = result.imageUrl.startsWith('data:');
+    final imageProvider = isDataUrl
+        ? MemoryImage(base64Decode(result.imageUrl.split(',')[1]))
+        : NetworkImage(result.imageUrl) as ImageProvider;
 
-    // We can reuse _buildResultCard logic but stripped down to just image
-    // Actually, let's use a standard image viewer
     return Stack(
       children: [
+        // Main Image Area
         Container(
           width: double.infinity,
           height: double.infinity,
-          child: (result.imageUrl.startsWith('data:')
-              ? Image.memory(
-                  base64Decode(result.imageUrl.split(',')[1]),
-                  fit: BoxFit.contain,
+          color: Colors.black,
+          child: _isComparing && session.hasUploadedImage
+              ? ComparisonSlider(
+                  beforeImage: MemoryImage(session.uploadedImageBytes!),
+                  afterImage: imageProvider,
                 )
-              : Image.network(result.imageUrl, fit: BoxFit.contain)),
+              : Image(image: imageProvider, fit: BoxFit.contain),
         ),
-        // Floating "Back to Grid" or similar if needed?
-        // For V2, let's assume we just swipe or use the bottom strip.
+
+        // Top Toolbar (Motion & Compare)
+        Positioned(
+          top: 16,
+          right: 16,
+          child: Row(
+            children: [
+              // Compare Toggle
+              if (session.hasUploadedImage)
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: FloatingActionButton.small(
+                    heroTag: 'compare_btn',
+                    backgroundColor: _isComparing
+                        ? const Color(0xFFD4AF37)
+                        : Colors.black54,
+                    child: Icon(
+                      Icons.compare,
+                      color: _isComparing ? Colors.black : Colors.white,
+                    ),
+                    onPressed: () =>
+                        setState(() => _isComparing = !_isComparing),
+                  ),
+                ),
+
+              // Motion / Video Generation
+              FloatingActionButton.small(
+                heroTag: 'motion_btn',
+                backgroundColor: Colors.black54,
+                child: const Icon(Icons.videocam, color: Colors.white),
+                onPressed: () => _generateCinematicVideo(session, result),
+              ),
+            ],
+          ),
+        ),
       ],
+    );
+  }
+
+  Future<void> _generateCinematicVideo(
+    SessionProvider session,
+    GenerationResult result,
+  ) async {
+    // Placeholder for video generation logic
+    debugPrint('Generating cinematic video for result: ${result.id}');
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Video generation not yet implemented.')),
     );
   }
 
@@ -1808,6 +1858,24 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     final clothingOptions = promptCategories['Styling & Vibe'] ?? [];
     final session = context.watch<SessionProvider>();
 
+    // Wardrobe Logic
+    final genderKey = _gender == 'male' ? 'Male' : 'Female';
+    final wardrobeMap = wardrobePresets[genderKey] ?? {};
+    final wardrobeCategories = wardrobeMap.keys.toList()..sort();
+
+    // Ensure selected category is valid
+    if (!wardrobeMap.containsKey(_selectedWardrobeCategory) &&
+        wardrobeCategories.isNotEmpty) {
+      if (!_selectedWardrobeCategory.isEmpty &&
+          wardrobeCategories.contains('Classic')) {
+        _selectedWardrobeCategory = 'Classic';
+      } else if (wardrobeCategories.isNotEmpty) {
+        _selectedWardrobeCategory = wardrobeCategories.first;
+      }
+    }
+
+    final wardrobeItems = wardrobeMap[_selectedWardrobeCategory] ?? [];
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
@@ -1827,7 +1895,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
+              color: Colors.white.withOpacity(0.05),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: Colors.white12),
             ),
@@ -1855,9 +1923,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   value: session.preserveAgeAndBody,
                   onChanged: (val) => session.setPreserveAgeAndBody(val),
                   activeColor: const Color(0xFFD4AF37),
-                  activeTrackColor: const Color(
-                    0xFFD4AF37,
-                  ).withValues(alpha: 0.3),
+                  activeTrackColor: const Color(0xFFD4AF37).withOpacity(0.3),
                   inactiveThumbColor: Colors.white24,
                   inactiveTrackColor: Colors.white10,
                 ),
@@ -1894,8 +1960,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   ),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
-                        : Colors.white.withValues(alpha: 0.05),
+                        ? const Color(0xFFD4AF37).withOpacity(0.15)
+                        : Colors.white.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isActive
@@ -1917,11 +1983,94 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               );
             }).toList(),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
 
-          // 2. CLOTHING STYLE
+          // WARDROBE COLLECTIONS
           const Text(
-            'CLOTHING STYLE',
+            'WARDROBE COLLECTIONS',
+            style: TextStyle(
+              color: Colors.white24,
+              fontSize: 10,
+              letterSpacing: 2,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Category Chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: wardrobeCategories.map((cat) {
+                final isActive = _selectedWardrobeCategory == cat;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(
+                      cat,
+                      style: TextStyle(
+                        color: isActive ? Colors.black : Colors.white70,
+                        fontSize: 11,
+                      ),
+                    ),
+                    selected: isActive,
+                    selectedColor: const Color(0xFFD4AF37),
+                    backgroundColor: Colors.white10,
+                    onSelected: (val) {
+                      if (val) setState(() => _selectedWardrobeCategory = cat);
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Wardrobe Items
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: wardrobeItems.map((item) {
+              final isActive = _selectedClothingStyle == item;
+              return GestureDetector(
+                onTap: () => setState(() {
+                  _selectedClothingStyle = isActive ? '' : item;
+                }),
+                child: Container(
+                  width: (MediaQuery.of(context).size.width - 48) / 2,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? const Color(0xFFD4AF37).withOpacity(0.15)
+                        : Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isActive
+                          ? const Color(0xFFD4AF37)
+                          : Colors.white12,
+                    ),
+                  ),
+                  child: Text(
+                    item,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: isActive
+                          ? const Color(0xFFD4AF37)
+                          : Colors.white70,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+
+          const SizedBox(height: 24),
+
+          // 2. CLOTHING STYLE (Generals)
+          const Text(
+            'GENERAL VIBES',
             style: TextStyle(
               color: Colors.white24,
               fontSize: 10,
@@ -1946,8 +2095,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   ),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
-                        : Colors.white.withValues(alpha: 0.05),
+                        ? const Color(0xFFD4AF37).withOpacity(0.15)
+                        : Colors.white.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isActive
@@ -1956,7 +2105,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     ),
                   ),
                   child: Text(
-                    style.toUpperCase(),
+                    style,
                     style: TextStyle(
                       color: isActive
                           ? const Color(0xFFD4AF37)
@@ -2214,6 +2363,61 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                       fontWeight: isActive
                           ? FontWeight.bold
                           : FontWeight.normal,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 20),
+
+          // FILTERS
+          const Text(
+            'FILTERS',
+            style: TextStyle(
+              color: Colors.white24,
+              fontSize: 10,
+              letterSpacing: 2,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: filterPresets.map((bg) {
+              final isMatch =
+                  _brightness.value == bg.brightness &&
+                  _contrast.value == bg.contrast &&
+                  _saturation.value == bg.saturation;
+
+              return GestureDetector(
+                onTap: () {
+                  _brightness.value = bg.brightness;
+                  _contrast.value = bg.contrast;
+                  _saturation.value = bg.saturation;
+                  setState(() {});
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isMatch
+                        ? const Color(0xFFD4AF37).withOpacity(0.15)
+                        : Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isMatch ? const Color(0xFFD4AF37) : Colors.white12,
+                    ),
+                  ),
+                  child: Text(
+                    bg.name,
+                    style: TextStyle(
+                      color: isMatch ? const Color(0xFFD4AF37) : Colors.white54,
+                      fontSize: 10,
+                      fontWeight: isMatch ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
                 ),
@@ -3200,5 +3404,76 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       final bytes = await image.readAsBytes();
       session.uploadClothingReference(bytes, image.name);
     }
+  }
+}
+
+Future<void> _generateCinematicVideo(
+  SessionProvider session,
+  GenerationResult sourceResult,
+) async {
+  if (session.isGenerating) return;
+
+  session.setGenerating(true);
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Generating Cinematic Video... (This may take 10-20s)'),
+    ),
+  );
+
+  try {
+    final service = GeminiService();
+    String rawImage = sourceResult.imageUrl;
+
+    // Ensure we have data key for API
+    if (!rawImage.startsWith('data:')) {
+      // If network image, we might need bytes.
+      // For now assuming result has data URI or we use _decodedImageBytes if focused.
+      if (_decodedImageBytes != null) {
+        rawImage =
+            'data:image/jpeg;base64,${base64Encode(_decodedImageBytes!)}';
+      }
+    }
+
+    final prompt = "Cinematic slow motion portrait. ${_customPrompt}";
+    final optic = session.selectedRig?.opticProtocol ?? "Cinematic";
+
+    final videoUri = await service.generateCinematicVideo(
+      rawImage,
+      prompt,
+      optic,
+    );
+
+    if (!videoUri.startsWith('Error')) {
+      if (await canLaunchUrl(Uri.parse(videoUri))) {
+        await launchUrl(Uri.parse(videoUri));
+      } else {
+        debugPrint("Video URI: $videoUri");
+        // Attempt to launch anyway or show dialog
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (c) => AlertDialog(
+              title: const Text("Video Generated"),
+              content: SelectableText(videoUri),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(c),
+                  child: const Text("OK"),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+    } else {
+      throw Exception(videoUri);
+    }
+  } catch (e) {
+    debugPrint("Video generation error: $e");
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Video failed: $e')));
+  } finally {
+    session.setGenerating(false);
   }
 }
