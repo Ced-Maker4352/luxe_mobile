@@ -45,7 +45,7 @@ class CameraSelectionScreen extends StatelessWidget {
   Widget _buildRigCard(BuildContext context, CameraRig rig) {
     return GestureDetector(
       onTap: () {
-        context.read<SessionProvider>().selectRig(rig);
+        context.read<SessionProvider>().setSelectedRig(rig);
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => const IdentityReferenceScreen(),

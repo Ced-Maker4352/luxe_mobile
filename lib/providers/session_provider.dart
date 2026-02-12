@@ -61,19 +61,19 @@ class SessionProvider extends ChangeNotifier {
 
   UserProfile? get userProfile => _userProfile;
 
-  // === SETTERS & METHODS ===
+  // === SETTERS & METHODS (Triggering re-analysis) ===
 
-  void selectPackage(PackageDetails package) {
+  void setSelectedPackage(PackageDetails package) {
     _selectedPackage = package;
     notifyListeners();
   }
 
-  void selectRig(CameraRig rig) {
+  void setSelectedRig(CameraRig rig) {
     _selectedRig = rig;
     notifyListeners();
   }
 
-  void selectStyle(StyleOption? style) {
+  void setSelectedStyle(StyleOption? style) {
     _selectedStyle = style;
     notifyListeners();
   }

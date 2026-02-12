@@ -94,12 +94,12 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
       // Auto-select first available rig if none selected
       if (session.selectedRig == null && cameraRigs.isNotEmpty) {
-        session.selectRig(cameraRigs.first);
+        session.setSelectedRig(cameraRigs.first);
       }
 
       // Auto-select first available package if none selected (Fix for missing generation)
       if (session.selectedPackage == null && packages.isNotEmpty) {
-        session.selectPackage(packages.first);
+        session.setSelectedPackage(packages.first);
       }
 
       // Sync local gender with session
@@ -140,7 +140,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       // Auto-recover for testing if package is missing
       if (session.selectedPackage == null && packages.isNotEmpty) {
         debugPrint('Studio: Attempting auto-recovery for package...');
-        session.selectPackage(packages.first);
+        session.setSelectedPackage(packages.first);
         if (session.selectedPackage != null) {
           debugPrint(
             'Studio: Auto-recovery successful. Selected: ${session.selectedPackage!.name}',
@@ -152,7 +152,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     }
 
     if (session.selectedRig == null && cameraRigs.isNotEmpty) {
-      session.selectRig(cameraRigs.first);
+      session.setSelectedRig(cameraRigs.first);
     }
 
     if (session.selectedRig == null) {
@@ -1094,7 +1094,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 diameterRatio: 1.6,
                 physics: const FixedExtentScrollPhysics(),
                 onSelectedItemChanged: (index) {
-                  session.selectRig(cameraRigs[index]);
+                  session.setSelectedRig(cameraRigs[index]);
                 },
                 childDelegate: ListWheelChildBuilderDelegate(
                   childCount: cameraRigs.length,

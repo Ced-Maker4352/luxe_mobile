@@ -88,8 +88,8 @@ class _SingleStyleSelectionScreenState
 
       if (success && mounted) {
         final session = Provider.of<SessionProvider>(context, listen: false);
-        session.selectPackage(widget.package);
-        session.selectStyle(_selectedStyle!);
+        session.setSelectedPackage(widget.package);
+        session.setSelectedStyle(_selectedStyle!);
 
         Navigator.pushReplacement(
           context,

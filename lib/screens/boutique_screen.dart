@@ -124,7 +124,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
       // 2. Grant Access Directly
       if (mounted) {
         final session = Provider.of<SessionProvider>(context, listen: false);
-        session.selectPackage(pkg);
+        session.setSelectedPackage(pkg);
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -208,7 +208,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                   context,
                   listen: false,
                 );
-                session.selectPackage(pkg);
+                session.setSelectedPackage(pkg);
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -260,7 +260,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
 
         // 2. Grant Access
         final session = Provider.of<SessionProvider>(context, listen: false);
-        session.selectPackage(pkg);
+        session.setSelectedPackage(pkg);
         Navigator.push(
           context,
           MaterialPageRoute(
