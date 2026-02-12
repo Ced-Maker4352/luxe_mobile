@@ -65,7 +65,7 @@ class _AssetEditorScreenState extends State<AssetEditorScreen> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFD4AF37).withOpacity(0.1),
+                    color: const Color(0xFFD4AF37).withValues(alpha: 0.1),
                     blurRadius: 40,
                   ),
                 ],

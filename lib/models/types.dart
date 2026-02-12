@@ -1,21 +1,21 @@
 import 'dart:typed_data';
 
 enum PortraitPackage {
-  EXECUTIVE,
-  ENTERTAINER,
-  CINEMATIC_NOIR,
-  BIRTHDAY_LUXE,
-  MOTION,
-  SOCIAL_QUICK,
-  CREATOR_PACK,
-  PROFESSIONAL_SHOOT,
-  AGENCY_MASTER,
-  SNAPSHOT_DAILY,
-  SNAPSHOT_STYLE,
-  DIGITAL_NOMAD,
-  CREATIVE_DIRECTOR,
+  executive,
+  entertainer,
+  cinematicNoir,
+  birthdayLuxe,
+  motion,
+  socialQuick,
+  creatorPack,
+  professionalShoot,
+  agencyMaster,
+  snapshotDaily,
+  snapshotStyle,
+  digitalNomad,
+  creativeDirector,
   branding,
-  STITCH,
+  stitch,
 }
 
 class CameraRig {

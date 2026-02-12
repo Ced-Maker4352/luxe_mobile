@@ -383,7 +383,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         imageUrl: imageUrl,
         mediaType: 'image_stitch',
-        packageType: PortraitPackage.STITCH,
+        packageType: PortraitPackage.stitch,
         timestamp: DateTime.now().millisecondsSinceEpoch,
       );
       session.addResult(newResult);
@@ -1113,14 +1113,14 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   decoration: BoxDecoration(
                     border: Border.symmetric(
                       horizontal: BorderSide(
-                        color: const Color(0xFFD4AF37).withOpacity(0.3),
+                        color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
                       ),
                     ),
                     gradient: LinearGradient(
                       colors: [
-                        const Color(0xFFD4AF37).withOpacity(0.05),
-                        const Color(0xFFD4AF37).withOpacity(0.12),
-                        const Color(0xFFD4AF37).withOpacity(0.05),
+                        const Color(0xFFD4AF37).withValues(alpha: 0.05),
+                        const Color(0xFFD4AF37).withValues(alpha: 0.12),
+                        const Color(0xFFD4AF37).withValues(alpha: 0.05),
                       ],
                     ),
                   ),
@@ -1175,7 +1175,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                                     child: Text(
                                       '${rig.specs.lens}  •  ${rig.specs.sensor}',
                                       style: TextStyle(
-                                        color: Colors.white.withOpacity(0.35),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.35,
+                                        ),
                                         fontSize: 10,
                                         letterSpacing: 0.5,
                                       ),
@@ -1229,14 +1231,14 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   decoration: BoxDecoration(
                     border: Border.symmetric(
                       horizontal: BorderSide(
-                        color: const Color(0xFFD4AF37).withOpacity(0.3),
+                        color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
                       ),
                     ),
                     gradient: LinearGradient(
                       colors: [
-                        const Color(0xFFD4AF37).withOpacity(0.05),
-                        const Color(0xFFD4AF37).withOpacity(0.12),
-                        const Color(0xFFD4AF37).withOpacity(0.05),
+                        const Color(0xFFD4AF37).withValues(alpha: 0.05),
+                        const Color(0xFFD4AF37).withValues(alpha: 0.12),
+                        const Color(0xFFD4AF37).withValues(alpha: 0.05),
                       ],
                     ),
                   ),
@@ -1332,7 +1334,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     hintText: 'Describe your vision...',
                     hintStyle: const TextStyle(color: Colors.white24),
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.05),
+                    fillColor: Colors.white.withValues(alpha: 0.05),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: Colors.white12),
@@ -1518,8 +1520,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                               ),
                               decoration: BoxDecoration(
                                 color: isActive
-                                    ? const Color(0xFFD4AF37).withOpacity(0.15)
-                                    : Colors.white.withOpacity(0.05),
+                                    ? const Color(
+                                        0xFFD4AF37,
+                                      ).withValues(alpha: 0.15)
+                                    : Colors.white.withValues(alpha: 0.05),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: isActive
@@ -1566,7 +1570,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                         child: Text(
                           entry.key.toUpperCase(),
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                           ),
@@ -1593,8 +1597,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                               ),
                               decoration: BoxDecoration(
                                 color: isActive
-                                    ? const Color(0xFFD4AF37).withOpacity(0.15)
-                                    : Colors.white.withOpacity(0.05),
+                                    ? const Color(
+                                        0xFFD4AF37,
+                                      ).withValues(alpha: 0.15)
+                                    : Colors.white.withValues(alpha: 0.05),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: isActive
@@ -1649,7 +1655,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                           ),
                           decoration: BoxDecoration(
                             color: isActive
-                                ? const Color(0xFFD4AF37).withOpacity(0.15)
+                                ? const Color(
+                                    0xFFD4AF37,
+                                  ).withValues(alpha: 0.15)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(18),
                             border: Border.all(
@@ -1745,7 +1753,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     return Container(
       width: 1,
       height: 30,
-      color: Colors.white.withOpacity(0.1),
+      color: Colors.white.withValues(alpha: 0.1),
     );
   }
 
@@ -1806,7 +1814,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           Text(
             'Developing high-fidelity asset...',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha: 0.3),
               fontSize: 11,
             ),
           ),
@@ -1831,7 +1839,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 border: Border.all(color: Colors.white12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withValues(alpha: 0.5),
                     blurRadius: 20,
                   ),
                 ],
@@ -1957,7 +1965,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           Icon(
             Icons.photo_library_outlined,
             size: 64,
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha: 0.1),
           ),
           const SizedBox(height: 20),
           const Text('No assets yet', style: TextStyle(color: Colors.white24)),
@@ -2015,10 +2023,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               (tag) => Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.7),
+                  color: Colors.black.withValues(alpha: 0.7),
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: const Color(0xFFD4AF37).withOpacity(0.3),
+                    color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
                   ),
                 ),
                 child: Text(
@@ -2077,7 +2085,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: Colors.white12),
             ),
@@ -2105,7 +2113,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   value: session.preserveAgeAndBody,
                   onChanged: (val) => session.setPreserveAgeAndBody(val),
                   activeColor: const Color(0xFFD4AF37),
-                  activeTrackColor: const Color(0xFFD4AF37).withOpacity(0.3),
+                  activeTrackColor: const Color(
+                    0xFFD4AF37,
+                  ).withValues(alpha: 0.3),
                   inactiveThumbColor: Colors.white24,
                   inactiveTrackColor: Colors.white10,
                 ),
@@ -2142,8 +2152,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   ),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? const Color(0xFFD4AF37).withOpacity(0.15)
-                        : Colors.white.withOpacity(0.05),
+                        ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
+                        : Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isActive
@@ -2223,8 +2233,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? const Color(0xFFD4AF37).withOpacity(0.15)
-                        : Colors.white.withOpacity(0.05),
+                        ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
+                        : Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isActive
@@ -2277,8 +2287,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   ),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? const Color(0xFFD4AF37).withOpacity(0.15)
-                        : Colors.white.withOpacity(0.05),
+                        ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
+                        : Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isActive
@@ -2526,8 +2536,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   ),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? const Color(0xFFD4AF37).withOpacity(0.15)
-                        : Colors.white.withOpacity(0.05),
+                        ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
+                        : Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isActive
@@ -2593,8 +2603,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   ),
                   decoration: BoxDecoration(
                     color: isMatch
-                        ? const Color(0xFFD4AF37).withOpacity(0.15)
-                        : Colors.white.withOpacity(0.05),
+                        ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
+                        : Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isMatch ? const Color(0xFFD4AF37) : Colors.white12,
@@ -3402,8 +3412,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: isActive
-            ? const Color(0xFFD4AF37).withOpacity(0.15)
-            : Colors.white.withOpacity(0.05),
+            ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
+            : Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isActive ? const Color(0xFFD4AF37) : Colors.white12,
@@ -3499,7 +3509,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         decoration: BoxDecoration(
           color: const Color(0xFF1A1A1A),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.3)),
+          border: Border.all(
+            color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
+          ),
         ),
         child: Column(
           children: [

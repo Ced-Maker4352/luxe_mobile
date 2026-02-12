@@ -694,9 +694,7 @@ DETAILS:
       'contents': [
         {'parts': parts},
       ],
-      'generationConfig': {
-        'responseModalities': ['VIDEO'], // Request Video output
-      },
+      'generationConfig': {'temperature': 0.4},
     };
 
     try {

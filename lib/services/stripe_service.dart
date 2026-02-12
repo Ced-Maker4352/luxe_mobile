@@ -90,11 +90,11 @@ class StripeService {
   static String? getPaymentLink(String packageId, {String? promoCode}) {
     // These match the test links in your web app's paymentLinks.ts
     const links = {
-      'SOCIAL_QUICK': 'https://buy.stripe.com/test_28E5kv5eigiD04N0lW7N600',
-      'CREATOR_PACK': 'https://buy.stripe.com/test_eVq5kv36ac2naJrfgQ7N601',
-      'PROFESSIONAL_SHOOT':
+      'socialQuick': 'https://buy.stripe.com/test_28E5kv5eigiD04N0lW7N600',
+      'creatorPack': 'https://buy.stripe.com/test_eVq5kv36ac2naJrfgQ7N601',
+      'professionalShoot':
           'https://buy.stripe.com/test_5kQ9AL7mqc2n04N5Gg7N603',
-      'AGENCY_MASTER': 'https://buy.stripe.com/test_fZubIT0Y2eavaJrecM7N604',
+      'agencyMaster': 'https://buy.stripe.com/test_fZubIT0Y2eavaJrecM7N604',
       // Subscriptions
       'sub_monthly_19': 'https://buy.stripe.com/test_28E5kv5eigiD04N0lW7N600',
       'sub_monthly_49': 'https://buy.stripe.com/test_eVq5kv36ac2naJrfgQ7N601',

@@ -71,7 +71,7 @@ class _ComparisonSliderState extends State<ComparisonSlider> {
                       color: Colors.white,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withValues(alpha: 0.5),
                           blurRadius: 4,
                         ),
                       ],
@@ -92,7 +92,7 @@ class _ComparisonSliderState extends State<ComparisonSlider> {
                       border: Border.all(color: Colors.black12, width: 0.5),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
+                          color: Colors.black.withValues(alpha: 0.3),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),
@@ -119,7 +119,7 @@ class _ComparisonSliderState extends State<ComparisonSlider> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
+                        color: Colors.black.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: Colors.white24),
                       ),
@@ -147,7 +147,7 @@ class _ComparisonSliderState extends State<ComparisonSlider> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
+                        color: Colors.black.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(color: Colors.white24),
                       ),

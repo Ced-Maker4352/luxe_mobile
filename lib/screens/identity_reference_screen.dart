@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -15,7 +14,6 @@ class IdentityReferenceScreen extends StatefulWidget {
 }
 
 class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
-  Uint8List? _imageBytes;
   bool _isStitchMode = false;
   final ImagePicker _picker = ImagePicker();
 
@@ -335,8 +333,8 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                                         // Future slots (disabled look)
                                         return Container(
                                           decoration: BoxDecoration(
-                                            color: Colors.white10.withOpacity(
-                                              0.05,
+                                            color: Colors.white10.withValues(
+                                              alpha: 0.05,
                                             ),
                                             borderRadius: BorderRadius.circular(
                                               16,

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/types.dart';
-import '../shared/constants.dart';
 import '../services/stripe_service.dart';
 import 'access_granted_screen.dart';
 import 'package:provider/provider.dart';

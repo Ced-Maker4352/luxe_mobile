@@ -49,7 +49,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
   }) async {
     // --- 1. UPGRADE TRIGGERS (AOV OPTIMIZATION) ---
     if (tierId == null) {
-      if (pkg.id == PortraitPackage.SOCIAL_QUICK) {
+      if (pkg.id == PortraitPackage.socialQuick) {
         final upgrade = await _showUpgradeModal(
           title: "WAIT! UPGRADE & SAVE",
           content:
@@ -60,7 +60,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
         );
         if (upgrade) {
           final creatorPkg = packages.firstWhere(
-            (p) => p.id == PortraitPackage.CREATOR_PACK,
+            (p) => p.id == PortraitPackage.creatorPack,
           );
           if (mounted) {
             setState(() => _selectedPackage = creatorPkg);
@@ -68,7 +68,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
           }
           return;
         }
-      } else if (pkg.id == PortraitPackage.CREATOR_PACK) {
+      } else if (pkg.id == PortraitPackage.creatorPack) {
         final upgrade = await _showUpgradeModal(
           title: "UNLOCK PROFESSIONAL STUDIO",
           content:
@@ -79,7 +79,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
         );
         if (upgrade) {
           final proPkg = packages.firstWhere(
-            (p) => p.id == PortraitPackage.PROFESSIONAL_SHOOT,
+            (p) => p.id == PortraitPackage.professionalShoot,
           );
           if (mounted) {
             setState(() => _selectedPackage = proPkg);
@@ -397,7 +397,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                   itemBuilder: (context, index) {
                     final pkg = packages[index];
                     final isSelected = pkg.id == _selectedPackage.id;
-                    final isPro = pkg.id == PortraitPackage.PROFESSIONAL_SHOOT;
+                    final isPro = pkg.id == PortraitPackage.professionalShoot;
 
                     // AOV Highlight: Pro tier gets subtle glow and badge
                     return GestureDetector(
@@ -695,10 +695,9 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                       ),
 
                       // Missing Features (AOV - Loss Aversion)
-                      if (_selectedPackage.id !=
-                              PortraitPackage.AGENCY_MASTER &&
+                      if (_selectedPackage.id != PortraitPackage.agencyMaster &&
                           _selectedPackage.id !=
-                              PortraitPackage.PROFESSIONAL_SHOOT) ...[
+                              PortraitPackage.professionalShoot) ...[
                         const SizedBox(height: 12),
                         const Text(
                           "MISSING IN THIS TIER:",
@@ -715,17 +714,17 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                           children:
                               [
                                 if (_selectedPackage.id ==
-                                        PortraitPackage.SOCIAL_QUICK ||
+                                        PortraitPackage.socialQuick ||
                                     _selectedPackage.id ==
-                                        PortraitPackage.CREATOR_PACK)
+                                        PortraitPackage.creatorPack)
                                   "4K Export (Pro Only)",
                                 if (_selectedPackage.id ==
-                                        PortraitPackage.SOCIAL_QUICK ||
+                                        PortraitPackage.socialQuick ||
                                     _selectedPackage.id ==
-                                        PortraitPackage.CREATOR_PACK)
+                                        PortraitPackage.creatorPack)
                                   "Studio Lighting (Pro Only)",
                                 if (_selectedPackage.id !=
-                                    PortraitPackage.AGENCY_MASTER)
+                                    PortraitPackage.agencyMaster)
                                   "Group Mode (Agency Only)",
                               ].map((f) {
                                 return Text(
@@ -741,7 +740,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
 
                       // Price Anchoring Text
                       if (_selectedPackage.id ==
-                          PortraitPackage.PROFESSIONAL_SHOOT) ...[
+                          PortraitPackage.professionalShoot) ...[
                         const SizedBox(height: 16),
                         Container(
                           padding: const EdgeInsets.all(8),
@@ -751,7 +750,9 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                             ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: const Color(0xFFD4AF37).withOpacity(0.3),
+                              color: const Color(
+                                0xFFD4AF37,
+                              ).withValues(alpha: 0.3),
                             ),
                           ),
                           child: const Row(
@@ -777,7 +778,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                         ),
                       ],
                       if (_selectedPackage.id ==
-                          PortraitPackage.AGENCY_MASTER) ...[
+                          PortraitPackage.agencyMaster) ...[
                         const SizedBox(height: 16),
                         const Text(
                           "Equivalent to a multi-day studio production (\$5,000+ value)",
@@ -908,13 +909,13 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
 
   IconData _getPackageIcon(PortraitPackage id) {
     switch (id) {
-      case PortraitPackage.SOCIAL_QUICK:
+      case PortraitPackage.socialQuick:
         return Icons.rocket_launch_outlined;
-      case PortraitPackage.CREATOR_PACK:
+      case PortraitPackage.creatorPack:
         return Icons.camera_enhance_outlined;
-      case PortraitPackage.PROFESSIONAL_SHOOT:
+      case PortraitPackage.professionalShoot:
         return Icons.business_center_outlined;
-      case PortraitPackage.AGENCY_MASTER:
+      case PortraitPackage.agencyMaster:
         return Icons.diamond_outlined;
       default:
         return Icons.star_outline;

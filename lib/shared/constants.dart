@@ -667,7 +667,7 @@ final List<CameraRig> cameraRigs = [
 
 final List<PackageDetails> packages = [
   PackageDetails(
-    id: PortraitPackage.CREATOR_PACK,
+    id: PortraitPackage.creatorPack,
     name: "The Creator Pack",
     price: "\$29",
     payAsYouGoPrice: "\$29.00",
@@ -698,7 +698,7 @@ final List<PackageDetails> packages = [
     ],
   ),
   PackageDetails(
-    id: PortraitPackage.PROFESSIONAL_SHOOT,
+    id: PortraitPackage.professionalShoot,
     name: "Professional Shoot",
     price: "\$99",
     payAsYouGoPrice: "\$99.00",
@@ -732,7 +732,7 @@ final List<PackageDetails> packages = [
     ],
   ),
   PackageDetails(
-    id: PortraitPackage.AGENCY_MASTER,
+    id: PortraitPackage.agencyMaster,
     name: "Agency / Master",
     price: "\$299",
     payAsYouGoPrice: "\$299.00",
@@ -764,7 +764,7 @@ final List<PackageDetails> packages = [
     ],
   ),
   PackageDetails(
-    id: PortraitPackage.SOCIAL_QUICK,
+    id: PortraitPackage.socialQuick,
     name: "Social Quick",
     price: "\$5",
     payAsYouGoPrice: "\$5.00",
