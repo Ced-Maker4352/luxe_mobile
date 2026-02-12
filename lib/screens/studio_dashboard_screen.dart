@@ -92,6 +92,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         session.selectPackage(packages.first);
       }
 
+      // Sync local gender with session
+      _gender = session.soloGender;
+
       // Removed auto-generation to prevent wasting credits/resources.
       // User must explicitly click GENERATE.
     });
@@ -165,7 +168,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
       if (session.isSingleStyleMode && session.selectedStyle != null) {
         fullPrompt =
-            '${session.selectedPackage!.basePrompt} ${session.selectedStyle!.promptAddition} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""} \nFRAMING: $framingText';
+            '${session.selectedPackage!.basePrompt} ${session.selectedStyle!.promptAddition} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""} \nTarget Gender: $_gender \nColor Temperature: $_styleTemperature \nFRAMING: $framingText';
         debugPrint('Studio: Using Single Style Prompt: $fullPrompt');
       } else {
         fullPrompt =
@@ -291,7 +294,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       final service = GeminiService();
 
       final imagesB64 = session.stitchImages
-          .map((bytes) => base64Encode(bytes))
+          .map((subject) => base64Encode(subject.bytes))
           .toList();
 
       // Build composite stitch prompt from: group type + style + user prompt + base prompt
@@ -320,9 +323,12 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       final perPersonStyles = <String>[];
       for (int i = 0; i < session.stitchImages.length; i++) {
         final style = _stitchPersonStyles[i] ?? '';
+        final gender = session.stitchImages[i].gender;
+        String desc = 'Person ${i + 1} (${gender.toUpperCase()})';
         if (style.isNotEmpty) {
-          perPersonStyles.add('Person ${i + 1}: $style');
+          desc += ': $style';
         }
+        perPersonStyles.add(desc);
       }
 
       String? clothingRef;
@@ -345,7 +351,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         imageUrl = resultText;
       } else {
         imageUrl =
-            'data:image/jpeg;base64,${base64Encode(session.stitchImages.first)}';
+            'data:image/jpeg;base64,${base64Encode(session.stitchImages.first.bytes)}';
       }
 
       final newResult = GenerationResult(
@@ -728,11 +734,29 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 label: _selectedBackdrop?.name ?? 'BACKDROP',
                 onTap: () => setState(() => _activeControl = 'backdrop'),
               ),
-              _buildDivider(),
               _buildControlButton(
                 icon: Icons.edit_note_outlined,
                 label: _customPrompt.isEmpty ? 'PROMPT' : 'STYLED',
                 onTap: () => setState(() => _activeControl = 'prompt'),
+              ),
+              _buildDivider(),
+              _buildControlButton(
+                icon: _gender == 'female'
+                    ? Icons.female
+                    : (_gender == 'male' ? Icons.male : Icons.person_outline),
+                label: _gender.toUpperCase(),
+                onTap: () {
+                  final session = context.read<SessionProvider>();
+                  setState(() {
+                    if (_gender == 'female')
+                      _gender = 'male';
+                    else if (_gender == 'male')
+                      _gender = 'unspecified';
+                    else
+                      _gender = 'female';
+                    session.setSoloGender(_gender);
+                  });
+                },
               ),
               const SizedBox(width: 8),
               _buildGenerateButton(session),
@@ -1859,7 +1883,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             children: ['female', 'male', 'unspecified'].map((g) {
               final isActive = _gender == g;
               return GestureDetector(
-                onTap: () => setState(() => _gender = g),
+                onTap: () {
+                  setState(() => _gender = g);
+                  session.setSoloGender(g);
+                },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
@@ -2634,7 +2661,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10),
                             image: DecorationImage(
-                              image: MemoryImage(entry.value),
+                              image: MemoryImage(entry.value.bytes),
                               fit: BoxFit.cover,
                             ),
                             border: Border.all(color: Colors.white12),
@@ -2682,7 +2709,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             const SizedBox(height: 6),
             ...session.stitchImages.asMap().entries.map((entry) {
               final idx = entry.key;
-              final bytes = entry.value;
+              final subject = entry.value;
               final currentStyle = _stitchPersonStyles[idx] ?? '';
               final clothingOptions = promptCategories['Styling & Vibe'] ?? [];
               return Container(
@@ -2693,93 +2720,156 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: Colors.white10),
                 ),
-                child: Row(
+                child: Column(
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: Image.memory(
-                        bytes,
-                        width: 28,
-                        height: 28,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'P${idx + 1}',
-                      style: const TextStyle(
-                        color: Colors.white54,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ShaderMask(
-                        shaderCallback: (Rect bounds) {
-                          return const LinearGradient(
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                            colors: [
-                              Colors.black,
-                              Colors.black,
-                              Colors.black,
-                              Colors.transparent,
-                            ],
-                            stops: [0.0, 0.1, 0.8, 1.0],
-                          ).createShader(bounds);
-                        },
-                        blendMode: BlendMode.dstIn,
-                        child: SizedBox(
-                          height: 26,
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            children: clothingOptions.map((style) {
-                              final isActive = currentStyle == style;
-                              return GestureDetector(
-                                onTap: () => setState(() {
-                                  _stitchPersonStyles[idx] = isActive
-                                      ? ''
-                                      : style;
-                                }),
-                                child: Container(
-                                  margin: const EdgeInsets.only(right: 4),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isActive
-                                        ? const Color(
-                                            0xFFD4AF37,
-                                          ).withValues(alpha: 0.1)
-                                        : Colors.white.withValues(alpha: 0.05),
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                      color: isActive
-                                          ? const Color(0xFFD4AF37)
-                                          : Colors.white10,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    style.toUpperCase(),
-                                    style: TextStyle(
-                                      color: isActive
-                                          ? const Color(0xFFD4AF37)
-                                          : Colors.white38,
-                                      fontSize: 8,
-                                      fontWeight: isActive
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
+                    Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: Image.memory(
+                            subject.bytes,
+                            width: 28,
+                            height: 28,
+                            fit: BoxFit.cover,
                           ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'P${idx + 1}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Spacer(),
+                        // Gender Toggle
+                        Row(
+                          children: ['female', 'male'].map((g) {
+                            final isGActive = subject.gender == g;
+                            return GestureDetector(
+                              onTap: () => session.updateStitchGender(idx, g),
+                              child: Container(
+                                margin: const EdgeInsets.only(left: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isGActive
+                                      ? const Color(0xFFD4AF37)
+                                      : Colors.white.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: isGActive
+                                        ? const Color(0xFFD4AF37)
+                                        : Colors.white10,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      g == 'female' ? Icons.female : Icons.male,
+                                      size: 10,
+                                      color: isGActive
+                                          ? Colors.black
+                                          : Colors.white54,
+                                    ),
+                                    const SizedBox(width: 2),
+                                    Text(
+                                      g.toUpperCase(),
+                                      style: TextStyle(
+                                        color: isGActive
+                                            ? Colors.black
+                                            : Colors.white54,
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ShaderMask(
+                            shaderCallback: (Rect bounds) {
+                              return const LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                colors: [
+                                  Colors.black,
+                                  Colors.black,
+                                  Colors.black,
+                                  Colors.transparent,
+                                ],
+                                stops: [0.0, 0.1, 0.8, 1.0],
+                              ).createShader(bounds);
+                            },
+                            blendMode: BlendMode.dstIn,
+                            child: SizedBox(
+                              height: 26,
+                              child: ListView(
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                ),
+                                children: clothingOptions.map((style) {
+                                  final isActive = currentStyle == style;
+                                  return GestureDetector(
+                                    onTap: () => setState(() {
+                                      _stitchPersonStyles[idx] = isActive
+                                          ? ''
+                                          : style;
+                                    }),
+                                    child: Container(
+                                      margin: const EdgeInsets.only(right: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isActive
+                                            ? const Color(
+                                                0xFFD4AF37,
+                                              ).withValues(alpha: 0.1)
+                                            : Colors.white.withValues(
+                                                alpha: 0.05,
+                                              ),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: isActive
+                                              ? const Color(0xFFD4AF37)
+                                              : Colors.white10,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        style.toUpperCase(),
+                                        style: TextStyle(
+                                          color: isActive
+                                              ? const Color(0xFFD4AF37)
+                                              : Colors.white38,
+                                          fontSize: 8,
+                                          fontWeight: isActive
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

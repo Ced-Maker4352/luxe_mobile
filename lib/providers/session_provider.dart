@@ -12,6 +12,7 @@ class SessionProvider extends ChangeNotifier {
   StyleOption? _selectedStyle;
   bool _isSingleStyleMode = false;
   bool _preserveAgeAndBody = true;
+  String _soloGender = 'female'; // Default to female
 
   PackageDetails? get selectedPackage => _selectedPackage;
   CameraRig? get selectedRig => _selectedRig;
@@ -22,6 +23,7 @@ class SessionProvider extends ChangeNotifier {
   StyleOption? get selectedStyle => _selectedStyle;
   bool get isSingleStyleMode => _isSingleStyleMode;
   bool get preserveAgeAndBody => _preserveAgeAndBody;
+  String get soloGender => _soloGender;
 
   void addResult(GenerationResult result) {
     _results.insert(0, result);
@@ -30,6 +32,11 @@ class SessionProvider extends ChangeNotifier {
 
   void setPreserveAgeAndBody(bool val) {
     _preserveAgeAndBody = val;
+    notifyListeners();
+  }
+
+  void setSoloGender(String gender) {
+    _soloGender = gender;
     notifyListeners();
   }
 
@@ -94,22 +101,29 @@ class SessionProvider extends ChangeNotifier {
   }
 
   // STITCH STUDIO STATE
-  final List<Uint8List> _stitchImages = [];
+  final List<StitchSubject> _stitchImages = [];
   String _stitchVibe = 'individual'; // 'matching', 'individual'
 
   // VIRTUAL TRY-ON STATE
   Uint8List? _clothingReferenceBytes;
   String? _clothingReferenceName;
 
-  List<Uint8List> get stitchImages => _stitchImages;
+  List<StitchSubject> get stitchImages => _stitchImages;
   String get stitchVibe => _stitchVibe;
   Uint8List? get clothingReferenceBytes => _clothingReferenceBytes;
   String? get clothingReferenceName => _clothingReferenceName;
   bool get hasClothingReference => _clothingReferenceBytes != null;
 
-  void addStitchImage(Uint8List bytes) {
+  void addStitchImage(Uint8List bytes, {String gender = 'female'}) {
     if (_stitchImages.length < 5) {
-      _stitchImages.add(bytes);
+      _stitchImages.add(StitchSubject(bytes: bytes, gender: gender));
+      notifyListeners();
+    }
+  }
+
+  void updateStitchGender(int index, String gender) {
+    if (index >= 0 && index < _stitchImages.length) {
+      _stitchImages[index].gender = gender;
       notifyListeners();
     }
   }

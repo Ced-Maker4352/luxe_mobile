@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 enum PortraitPackage {
   EXECUTIVE,
   ENTERTAINER,
@@ -178,4 +180,11 @@ class BrandStrategy {
     required this.slogan,
     required this.aesthetic,
   });
+}
+
+class StitchSubject {
+  final Uint8List bytes;
+  String gender;
+
+  StitchSubject({required this.bytes, this.gender = 'female'});
 }

@@ -139,108 +139,92 @@ class GeminiService {
     }
   }
 
-  /// Helper for GEMINI generation (generateContent endpoint with inlineData)
-  Future<String> _generateImageWithGemini(
-    String model,
-    String prompt,
-    String contextImageBase64, {
-    String? identityImageBase64, // NEW: The original photo for ID lock
-    String? backgroundImageBase64,
+  Future<String> _callGeminiWithFallback(
+    List<String> models,
+    List<Map<String, dynamic>> parts, {
+    String aspectRatio = '3:4',
+    String? imageSize,
   }) async {
-    final url = Uri.parse('$_baseUrl/$model:generateContent?key=$_apiKey');
+    for (final model in models) {
+      final url = Uri.parse('$_baseUrl/$model:generateContent?key=$_apiKey');
 
-    final parts = <Map<String, dynamic>>[];
-
-    // 1. Context Image (The image being edited)
-    if (contextImageBase64.isNotEmpty) {
-      parts.add(_getDataPart(contextImageBase64));
-    }
-
-    // 2. Identity Image (The original photo - Source of Truth)
-    if (identityImageBase64 != null && identityImageBase64.isNotEmpty) {
-      parts.add(_getDataPart(identityImageBase64));
-    }
-
-    // 3. Background Image (Optional)
-    if (backgroundImageBase64 != null && backgroundImageBase64.isNotEmpty) {
-      parts.add(_getDataPart(backgroundImageBase64));
-    }
-
-    // Add prompt
-    parts.add({'text': prompt});
-
-    final body = {
-      'contents': [
-        {'parts': parts},
-      ],
-      'generationConfig': {
-        // 'response_modalities': ['IMAGE'], // Do not send for gemini-2.5
-        'temperature': 0.4,
-      },
-      'safetySettings': [
-        {'category': 'HARM_CATEGORY_HARASSMENT', 'threshold': 'BLOCK_NONE'},
-        {'category': 'HARM_CATEGORY_HATE_SPEECH', 'threshold': 'BLOCK_NONE'},
-        {
-          'category': 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-          'threshold': 'BLOCK_NONE',
+      final body = {
+        'contents': [
+          {'parts': parts},
+        ],
+        'generationConfig': {
+          'temperature': 0.4,
+          if (imageSize != null) 'imageSize': imageSize,
+          // 'aspectRatio' is often in 'imageConfig' for some models,
+          // but for general generateContent it varies.
+          // Standardizing on what web app uses.
         },
-        {
-          'category': 'HARM_CATEGORY_DANGEROUS_CONTENT',
-          'threshold': 'BLOCK_NONE',
-        },
-      ],
-    };
+        'safetySettings': [
+          {'category': 'HARM_CATEGORY_HARASSMENT', 'threshold': 'BLOCK_NONE'},
+          {'category': 'HARM_CATEGORY_HATE_SPEECH', 'threshold': 'BLOCK_NONE'},
+          {
+            'category': 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            'threshold': 'BLOCK_NONE',
+          },
+          {
+            'category': 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            'threshold': 'BLOCK_NONE',
+          },
+        ],
+      };
 
-    // ... (rest of method same as before) ...
-    try {
-      debugPrint(
-        'GeminiService: Calling $model (Gemini) with Identity Anchor...',
-      );
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
+      // Add imageConfig if it's a model that supports it (like 3-pro-image-preview)
+      if (model.contains('image')) {
+        body['imageConfig'] = {
+          'aspectRatio': aspectRatio,
+          if (imageSize != null) 'imageSize': imageSize,
+        };
+      }
 
-      debugPrint('GeminiService Response Status: ${response.statusCode}');
+      try {
+        debugPrint('GeminiService: Attempting $model...');
+        final response = await http.post(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(body),
+        );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data is Map && data.containsKey('candidates')) {
-          final candidates = data['candidates'] as List;
-          if (candidates.isNotEmpty) {
-            final candidate = candidates[0];
-            if (candidate is Map && candidate.containsKey('content')) {
-              final content = candidate['content'];
-              if (content is Map && content.containsKey('parts')) {
-                final parts = content['parts'] as List;
-                for (final part in parts) {
-                  if (part is Map && part.containsKey('inlineData')) {
-                    final inlineData = part['inlineData'];
-                    debugPrint(
-                      'GeminiService: Gemini image received successfully!',
-                    );
-                    final mimeType = inlineData['mimeType'];
-                    final base64Data = inlineData['data'];
-                    return 'data:$mimeType;base64,$base64Data';
+        debugPrint('GeminiService $model Response: ${response.statusCode}');
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          if (data is Map && data.containsKey('candidates')) {
+            final candidates = data['candidates'] as List;
+            if (candidates.isNotEmpty) {
+              final candidate = candidates[0];
+              if (candidate is Map && candidate.containsKey('content')) {
+                final content = candidate['content'];
+                if (content is Map && content.containsKey('parts')) {
+                  final parts = content['parts'] as List;
+                  for (final part in parts) {
+                    if (part is Map && part.containsKey('inlineData')) {
+                      final inlineData = part['inlineData'];
+                      debugPrint('GeminiService: Success with $model!');
+                      final mimeType = inlineData['mimeType'];
+                      final base64Data = inlineData['data'];
+                      return 'data:$mimeType;base64,$base64Data';
+                    }
                   }
                 }
               }
             }
           }
+          debugPrint('GeminiService: $model returned no image data.');
+        } else {
+          debugPrint(
+            'GeminiService: $model failed (${response.statusCode}): ${response.body}',
+          );
         }
-        debugPrint('GeminiService: No image found. content: ${response.body}');
-        return 'Error: No image in response.';
-      } else {
-        debugPrint(
-          'Gemini API Error: ${response.statusCode} - ${response.body}',
-        );
-        return 'Error: Gemini API returned ${response.statusCode}';
+      } catch (e) {
+        debugPrint('GeminiService: Error with $model: $e');
       }
-    } catch (e) {
-      debugPrint('Gemini Network Error: $e');
-      return 'Error: Network request failed';
     }
+    return '';
   }
 
   // Helper to extract clean data from a data URL for inlineData
@@ -341,38 +325,31 @@ FINAL CHECK: Before outputting, verify the face matches the reference image. If 
 
 Output: Photorealistic 4K photograph.""";
 
-    // Try primary model: imagen-4.0-fast-generate-001 (for new generation)
-    // Actually, for generation from reference image, let's use gemini-2.5-flash-image based on web app success.
-    String modelName = 'imagen-4.0-fast-generate-001';
-    if (referenceImageBase64.isNotEmpty) {
-      modelName = 'gemini-2.5-flash-image';
+    final parts = <Map<String, dynamic>>[];
+    parts.add(_getDataPart(referenceImageBase64));
+
+    if (backgroundImageBase64 != null) {
+      parts.add(_getDataPart(backgroundImageBase64));
     }
 
-    debugPrint('GeminiService: Attempting primary model $modelName...');
+    parts.add({'text': finalPrompt});
 
-    if (modelName.contains('gemini')) {
-      // Use _generateContent with image payload
-      return _generateImageWithGemini(
-        modelName,
-        finalPrompt,
-        referenceImageBase64, // context
-        identityImageBase64:
-            null, // Initial generation has only 1 image (reference)
-        backgroundImageBase64: backgroundImageBase64,
-      );
-    }
+    final models = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
 
-    // ... (Imagen fallback remains same) ...
-    var result = await _generateImageWithImagen(
-      modelName,
+    final result = await _callGeminiWithFallback(
+      models,
+      parts,
+      imageSize: '4K',
+    );
+
+    if (result.isNotEmpty) return result;
+
+    // Last resort fallback to Imagen
+    return _generateImageWithImagen(
+      'imagen-4.0-fast-generate-001',
       finalPrompt,
       referenceImageBase64: referenceImageBase64,
     );
-    if (result.isNotEmpty && result.startsWith('data:image')) {
-      debugPrint('GeminiService: Primary model success!');
-      return result;
-    }
-    return result;
   }
 
   Future<String> generateStylingChange({
@@ -411,15 +388,22 @@ ${framingInstructions[framingMode] ?? framingInstructions['portrait']}
 
 Output: Photorealistic image combining Image 1's style with Image 2's face and body structure.""";
 
-    // Use gemini-2.5-flash-image for styling change
-    return _generateImageWithGemini(
-      'gemini-2.5-flash-image',
-      prompt,
-      currentImageBase64,
-      identityImageBase64: identityImageBase64,
-      backgroundImageBase64:
-          clothingReferenceBase64, // Reuse for clothing ref if needed
-    );
+    final parts = <Map<String, dynamic>>[];
+    parts.add(_getDataPart(currentImageBase64));
+    parts.add(_getDataPart(identityImageBase64));
+
+    if (clothingReferenceBase64 != null) {
+      parts.add(_getDataPart(clothingReferenceBase64));
+    }
+
+    parts.add({'text': prompt});
+
+    final models = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
+
+    final result = await _callGeminiWithFallback(models, parts);
+    if (result.isNotEmpty) return result;
+
+    throw Exception('Styling change failed.');
   }
 
   Future<String> applySkinTexture(
@@ -442,13 +426,17 @@ $skinTexturePrompt
 
 Output: Photorealistic image.""";
 
-    // Use gemini-2.5-flash-image for skin texture
-    return _generateImageWithGemini(
-      'gemini-2.5-flash-image',
-      prompt,
-      currentImageBase64,
-      identityImageBase64: identityImageBase64,
-    );
+    final parts = <Map<String, dynamic>>[];
+    parts.add(_getDataPart(currentImageBase64));
+    parts.add(_getDataPart(identityImageBase64));
+    parts.add({'text': prompt});
+
+    final models = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
+
+    final result = await _callGeminiWithFallback(models, parts);
+    if (result.isNotEmpty) return result;
+
+    throw Exception('Skin texture application failed.');
   }
 
   Future<String> upscaleTo4K(
@@ -468,13 +456,14 @@ DETAILS:
 - Refine skin texture and details based on Image 2.
 - Output: High fidelity photograph.""";
 
-    // Use gemini-2.5-flash-image for upscaling
-    return _generateImageWithGemini(
-      'gemini-2.5-flash-image',
-      prompt,
-      currentImageBase64,
-      identityImageBase64: identityImageBase64,
-    );
+    final parts = <Map<String, dynamic>>[];
+    parts.add(_getDataPart(currentImageBase64));
+    parts.add(_getDataPart(identityImageBase64));
+    parts.add({'text': prompt});
+
+    final models = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
+
+    return _callGeminiWithFallback(models, parts);
   }
 
   Future<String> removeBackground(
@@ -494,13 +483,14 @@ DETAILS:
 - Preserve edge details and hair strands.
 - Output: High fidelity image with white background.""";
 
-    // Use gemini-2.5-flash-image for background removal
-    return _generateImageWithGemini(
-      'gemini-2.5-flash-image',
-      prompt,
-      currentImageBase64,
-      identityImageBase64: identityImageBase64,
-    );
+    final parts = <Map<String, dynamic>>[];
+    parts.add(_getDataPart(currentImageBase64));
+    parts.add(_getDataPart(identityImageBase64));
+    parts.add({'text': prompt});
+
+    final models = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
+
+    return _callGeminiWithFallback(models, parts);
   }
 
   Future<String> generateGroupStitch({
@@ -638,69 +628,8 @@ DETAILS:
 
     parts.add({'text': promptBuffer.toString()});
 
-    return _callGeminiRaw('gemini-2.5-flash-image', parts);
-  }
+    final models = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
 
-  Future<String> _callGeminiRaw(
-    String model,
-    List<Map<String, dynamic>> parts,
-  ) async {
-    final url = Uri.parse('$_baseUrl/$model:generateContent?key=$_apiKey');
-    final body = {
-      'contents': [
-        {'parts': parts},
-      ],
-      'generationConfig': {'temperature': 0.2},
-      'safetySettings': [
-        {'category': 'HARM_CATEGORY_HARASSMENT', 'threshold': 'BLOCK_NONE'},
-        {'category': 'HARM_CATEGORY_HATE_SPEECH', 'threshold': 'BLOCK_NONE'},
-        {
-          'category': 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-          'threshold': 'BLOCK_NONE',
-        },
-        {
-          'category': 'HARM_CATEGORY_DANGEROUS_CONTENT',
-          'threshold': 'BLOCK_NONE',
-        },
-      ],
-    };
-
-    try {
-      debugPrint('GeminiService: Calling $model (Raw Stitch Mode)...');
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
-
-      debugPrint('GeminiService Stitch Response: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data is Map && data.containsKey('candidates')) {
-          final candidates = data['candidates'] as List;
-          if (candidates.isNotEmpty) {
-            final candidate = candidates[0];
-            if (candidate is Map && candidate.containsKey('content')) {
-              final content = candidate['content'];
-              if (content is Map && content.containsKey('parts')) {
-                final parts = content['parts'] as List;
-                for (final part in parts) {
-                  if (part is Map && part.containsKey('inlineData')) {
-                    final inlineData = part['inlineData'];
-                    return 'data:${inlineData['mimeType']};base64,${inlineData['data']}';
-                  }
-                }
-              }
-            }
-          }
-        }
-        return 'Error: No image in response.';
-      } else {
-        return 'Error: Gemini API ${response.statusCode}';
-      }
-    } catch (e) {
-      return 'Error: $e';
-    }
+    return _callGeminiWithFallback(models, parts);
   }
 }
