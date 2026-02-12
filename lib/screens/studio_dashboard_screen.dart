@@ -34,10 +34,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   String _customBgPrompt = '';
   final TextEditingController _bgPromptController = TextEditingController();
 
-  // Adjustment sliders state
-  double _brightness = 100;
-  double _contrast = 100;
-  double _saturation = 100;
+  // Adjustment sliders state (Using ValueNotifier for 60fps real-time updates)
+  final ValueNotifier<double> _brightness = ValueNotifier<double>(100);
+  final ValueNotifier<double> _contrast = ValueNotifier<double>(100);
+  final ValueNotifier<double> _saturation = ValueNotifier<double>(100);
 
   // NEW: Framing Options
   // NEW: Missing web features - Gender & Style
@@ -57,6 +57,21 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   String _activeControl =
       'main'; // 'main', 'camera', 'backdrop', 'prompt', 'style', 'retouch', 'stitch', 'print', 'download', 'share'
   GenerationResult? _focusedResult;
+  Uint8List? _decodedImageBytes;
+
+  Future<void> _decodeFocusedImage() async {
+    if (_focusedResult == null) return;
+    if (_focusedResult!.imageUrl.startsWith('data:')) {
+      try {
+        final base64String = _focusedResult!.imageUrl.split(',')[1];
+        setState(() {
+          _decodedImageBytes = base64Decode(base64String);
+        });
+      } catch (e) {
+        debugPrint("Error decoding image: $e");
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -87,6 +102,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     _promptController.dispose();
     _bgPromptController.dispose();
     _stitchPromptController.dispose();
+    _brightness.dispose();
+    _contrast.dispose();
+    _saturation.dispose();
     super.dispose();
   }
 
@@ -159,9 +177,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           """
       
       Adjustments:
-      - Brightness: ${_brightness.toInt()}% (Normal=100%)
-      - Contrast: ${_contrast.toInt()}% (Normal=100%)
-      - Saturation: ${_saturation.toInt()}% (Normal=100%)
+      - Brightness: ${_brightness.value.toInt()}% (Normal=100%)
+      - Contrast: ${_contrast.value.toInt()}% (Normal=100%)
+      - Saturation: ${_saturation.value.toInt()}% (Normal=100%)
       - Skin Finish: ${_selectedSkinTexture.label}
       """;
 
@@ -195,15 +213,20 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         imageUrl = 'data:image/jpeg;base64,$base64Image';
       }
 
-      session.addResult(
-        GenerationResult(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          imageUrl: imageUrl,
-          mediaType: 'image',
-          packageType: session.selectedPackage!.id,
-          timestamp: DateTime.now().millisecondsSinceEpoch,
-        ),
+      final newResult = GenerationResult(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        imageUrl: imageUrl,
+        mediaType: 'image',
+        packageType: session.selectedPackage!.id,
+        timestamp: DateTime.now().millisecondsSinceEpoch,
       );
+      session.addResult(newResult);
+      if (mounted) {
+        setState(() {
+          _focusedResult = newResult;
+        });
+        _decodeFocusedImage();
+      }
       debugPrint('Studio: Generated with rig: ${session.selectedRig!.name}');
       debugPrint('Studio: API Response length: ${resultText.length}');
     } catch (e) {
@@ -325,15 +348,20 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             'data:image/jpeg;base64,${base64Encode(session.stitchImages.first)}';
       }
 
-      session.addResult(
-        GenerationResult(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          imageUrl: imageUrl,
-          mediaType: 'image_stitch',
-          packageType: PortraitPackage.STITCH,
-          timestamp: DateTime.now().millisecondsSinceEpoch,
-        ),
+      final newResult = GenerationResult(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        imageUrl: imageUrl,
+        mediaType: 'image_stitch',
+        packageType: PortraitPackage.STITCH,
+        timestamp: DateTime.now().millisecondsSinceEpoch,
       );
+      session.addResult(newResult);
+      if (mounted) {
+        setState(() {
+          _focusedResult = newResult;
+        });
+        _decodeFocusedImage();
+      }
     } catch (e) {
       debugPrint("Stitch failed: $e");
       if (mounted) {
@@ -523,11 +551,15 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   }
 
   // Helper: build a color filter matrix from brightness/contrast/saturation
-  ColorFilter _buildRetouchFilter() {
+  ColorFilter _buildRetouchFilter(
+    double brightness,
+    double contrast,
+    double saturation,
+  ) {
     // Normalize 0-200 range to multipliers
-    final double b = _brightness / 100.0; // 1.0 = normal
-    final double c = _contrast / 100.0;
-    final double s = _saturation / 100.0;
+    final double b = brightness / 100.0; // 1.0 = normal
+    final double c = contrast / 100.0;
+    final double s = saturation / 100.0;
 
     // Brightness offset (shift toward white or black)
     final double bOffset = (b - 1.0) * 255;
@@ -570,14 +602,28 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         Container(
           width: double.infinity,
           height: double.infinity,
-          child: ColorFiltered(
-            colorFilter: _buildRetouchFilter(),
-            child: (result.imageUrl.startsWith('data:')
-                ? Image.memory(
-                    base64Decode(result.imageUrl.split(',')[1]),
-                    fit: BoxFit.contain,
-                  )
-                : Image.network(result.imageUrl, fit: BoxFit.contain)),
+          child: ValueListenableBuilder<double>(
+            valueListenable: _brightness,
+            builder: (context, b, _) => ValueListenableBuilder<double>(
+              valueListenable: _contrast,
+              builder: (context, c, _) => ValueListenableBuilder<double>(
+                valueListenable: _saturation,
+                builder: (context, s, _) => ColorFiltered(
+                  colorFilter: _buildRetouchFilter(b, c, s),
+                  child: _decodedImageBytes != null
+                      ? Image.memory(_decodedImageBytes!, fit: BoxFit.contain)
+                      : (result.imageUrl.startsWith('data:')
+                            ? Image.memory(
+                                base64Decode(result.imageUrl.split(',')[1]),
+                                fit: BoxFit.contain,
+                              )
+                            : Image.network(
+                                result.imageUrl,
+                                fit: BoxFit.contain,
+                              )),
+                ),
+              ),
+            ),
           ),
         ),
       ],
@@ -724,7 +770,12 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 final result = session.results[index];
                 final isSelected = _focusedResult?.id == result.id;
                 return GestureDetector(
-                  onTap: () => setState(() => _focusedResult = result),
+                  onTap: () {
+                    setState(() {
+                      _focusedResult = result;
+                    });
+                    _decodeFocusedImage();
+                  },
                   child: Container(
                     width: 80,
                     margin: const EdgeInsets.only(right: 12),
@@ -740,6 +791,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                           ? Image.memory(
                               base64Decode(result.imageUrl.split(',')[1]),
                               fit: BoxFit.cover,
+                              gaplessPlayback: true,
                             )
                           : Image.network(result.imageUrl, fit: BoxFit.cover),
                     ),
@@ -754,7 +806,19 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
   Widget _buildToolIcon(IconData icon, String label, String controlKey) {
     return GestureDetector(
-      onTap: () => setState(() => _activeControl = controlKey),
+      onTap: () {
+        final session = context.read<SessionProvider>();
+        setState(() {
+          _activeControl = controlKey;
+          // Auto-focus latest if retouching and none focused
+          if (controlKey == 'retouch' &&
+              _focusedResult == null &&
+              session.results.isNotEmpty) {
+            _focusedResult = session.results.last;
+            _decodeFocusedImage();
+          }
+        });
+      },
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1226,6 +1290,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 }),
                 const SizedBox(height: 6),
                 // Location / Environment Presets
+                // Location / Environment Presets
                 const Text(
                   'LOCATIONS',
                   style: TextStyle(
@@ -1243,7 +1308,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                       Padding(
                         padding: const EdgeInsets.only(bottom: 6),
                         child: Text(
-                          entry.key,
+                          entry.key.toUpperCase(),
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.3),
                             fontSize: 10,
@@ -1259,7 +1324,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                           return GestureDetector(
                             onTap: () {
                               _bgPromptController.text = tip;
-                              setState(() => _customBgPrompt = tip);
+                              setState(() {
+                                _customBgPrompt = tip;
+                                _selectedBackdrop =
+                                    null; // Clear wheel selection
+                              });
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(
@@ -1297,7 +1366,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 const SizedBox(height: 14),
                 // Skin texture selector
                 const Text(
-                  'SKIN TEXTURE',
+                  'SKIN ARCHITECTURE',
                   style: TextStyle(
                     color: Colors.white24,
                     fontSize: 9,
@@ -1350,6 +1419,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     },
                   ),
                 ),
+                const SizedBox(height: 100), // Bottom safety padding
               ],
             ),
           ),
@@ -1773,36 +1843,37 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             ),
           ),
           const SizedBox(height: 12),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: ['female', 'male', 'unspecified'].map((g) {
               final isActive = _gender == g;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => setState(() => _gender = g),
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
+              return GestureDetector(
+                onTap: () => setState(() => _gender = g),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
+                        : Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
                       color: isActive
-                          ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
-                          : Colors.white.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isActive
-                            ? const Color(0xFFD4AF37)
-                            : Colors.white12,
-                      ),
+                          ? const Color(0xFFD4AF37)
+                          : Colors.white12,
                     ),
-                    child: Text(
-                      g.toUpperCase(),
-                      style: TextStyle(
-                        color: isActive
-                            ? const Color(0xFFD4AF37)
-                            : Colors.white54,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  ),
+                  child: Text(
+                    g.toUpperCase(),
+                    style: TextStyle(
+                      color: isActive
+                          ? const Color(0xFFD4AF37)
+                          : Colors.white54,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
@@ -1876,36 +1947,37 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             ),
           ),
           const SizedBox(height: 12),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: ['neutral', 'warm', 'cool'].map((s) {
               final isActive = _styleTemperature == s;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => setState(() => _styleTemperature = s),
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
+              return GestureDetector(
+                onTap: () => setState(() => _styleTemperature = s),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
+                        : Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
                       color: isActive
-                          ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
-                          : Colors.white.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isActive
-                            ? const Color(0xFFD4AF37)
-                            : Colors.white12,
-                      ),
+                          ? const Color(0xFFD4AF37)
+                          : Colors.white12,
                     ),
-                    child: Text(
-                      s.toUpperCase(),
-                      style: TextStyle(
-                        color: isActive
-                            ? const Color(0xFFD4AF37)
-                            : Colors.white54,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  ),
+                  child: Text(
+                    s.toUpperCase(),
+                    style: TextStyle(
+                      color: isActive
+                          ? const Color(0xFFD4AF37)
+                          : Colors.white54,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
@@ -2001,8 +2073,6 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
           const SizedBox(height: 24),
 
-          const SizedBox(height: 24),
-
           // APPLY STYLE — triggers regeneration
           Consumer<SessionProvider>(
             builder: (context, session, child) {
@@ -2051,25 +2121,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               );
             },
           ),
-
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: TextButton(
-              onPressed: () => setState(() {
-                _activeControl = 'main';
-                _focusedResult = null;
-              }),
-              child: const Text(
-                'CANCEL',
-                style: TextStyle(
-                  color: Colors.white38,
-                  letterSpacing: 2,
-                  fontSize: 11,
-                ),
-              ),
-            ),
-          ),
+          const SizedBox(height: 120), // Bottom safety padding
         ],
       ),
     );
@@ -2083,7 +2135,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         children: [
           // 1. SKIN TEXTURE (Synced with constants)
           const Text(
-            'SKIN FINISH',
+            'SKIN ARCHITECTURE',
             style: TextStyle(
               color: Colors.white24,
               fontSize: 10,
@@ -2133,7 +2185,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           ),
           const SizedBox(height: 20),
 
-          // 4. FINE TUNE SLIDERS
+          // 4. FINE TUNE SLIDERS (ValueNotifier driven for performance)
           const Text(
             'FINE TUNE',
             style: TextStyle(
@@ -2144,21 +2196,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             ),
           ),
           const SizedBox(height: 12),
-          _buildSlider(
-            'BRIGHTNESS',
-            _brightness,
-            (v) => setState(() => _brightness = v),
-          ),
-          _buildSlider(
-            'CONTRAST',
-            _contrast,
-            (v) => setState(() => _contrast = v),
-          ),
-          _buildSlider(
-            'SATURATION',
-            _saturation,
-            (v) => setState(() => _saturation = v),
-          ),
+          _buildSlider('BRIGHTNESS', _brightness),
+          _buildSlider('CONTRAST', _contrast),
+          _buildSlider('SATURATION', _saturation),
 
           const SizedBox(height: 24),
 
@@ -2212,66 +2252,55 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               );
             },
           ),
-
-          const SizedBox(height: 8),
-
-          // CANCEL — close drawer without generating
-          SizedBox(
-            width: double.infinity,
-            child: TextButton(
-              onPressed: () => setState(() {
-                _activeControl = 'main';
-                _focusedResult = null;
-              }),
-              child: const Text(
-                'CANCEL',
-                style: TextStyle(
-                  color: Colors.white38,
-                  letterSpacing: 2,
-                  fontSize: 11,
-                ),
-              ),
-            ),
-          ),
+          const SizedBox(height: 120), // Bottom safety padding
         ],
       ),
     );
   }
 
-  Widget _buildSlider(
-    String label,
-    double value,
-    ValueChanged<double> onChanged,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildSlider(String label, ValueNotifier<double> notifier) {
+    return ValueListenableBuilder<double>(
+      valueListenable: notifier,
+      builder: (context, value, _) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              label,
-              style: const TextStyle(color: Colors.white54, fontSize: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(color: Colors.white54, fontSize: 10),
+                ),
+                Text(
+                  '${value.toInt()}%',
+                  style: const TextStyle(
+                    color: Color(0xFFD4AF37),
+                    fontSize: 10,
+                  ),
+                ),
+              ],
             ),
-            Text(
-              '${value.toInt()}%',
-              style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 10),
+            SliderTheme(
+              data: SliderThemeData(
+                activeTrackColor: const Color(0xFFD4AF37),
+                inactiveTrackColor: Colors.white10,
+                thumbColor: const Color(0xFFD4AF37),
+                trackHeight: 2,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+              ),
+              child: Slider(
+                value: value,
+                min: 0,
+                max: 200,
+                onChanged: (v) => notifier.value = v,
+              ),
             ),
+            const SizedBox(height: 8),
           ],
-        ),
-        SliderTheme(
-          data: SliderThemeData(
-            activeTrackColor: const Color(0xFFD4AF37),
-            inactiveTrackColor: Colors.white10,
-            thumbColor: const Color(0xFFD4AF37),
-            trackHeight: 2,
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-            overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
-          ),
-          child: Slider(value: value, min: 0, max: 200, onChanged: onChanged),
-        ),
-        const SizedBox(height: 8),
-      ],
+        );
+      },
     );
   }
 
@@ -2842,7 +2871,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
   Widget _buildPrintDrawer() {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 120),
       itemCount: printProducts.length,
       itemBuilder: (context, index) {
         final product = printProducts[index];
@@ -2880,9 +2909,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   }
 
   Widget _buildDownloadDrawer() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+      child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -2944,9 +2973,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   }
 
   Widget _buildShareDrawer() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+      child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
