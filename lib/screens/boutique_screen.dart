@@ -393,7 +393,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                     mainAxisSpacing: 12,
                   ),
                   itemCount: packages.length,
-                  itemCount: packages.length,
+
                   itemBuilder: (context, index) {
                     final pkg = packages[index];
                     final isSelected = pkg.id == _selectedPackage.id;
