@@ -726,68 +726,64 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           child: AnimatedBuilder(
             animation: Listenable.merge([
               _brightness,
-                _contrast,
-                _saturation,
-                _temperature,
-                _tint,
-                _vignette,
-              ]),
-              builder: (context, _) {
-                return Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    ColorFiltered(
-                      colorFilter: _buildRetouchFilter(
-                        _brightness.value,
-                        _contrast.value,
-                        _saturation.value,
-                        _temperature.value,
-                        _tint.value,
-                      ),
-                      child: _decodedImageBytes != null
-                          ? Image.memory(
-                              _decodedImageBytes!,
-                              fit: BoxFit.contain,
-                            )
-                          : (result.imageUrl.startsWith('data:')
-                                ? Image.memory(
-                                    base64Decode(result.imageUrl.split(',')[1]),
-                                    fit: BoxFit.contain,
-                                  )
-                                : Image.network(
-                                    result.imageUrl,
-                                    fit: BoxFit.contain,
-                                  )),
+              _contrast,
+              _saturation,
+              _temperature,
+              _tint,
+              _vignette,
+            ]),
+            builder: (context, _) {
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  ColorFiltered(
+                    colorFilter: _buildRetouchFilter(
+                      _brightness.value,
+                      _contrast.value,
+                      _saturation.value,
+                      _temperature.value,
+                      _tint.value,
                     ),
-                    // Vignette Overlay
-                    if (_vignette.value > 0)
-                      Positioned.fill(
-                        child: IgnorePointer(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: RadialGradient(
-                                center: Alignment.center,
-                                radius:
-                                    1.2, // Slightly larger than screen to soften edges
-                                colors: [
-                                  Colors.transparent,
-                                  Colors.black.withValues(
-                                    alpha: _vignette.value * 0.9,
-                                  ), // Max 90% opacity
-                                ],
-                                stops: const [
-                                  0.3,
-                                  1.0,
-                                ], // Start darkening at 30% out
-                              ),
+                    child: _decodedImageBytes != null
+                        ? Image.memory(_decodedImageBytes!, fit: BoxFit.contain)
+                        : (result.imageUrl.startsWith('data:')
+                              ? Image.memory(
+                                  base64Decode(result.imageUrl.split(',')[1]),
+                                  fit: BoxFit.contain,
+                                )
+                              : Image.network(
+                                  result.imageUrl,
+                                  fit: BoxFit.contain,
+                                )),
+                  ),
+                  // Vignette Overlay
+                  if (_vignette.value > 0)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: RadialGradient(
+                              center: Alignment.center,
+                              radius:
+                                  1.2, // Slightly larger than screen to soften edges
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withValues(
+                                  alpha: _vignette.value * 0.9,
+                                ), // Max 90% opacity
+                              ],
+                              stops: const [
+                                0.3,
+                                1.0,
+                              ], // Start darkening at 30% out
                             ),
                           ),
                         ),
                       ),
-                  ],
-                );
-              },
-            ),
+                    ),
+                ],
+              );
+            },
           ),
         ),
       ],
@@ -2581,7 +2577,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
           // SLIDERS SECTIONS
           _buildDivider(),
-          
+
           // COLOR BALANCE
           const Text(
             'COLOR BALANCE',
@@ -2593,11 +2589,17 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             ),
           ),
           const SizedBox(height: 12),
-          _buildSlider('TEMPERATURE', _temperature, min: -1.0, max: 1.0, isPercentage: false),
+          _buildSlider(
+            'TEMPERATURE',
+            _temperature,
+            min: -1.0,
+            max: 1.0,
+            isPercentage: false,
+          ),
           _buildSlider('TINT', _tint, min: -1.0, max: 1.0, isPercentage: false),
-          
+
           const SizedBox(height: 12),
-          
+
           // EFFECTS
           const Text(
             'EFFECTS',
@@ -2609,8 +2611,14 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             ),
           ),
           const SizedBox(height: 12),
-          _buildSlider('VIGNETTE', _vignette, min: 0.0, max: 1.0, isPercentage: true),
-          
+          _buildSlider(
+            'VIGNETTE',
+            _vignette,
+            min: 0.0,
+            max: 1.0,
+            isPercentage: true,
+          ),
+
           const SizedBox(height: 12),
 
           // FINE TUNE
@@ -2687,7 +2695,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   }
 
   Widget _buildSlider(
-    String label, 
+    String label,
     ValueNotifier<double> notifier, {
     double min = 0,
     double max = 200,

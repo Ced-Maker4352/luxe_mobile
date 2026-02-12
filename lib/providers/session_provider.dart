@@ -5,20 +5,103 @@ import '../models/user_profile.dart';
 import '../services/auth_service.dart';
 
 class SessionProvider extends ChangeNotifier {
+  // === SELECTION STATE ===
   PackageDetails? _selectedPackage;
   CameraRig? _selectedRig;
-  // IDENTITY LOCK STATE (Multi-Image Support)
+  StyleOption? _selectedStyle;
+  bool _isSingleStyleMode = false;
+  String _soloGender = 'female';
+  bool _preserveAgeAndBody = true;
+
+  // === GENERATION STATE ===
+  bool _isGenerating = false;
+  final List<GenerationResult> _results = [];
+
+  // === IDENTITY LOCK STATE (Multi-Image Support) ===
   final List<Uint8List> _identityImages = [];
 
   // Backward compatibility: Returns the first image or null
   Uint8List? get uploadedImageBytes =>
       _identityImages.isNotEmpty ? _identityImages.first : null;
-  // We can't easily support a single name for multiple images, so we return a placeholder or first name if we tracked it per image.
-  // For now, let's just keep _uploadedImageName as a general label or remove it if unused.
+
   String? _uploadedImageName;
   String? get uploadedImageName => _uploadedImageName;
 
+  // === STITCH STUDIO STATE ===
+  final List<StitchSubject> _stitchImages = [];
+  String _stitchVibe = 'individual'; // 'matching', 'individual'
+
+  // === VIRTUAL TRY-ON STATE ===
+  Uint8List? _clothingReferenceBytes;
+  String? _clothingReferenceName;
+
+  // === USER PROFILE & CREDITS ===
+  UserProfile? _userProfile;
+
+  // === GETTERS ===
+  PackageDetails? get selectedPackage => _selectedPackage;
+  CameraRig? get selectedRig => _selectedRig;
+  StyleOption? get selectedStyle => _selectedStyle;
+  bool get isSingleStyleMode => _isSingleStyleMode;
+  String get soloGender => _soloGender;
+  bool get preserveAgeAndBody => _preserveAgeAndBody;
+
+  bool get isGenerating => _isGenerating;
+  List<GenerationResult> get results => List.unmodifiable(_results);
+
   List<Uint8List> get identityImages => _identityImages;
+  bool get hasUploadedImage => _identityImages.isNotEmpty;
+
+  List<StitchSubject> get stitchImages => _stitchImages;
+  String get stitchVibe => _stitchVibe;
+
+  Uint8List? get clothingReferenceBytes => _clothingReferenceBytes;
+  String? get clothingReferenceName => _clothingReferenceName;
+  bool get hasClothingReference => _clothingReferenceBytes != null;
+
+  UserProfile? get userProfile => _userProfile;
+
+  // === SETTERS & METHODS ===
+
+  void selectPackage(PackageDetails package) {
+    _selectedPackage = package;
+    notifyListeners();
+  }
+
+  void selectRig(CameraRig rig) {
+    _selectedRig = rig;
+    notifyListeners();
+  }
+
+  void selectStyle(StyleOption? style) {
+    _selectedStyle = style;
+    notifyListeners();
+  }
+
+  void toggleSingleStyleMode(bool enabled) {
+    _isSingleStyleMode = enabled;
+    notifyListeners();
+  }
+
+  void setSoloGender(String gender) {
+    _soloGender = gender;
+    notifyListeners();
+  }
+
+  void setPreserveAgeAndBody(bool value) {
+    _preserveAgeAndBody = value;
+    notifyListeners();
+  }
+
+  void setGenerating(bool value) {
+    _isGenerating = value;
+    notifyListeners();
+  }
+
+  void addResult(GenerationResult result) {
+    _results.insert(0, result);
+    notifyListeners();
+  }
 
   /// Store a single image (Legacy / First Image) - clears existing list
   void uploadImageBytes(Uint8List bytes, String name) {
@@ -50,9 +133,6 @@ class SessionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Check if we have at least one valid identity image
-  bool get hasUploadedImage => _identityImages.isNotEmpty;
-
   /// Clear only the uploaded solo portrait images
   void clearUploadedImage() {
     _identityImages.clear();
@@ -68,23 +148,11 @@ class SessionProvider extends ChangeNotifier {
     _isGenerating = false;
     _selectedStyle = null; // Clear style
     _isSingleStyleMode = false; // Reset mode
+    // Keep rig and package as they might be defaults
     notifyListeners();
   }
 
-  // STITCH STUDIO STATE
-  final List<StitchSubject> _stitchImages = [];
-  String _stitchVibe = 'individual'; // 'matching', 'individual'
-
-  // VIRTUAL TRY-ON STATE
-  Uint8List? _clothingReferenceBytes;
-  String? _clothingReferenceName;
-
-  List<StitchSubject> get stitchImages => _stitchImages;
-  String get stitchVibe => _stitchVibe;
-  Uint8List? get clothingReferenceBytes => _clothingReferenceBytes;
-  String? get clothingReferenceName => _clothingReferenceName;
-  bool get hasClothingReference => _clothingReferenceBytes != null;
-
+  // === STITCH METHODS ===
   void addStitchImage(Uint8List bytes, {String gender = 'female'}) {
     if (_stitchImages.length < 5) {
       _stitchImages.add(StitchSubject(bytes: bytes, gender: gender));
@@ -111,6 +179,7 @@ class SessionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // === CLOTHING METHODS ===
   void uploadClothingReference(Uint8List bytes, String name) {
     _clothingReferenceBytes = bytes;
     _clothingReferenceName = name;
@@ -123,10 +192,7 @@ class SessionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // USER PROFILE & CREDITS
-  UserProfile? _userProfile;
-  UserProfile? get userProfile => _userProfile;
-
+  // === CREDIT METHODS ===
   Future<void> fetchUserProfile() async {
     final data = await AuthService().getUserProfile();
     if (data != null) {
