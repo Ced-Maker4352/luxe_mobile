@@ -1564,88 +1564,6 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
     if (session.hasUploadedImage && session.uploadedImageBytes != null) {
       // PREVIEW MODE with Real-time Filters
-      // Brightness matrix (offset)
-      // Brightness 0-200 => Offset -100 to +100
-      double b = (_brightness - 100) * 1.5;
-      final brightnessMatrix = <double>[
-        1,
-        0,
-        0,
-        0,
-        b,
-        0,
-        1,
-        0,
-        0,
-        b,
-        0,
-        0,
-        1,
-        0,
-        b,
-        0,
-        0,
-        0,
-        1,
-        0,
-      ];
-
-      // Contrast matrix (slope)
-      // Contrast 0-200 (100 center). 0->0, 200->2.
-      double c = _contrast / 100.0;
-      double t = 128 * (1 - c);
-      final contrastMatrix = <double>[
-        c,
-        0,
-        0,
-        0,
-        t,
-        0,
-        c,
-        0,
-        0,
-        t,
-        0,
-        0,
-        c,
-        0,
-        t,
-        0,
-        0,
-        0,
-        1,
-        0,
-      ];
-
-      // Saturation matrix
-      double s = _saturation / 100.0;
-      double lumR = 0.2126;
-      double lumG = 0.7152;
-      double lumB = 0.0722;
-      double oneMinusS = 1 - s;
-
-      final saturationMatrix = <double>[
-        (oneMinusS * lumR) + s,
-        (oneMinusS * lumG),
-        (oneMinusS * lumB),
-        0,
-        0,
-        (oneMinusS * lumR),
-        (oneMinusS * lumG) + s,
-        (oneMinusS * lumB),
-        0,
-        0,
-        (oneMinusS * lumR),
-        (oneMinusS * lumG),
-        (oneMinusS * lumB) + s,
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-      ];
 
       return Stack(
         children: [
@@ -1664,18 +1582,107 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
-                // Apply Filters: Saturation -> Contrast -> Brightness
-                child: ColorFiltered(
-                  colorFilter: ColorFilter.matrix(brightnessMatrix),
-                  child: ColorFiltered(
-                    colorFilter: ColorFilter.matrix(contrastMatrix),
-                    child: ColorFiltered(
-                      colorFilter: ColorFilter.matrix(saturationMatrix),
-                      child: Image.memory(
-                        session.uploadedImageBytes!,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
+                child: ValueListenableBuilder<double>(
+                  valueListenable: _brightness,
+                  builder: (context, bVal, _) => ValueListenableBuilder<double>(
+                    valueListenable: _contrast,
+                    builder: (context, cVal, _) =>
+                        ValueListenableBuilder<double>(
+                          valueListenable: _saturation,
+                          builder: (context, sVal, _) {
+                            // Recalculate matrices within builder for reactivity
+                            double b = (bVal - 100) * 1.5;
+                            final bMat = <double>[
+                              1,
+                              0,
+                              0,
+                              0,
+                              b,
+                              0,
+                              1,
+                              0,
+                              0,
+                              b,
+                              0,
+                              0,
+                              1,
+                              0,
+                              b,
+                              0,
+                              0,
+                              0,
+                              1,
+                              0,
+                            ];
+
+                            double c = cVal / 100.0;
+                            double t = 128 * (1 - c);
+                            final cMat = <double>[
+                              c,
+                              0,
+                              0,
+                              0,
+                              t,
+                              0,
+                              c,
+                              0,
+                              0,
+                              t,
+                              0,
+                              0,
+                              c,
+                              0,
+                              t,
+                              0,
+                              0,
+                              0,
+                              1,
+                              0,
+                            ];
+
+                            double s = sVal / 100.0;
+                            double lumR = 0.2126;
+                            double lumG = 0.7152;
+                            double lumB = 0.0722;
+                            double oneMinusS = 1 - s;
+                            final sMat = <double>[
+                              (oneMinusS * lumR) + s,
+                              (oneMinusS * lumG),
+                              (oneMinusS * lumB),
+                              0,
+                              0,
+                              (oneMinusS * lumR),
+                              (oneMinusS * lumG) + s,
+                              (oneMinusS * lumB),
+                              0,
+                              0,
+                              (oneMinusS * lumR),
+                              (oneMinusS * lumG),
+                              (oneMinusS * lumB) + s,
+                              0,
+                              0,
+                              0,
+                              0,
+                              0,
+                              1,
+                              0,
+                            ];
+
+                            return ColorFiltered(
+                              colorFilter: ColorFilter.matrix(bMat),
+                              child: ColorFiltered(
+                                colorFilter: ColorFilter.matrix(cMat),
+                                child: ColorFiltered(
+                                  colorFilter: ColorFilter.matrix(sMat),
+                                  child: Image.memory(
+                                    session.uploadedImageBytes!,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                   ),
                 ),
               ),
@@ -1714,9 +1721,12 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
   Widget _buildAdjustmentsOverlay() {
     final tags = <String>[];
-    if (_brightness != 100) tags.add('Brightness ${_brightness.toInt()}%');
-    if (_contrast != 100) tags.add('Contrast ${_contrast.toInt()}%');
-    if (_saturation != 100) tags.add('Saturation ${_saturation.toInt()}%');
+    if (_brightness.value != 100)
+      tags.add('Brightness ${_brightness.value.toInt()}%');
+    if (_contrast.value != 100)
+      tags.add('Contrast ${_contrast.value.toInt()}%');
+    if (_saturation.value != 100)
+      tags.add('Saturation ${_saturation.value.toInt()}%');
     tags.add('Skin: ${_selectedSkinTexture.label}');
     tags.add('Framing: ${_framingMode.replaceAll('-', ' ').toUpperCase()}');
     if (_customPrompt.isNotEmpty)
