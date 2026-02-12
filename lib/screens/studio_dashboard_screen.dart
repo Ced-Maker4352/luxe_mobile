@@ -3405,75 +3405,79 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       session.uploadClothingReference(bytes, image.name);
     }
   }
-}
+  }
 
-Future<void> _generateCinematicVideo(
-  SessionProvider session,
-  GenerationResult sourceResult,
-) async {
-  if (session.isGenerating) return;
+  Future<void> _generateCinematicVideo(
+    SessionProvider session,
+    GenerationResult sourceResult,
+  ) async {
+    if (session.isGenerating) return;
 
-  session.setGenerating(true);
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Generating Cinematic Video... (This may take 10-20s)'),
-    ),
-  );
-
-  try {
-    final service = GeminiService();
-    String rawImage = sourceResult.imageUrl;
-
-    // Ensure we have data key for API
-    if (!rawImage.startsWith('data:')) {
-      // If network image, we might need bytes.
-      // For now assuming result has data URI or we use _decodedImageBytes if focused.
-      if (_decodedImageBytes != null) {
-        rawImage =
-            'data:image/jpeg;base64,${base64Encode(_decodedImageBytes!)}';
-      }
-    }
-
-    final prompt = "Cinematic slow motion portrait. ${_customPrompt}";
-    final optic = session.selectedRig?.opticProtocol ?? "Cinematic";
-
-    final videoUri = await service.generateCinematicVideo(
-      rawImage,
-      prompt,
-      optic,
+    session.setGenerating(true);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Generating Cinematic Video... (This may take 10-20s)'),
+      ),
     );
 
-    if (!videoUri.startsWith('Error')) {
-      if (await canLaunchUrl(Uri.parse(videoUri))) {
-        await launchUrl(Uri.parse(videoUri));
-      } else {
-        debugPrint("Video URI: $videoUri");
-        // Attempt to launch anyway or show dialog
-        if (mounted) {
-          showDialog(
-            context: context,
-            builder: (c) => AlertDialog(
-              title: const Text("Video Generated"),
-              content: SelectableText(videoUri),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(c),
-                  child: const Text("OK"),
-                ),
-              ],
-            ),
-          );
+    try {
+      final service = GeminiService();
+      String rawImage = sourceResult.imageUrl;
+
+      // Ensure we have data key for API
+      if (!rawImage.startsWith('data:')) {
+        // If network image, we might need bytes.
+        // For now assuming result has data URI or we use _decodedImageBytes if focused.
+        if (_decodedImageBytes != null) {
+          rawImage =
+              'data:image/jpeg;base64,${base64Encode(_decodedImageBytes!)}';
         }
       }
-    } else {
-      throw Exception(videoUri);
+
+      final prompt = "Cinematic slow motion portrait. $_customPrompt";
+      final optic = session.selectedRig?.opticProtocol ?? "Cinematic";
+
+      final videoUri = await service.generateCinematicVideo(
+        rawImage,
+        prompt,
+        optic,
+      );
+
+      if (!videoUri.startsWith('Error')) {
+        if (await canLaunchUrl(Uri.parse(videoUri))) {
+          await launchUrl(Uri.parse(videoUri));
+        } else {
+          debugPrint("Video URI: $videoUri");
+          // Attempt to launch anyway or show dialog
+          if (mounted) {
+            showDialog(
+              context: context,
+              builder: (c) => AlertDialog(
+                title: const Text("Video Generated"),
+                content: SelectableText(videoUri),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(c),
+                    child: const Text("OK"),
+                  ),
+                ],
+              ),
+            );
+          }
+        }
+      } else {
+        throw Exception(videoUri);
+      }
+    } catch (e) {
+      debugPrint("Video generation error: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Video failed: $e')));
+      }
+    } finally {
+      session.setGenerating(false);
     }
-  } catch (e) {
-    debugPrint("Video generation error: $e");
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Video failed: $e')));
-  } finally {
-    session.setGenerating(false);
   }
 }
