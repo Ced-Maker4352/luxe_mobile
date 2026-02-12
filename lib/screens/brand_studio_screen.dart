@@ -1,7 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:permission_handler/permission_handler.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
+import '../shared/web_helper.dart'
+    if (dart.library.html) '../shared/web_helper_web.dart';
 import '../providers/session_provider.dart';
 import '../services/gemini_service.dart';
 
@@ -138,10 +143,36 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
   Future<void> _downloadImage(String imageUrl) async {
     try {
       final bytes = base64Decode(imageUrl.split(',')[1]);
-      final result = await ImageGallerySaver.saveImage(bytes);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Saved: $result')));
+      if (kIsWeb) {
+        WebHelper.downloadImage(
+          bytes,
+          "luxe_logo_${DateTime.now().millisecondsSinceEpoch}.png",
+        );
+      } else {
+        bool hasPermission = false;
+        if (Platform.isAndroid) {
+          hasPermission =
+              await Permission.photos.request().isGranted ||
+              await Permission.storage.request().isGranted;
+        } else {
+          hasPermission = await Permission.photos.request().isGranted;
+        }
+
+        if (hasPermission) {
+          final result = await ImageGallerySaver.saveImage(bytes);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Saved to Gallery: $result')),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Storage permission denied.')),
+            );
+          }
+        }
+      }
     } catch (e) {
       ScaffoldMessenger.of(
         context,

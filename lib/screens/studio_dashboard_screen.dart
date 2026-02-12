@@ -10,10 +10,14 @@ import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
+import '../shared/web_helper.dart'
+    if (dart.library.html) '../shared/web_helper_web.dart';
 
 class StudioDashboardScreen extends StatefulWidget {
   final bool startInStitchMode;
@@ -422,7 +426,38 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         bytes = base64Decode(base64String);
       }
 
-      if (bytes != null) {
+      if (bytes == null) return;
+
+      if (kIsWeb) {
+        // Web Download implementation
+        WebHelper.downloadImage(
+          bytes,
+          "luxe_portrait_${DateTime.now().millisecondsSinceEpoch}.png",
+        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Download started')));
+      } else {
+        // Mobile Implementation with Permission Check
+        bool hasPermission = false;
+        if (Platform.isAndroid) {
+          // For Android 13+ (API 33+), we might need photos permission
+          hasPermission =
+              await Permission.photos.request().isGranted ||
+              await Permission.storage.request().isGranted;
+        } else {
+          hasPermission = await Permission.photos.request().isGranted;
+        }
+
+        if (!hasPermission) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Storage permission denied.')),
+            );
+          }
+          return;
+        }
+
         final result = await ImageGallerySaver.saveImage(bytes);
         if (mounted) {
           ScaffoldMessenger.of(
@@ -433,9 +468,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     } catch (e) {
       debugPrint('Save error: $e');
       if (mounted) {
+        String errorMsg = e.toString();
+        if (errorMsg.contains('MissingPluginException')) {
+          errorMsg = 'This feature is not supported on this platform.';
+        }
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Failed to save: $e')));
+        ).showSnackBar(SnackBar(content: Text('Failed to save: $errorMsg')));
       }
     }
   }
