@@ -138,9 +138,26 @@ class AuthService {
       if (data == null) return;
 
       final key = type == 'video' ? 'video_generations' : 'photo_generations';
-      int current = data[key] ?? 0;
+
+      // Inference logic for credits if columns are missing
+      int current = data[key] ?? data['generations_remaining'] ?? 0;
+      if (current == 0 && data[key] == null) {
+        final tier = data['subscription_tier'] as String?;
+        if (tier != null) {
+          if (tier.contains('creatorPack'))
+            current = 30;
+          else if (tier.contains('professionalShoot'))
+            current = 80;
+          else if (tier.contains('agencyMaster'))
+            current = 200;
+          else if (tier.contains('socialQuick'))
+            current = 5;
+        }
+      }
+
       if (current > 0) {
         // 2. Decrement
+        // Note: This will fail if columns don't exist in Supabase.
         await _supabase
             .from('profiles')
             .update({key: current - 1})

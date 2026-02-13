@@ -115,6 +115,8 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
           'email': user.email,
           'is_subscribed': true,
           'subscription_tier': paymentTargetId,
+          'photo_generations': pkg.assetCount,
+          'video_generations': 0,
           'updated_at': DateTime.now().toIso8601String(),
         });
       } catch (dbError) {
@@ -196,6 +198,8 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                   'email': user.email,
                   'is_subscribed': true,
                   'subscription_tier': paymentTargetId,
+                  'photo_generations': pkg.assetCount,
+                  'video_generations': 0,
                   'updated_at': DateTime.now().toIso8601String(),
                 });
               } catch (dbError) {
@@ -251,6 +255,8 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
             'email': user.email,
             'is_subscribed': true,
             'subscription_tier': paymentTargetId,
+            'photo_generations': pkg.assetCount,
+            'video_generations': 0,
             'updated_at': DateTime.now().toIso8601String(),
           });
         } catch (dbError) {

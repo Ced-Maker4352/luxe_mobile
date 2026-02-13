@@ -12,13 +12,29 @@ class UserProfile {
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
+    final tier = json['subscription_tier'] as String?;
+
+    // Default credits if missing in DB
+    int defaultPhotos = 0;
+    if (tier != null) {
+      if (tier.contains('creatorPack'))
+        defaultPhotos = 30;
+      else if (tier.contains('professionalShoot'))
+        defaultPhotos = 80;
+      else if (tier.contains('agencyMaster'))
+        defaultPhotos = 200;
+      else if (tier.contains('socialQuick'))
+        defaultPhotos = 5;
+    }
+
     return UserProfile(
       id: json['id'] as String,
-      // Map potential column names found in standard Supabase setups
       photoGenerations:
-          json['photo_generations'] ?? json['generations_remaining'] ?? 0,
+          json['photo_generations'] ??
+          json['generations_remaining'] ??
+          defaultPhotos,
       videoGenerations: json['video_generations'] ?? 0,
-      subscriptionTier: json['subscription_tier'] as String?,
+      subscriptionTier: tier,
     );
   }
 }
