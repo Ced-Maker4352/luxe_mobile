@@ -968,7 +968,7 @@ final List<PackageDetails> packages = [
     exampleImage:
         "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=800&h=1000",
     thumbnail:
-        "https://images.unsplash.com/photo-1620932900342-60bd06374092?auto=format&fit=crop&q=80&w=400",
+        "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400",
     basePrompt:
         "IDENTITY INTEGRITY: 1:1 facial identity. COMPOSITION: Professional studio portrait.",
     buttonLabel: "UPGRADE YOUR LOOK",

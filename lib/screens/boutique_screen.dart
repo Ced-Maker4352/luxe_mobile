@@ -294,584 +294,623 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
       backgroundColor: isEnterprise
           ? AppColors.enterpriseNavy
           : AppColors.midnightNavy,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // === TOP HERO SECTION ===
-            Expanded(
-              flex: 3,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // 1. CAROUSEL LAYER
-                  const HeroCarousel(),
-
-                  // 2. TEXT OVERLAY LAYER
-                  Consumer<SessionProvider>(
-                    builder: (context, session, child) {
-                      final isEnterprise = session.isEnterpriseMode;
-                      return Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.black.withValues(alpha: 0.4),
-                              Colors.transparent,
-                              Colors.black.withValues(alpha: 0.8),
-                            ],
-                          ),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              "LUXE AI STUDIO",
-                              textAlign: TextAlign.center,
-                              style:
-                                  AppTypography.h2Display(
-                                    color: isEnterprise
-                                        ? AppColors.enterpriseGold
-                                        : AppColors.matteGold,
-                                  ).copyWith(
-                                    shadows: [
-                                      Shadow(
-                                        blurRadius: 10.0,
-                                        color: Colors.black,
-                                        offset: Offset(2.0, 2.0),
-                                      ),
-                                    ],
-                                  ),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              isEnterprise
-                                  ? "Production-Ready Visual Systems for Modern Teams"
-                                  : "Your Vision. Professionally Realized.",
-                              textAlign: TextAlign.center,
-                              style:
-                                  AppTypography.h3Display(
-                                    color: Colors.white.withValues(alpha: 0.95),
-                                  ).copyWith(
-                                    shadows: const [
-                                      Shadow(
-                                        blurRadius: 4.0,
-                                        color: Colors.black,
-                                        offset: Offset(1.0, 1.0),
-                                      ),
-                                    ],
-                                  ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              isEnterprise
-                                  ? "Generate cohesive executive headshots, campaign imagery, and brand-consistent visuals — without scheduling studios or coordinating shoots."
-                                  : "Upload once. Create unlimited campaigns.\nFrom social content to executive portraits.",
-                              textAlign: TextAlign.center,
-                              style:
-                                  AppTypography.small(
-                                    color: Colors.white.withValues(alpha: 0.8),
-                                  ).copyWith(
-                                    shadows: const [
-                                      Shadow(
-                                        blurRadius: 4.0,
-                                        color: Colors.black,
-                                        offset: Offset(1.0, 1.0),
-                                      ),
-                                    ],
-                                  ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-            // === MIDDLE GRID SECTION ===
-            Expanded(
-              flex: 3,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: GridView.builder(
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 1.4,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                  ),
-                  itemCount: packages.length,
-
-                  itemBuilder: (context, index) {
-                    final pkg = packages[index];
-                    final isSelected = pkg.id == _selectedPackage.id;
-                    final isPro = pkg.id == PortraitPackage.professionalShoot;
-
-                    // AOV Highlight: Pro tier gets subtle glow and badge
-                    return GestureDetector(
-                      onTap: () => setState(() => _selectedPackage = pkg),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // === TOP HERO SECTION ===
+                    SizedBox(
+                      height: constraints.maxHeight * 0.35,
                       child: Stack(
-                        clipBehavior: Clip.none,
+                        fit: StackFit.expand,
                         children: [
-                          AnimatedContainer(
-                            duration: AppMotion.micro,
-                            curve: AppMotion.cinematic,
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppColors.matteGold.withValues(alpha: 0.15)
-                                  : (isPro
-                                        ? AppColors.matteGold.withValues(
-                                            alpha: 0.05,
-                                          )
-                                        : Colors.transparent),
-                              image: DecorationImage(
-                                image: NetworkImage(pkg.thumbnail),
-                                fit: BoxFit.cover,
-                                opacity: isSelected ? 0.6 : 0.3,
-                                colorFilter: ColorFilter.mode(
-                                  Colors.black.withValues(
-                                    alpha: isSelected ? 0.2 : 0.5,
+                          // 1. CAROUSEL LAYER
+                          const HeroCarousel(),
+
+                          // 2. TEXT OVERLAY LAYER
+                          Consumer<SessionProvider>(
+                            builder: (context, session, child) {
+                              final isEnterprise = session.isEnterpriseMode;
+                              return Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.black.withValues(alpha: 0.4),
+                                      Colors.transparent,
+                                      Colors.black.withValues(alpha: 0.8),
+                                    ],
                                   ),
-                                  BlendMode.darken,
                                 ),
-                              ),
-                              border: Border.all(
-                                color: isSelected
-                                    ? AppColors.matteGold
-                                    : (isPro
-                                          ? AppColors.matteGold.withValues(
-                                              alpha: 0.4,
-                                            )
-                                          : AppColors.matteGold.withValues(
-                                              alpha: 0.1,
-                                            )),
-                                width: isSelected ? 2.5 : (isPro ? 1.5 : 0.5),
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                if (isSelected)
-                                  BoxShadow(
-                                    color: AppColors.matteGold.withValues(
-                                      alpha: 0.3,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "LUXE AI STUDIO",
+                                      textAlign: TextAlign.center,
+                                      style:
+                                          AppTypography.h2Display(
+                                            color: isEnterprise
+                                                ? AppColors.enterpriseGold
+                                                : AppColors.matteGold,
+                                          ).copyWith(
+                                            shadows: [
+                                              Shadow(
+                                                blurRadius: 10.0,
+                                                color: Colors.black,
+                                                offset: Offset(2.0, 2.0),
+                                              ),
+                                            ],
+                                          ),
                                     ),
-                                    blurRadius: isPro ? 15 : 10,
-                                    spreadRadius: 2,
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      isEnterprise
+                                          ? "Production-Ready Visual Systems for Modern Teams"
+                                          : "Your Vision. Professionally Realized.",
+                                      textAlign: TextAlign.center,
+                                      style:
+                                          AppTypography.h3Display(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.95,
+                                            ),
+                                          ).copyWith(
+                                            shadows: const [
+                                              Shadow(
+                                                blurRadius: 4.0,
+                                                color: Colors.black,
+                                                offset: Offset(1.0, 1.0),
+                                              ),
+                                            ],
+                                          ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      isEnterprise
+                                          ? "Generate cohesive executive headshots, campaign imagery, and brand-consistent visuals — without scheduling studios or coordinating shoots."
+                                          : "Upload once. Create unlimited campaigns.\nFrom social content to executive portraits.",
+                                      textAlign: TextAlign.center,
+                                      style:
+                                          AppTypography.small(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.8,
+                                            ),
+                                          ).copyWith(
+                                            shadows: const [
+                                              Shadow(
+                                                blurRadius: 4.0,
+                                                color: Colors.black,
+                                                offset: Offset(1.0, 1.0),
+                                              ),
+                                            ],
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // === MIDDLE GRID SECTION ===
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: GridView.builder(
+                        shrinkWrap: true,
+                        clipBehavior: Clip.none,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 1.3,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                            ),
+                        itemCount: packages.length,
+
+                        itemBuilder: (context, index) {
+                          final pkg = packages[index];
+                          final isSelected = pkg.id == _selectedPackage.id;
+                          final isPro =
+                              pkg.id == PortraitPackage.professionalShoot;
+
+                          // AOV Highlight: Pro tier gets subtle glow and badge
+                          return GestureDetector(
+                            onTap: () => setState(() => _selectedPackage = pkg),
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                AnimatedContainer(
+                                  duration: AppMotion.micro,
+                                  curve: AppMotion.cinematic,
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? AppColors.matteGold.withValues(
+                                            alpha: 0.15,
+                                          )
+                                        : (isPro
+                                              ? AppColors.matteGold.withValues(
+                                                  alpha: 0.05,
+                                                )
+                                              : Colors.transparent),
+                                    image: DecorationImage(
+                                      image: NetworkImage(pkg.thumbnail),
+                                      fit: BoxFit.cover,
+                                      opacity: isSelected ? 0.6 : 0.3,
+                                      colorFilter: ColorFilter.mode(
+                                        Colors.black.withValues(
+                                          alpha: isSelected ? 0.2 : 0.5,
+                                        ),
+                                        BlendMode.darken,
+                                      ),
+                                    ),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? AppColors.matteGold
+                                          : (isPro
+                                                ? AppColors.matteGold
+                                                      .withValues(alpha: 0.4)
+                                                : AppColors.matteGold
+                                                      .withValues(alpha: 0.1)),
+                                      width: isSelected
+                                          ? 2.5
+                                          : (isPro ? 1.5 : 0.5),
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      if (isSelected)
+                                        BoxShadow(
+                                          color: AppColors.matteGold.withValues(
+                                            alpha: 0.3,
+                                          ),
+                                          blurRadius: isPro ? 15 : 10,
+                                          spreadRadius: 2,
+                                        ),
+                                    ],
+                                  ),
+                                  alignment: Alignment.center,
+                                  padding: const EdgeInsets.all(12),
+                                  child: AnimatedScale(
+                                    scale: isSelected ? 1.02 : 1.0,
+                                    duration: AppMotion.micro,
+                                    curve: AppMotion.cinematic,
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          _getPackageIcon(pkg.id),
+                                          color: isSelected
+                                              ? AppColors.matteGold
+                                              : (isPro
+                                                    ? AppColors.matteGold
+                                                    : Colors.white54),
+                                          size: 28,
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          pkg.name.toUpperCase(),
+                                          textAlign: TextAlign.center,
+                                          style:
+                                              AppTypography.microBold(
+                                                color: isSelected
+                                                    ? Colors.white
+                                                    : Colors.white70,
+                                              ).copyWith(
+                                                fontSize: 11,
+                                                shadows: [
+                                                  Shadow(
+                                                    color: Colors.black,
+                                                    blurRadius: 4,
+                                                    offset: Offset(1, 1),
+                                                  ),
+                                                ],
+                                              ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          pkg.price,
+                                          style:
+                                              AppTypography.bodyMedium(
+                                                color: AppColors.matteGold,
+                                              ).copyWith(
+                                                fontWeight: FontWeight.bold,
+                                                shadows: [
+                                                  Shadow(
+                                                    color: Colors.black,
+                                                    blurRadius: 4,
+                                                    offset: Offset(1, 1),
+                                                  ),
+                                                ],
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                // MOST POPULAR BADGE
+                                if (isPro)
+                                  Positioned(
+                                    top: -10,
+                                    right: 0,
+                                    left: 0,
+                                    child: Center(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.matteGold,
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          boxShadow: const [
+                                            BoxShadow(
+                                              color: Colors.black45,
+                                              blurRadius: 4,
+                                              offset: Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Text(
+                                          isEnterprise
+                                              ? "PROFESSIONAL PRODUCTION"
+                                              : "MOST POPULAR",
+                                          style: AppTypography.microBold(
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                               ],
                             ),
-                            alignment: Alignment.center,
-                            padding: const EdgeInsets.all(12),
-                            child: AnimatedScale(
-                              scale: isSelected ? 1.02 : 1.0,
-                              duration: AppMotion.micro,
-                              curve: AppMotion.cinematic,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                          );
+                        },
+                      ),
+                    ),
+                    // === SUBSCRIPTION SECTION ===
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            isEnterprise
+                                ? "PRODUCTION TIERS"
+                                : "STUDIO PACKAGES",
+                            style: AppTypography.microBold(
+                              color: Colors.white54,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              _buildSubscriptionButton(
+                                "STARTER",
+                                "\$19/mo",
+                                "sub_monthly_19",
+                              ),
+                              const SizedBox(width: 8),
+                              _buildSubscriptionButton(
+                                "PRO",
+                                "\$49/mo",
+                                "sub_monthly_49",
+                              ),
+                              const SizedBox(width: 8),
+                              _buildSubscriptionButton(
+                                "UNLIMITED",
+                                "\$99/mo",
+                                "sub_monthly_99",
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    Spacer(),
+
+                    // === BOTTOM DETAILS SECTION ===
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.softCharcoal,
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(30),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 20,
+                            offset: Offset(0, -5),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Dynamic Image + Title Row
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.matteGold.withValues(
+                                        alpha: 0.2,
+                                      ),
+                                      blurRadius: 10,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    _selectedPackage.exampleImage,
+                                    width: 80,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _selectedPackage.name.toUpperCase(),
+                                      style: AppTypography.h3Display(
+                                        color: AppColors.matteGold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    RichText(
+                                      text: TextSpan(
+                                        children: [
+                                          TextSpan(
+                                            text: '\$',
+                                            style: AppTypography.priceDisplay()
+                                                .copyWith(fontSize: 16),
+                                          ),
+                                          TextSpan(
+                                            text: _selectedPackage.price
+                                                .replaceAll('\$', ''),
+                                            style: AppTypography.priceDisplay()
+                                                .copyWith(fontSize: 32),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      _selectedPackage.description,
+                                      style: AppTypography.small(
+                                        color: Colors.white70,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Features
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: _selectedPackage.features.map((f) {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: Colors.white12),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.check,
+                                      color: AppColors.matteGold,
+                                      size: 12,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      f,
+                                      style: AppTypography.smallSemiBold(
+                                        color: Colors.white70,
+                                      ).copyWith(fontSize: 10),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+
+                          // Missing Features (AOV - Loss Aversion)
+                          if (_selectedPackage.id !=
+                                  PortraitPackage.agencyMaster &&
+                              _selectedPackage.id !=
+                                  PortraitPackage.professionalShoot) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              "MISSING IN THIS TIER:",
+                              style: AppTypography.microBold(
+                                color: Colors.white24,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children:
+                                  [
+                                    if (_selectedPackage.id ==
+                                            PortraitPackage.socialQuick ||
+                                        _selectedPackage.id ==
+                                            PortraitPackage.creatorPack)
+                                      "4K Export (Pro Only)",
+                                    if (_selectedPackage.id ==
+                                            PortraitPackage.socialQuick ||
+                                        _selectedPackage.id ==
+                                            PortraitPackage.creatorPack)
+                                      "Studio Lighting (Pro Only)",
+                                    if (_selectedPackage.id !=
+                                        PortraitPackage.agencyMaster)
+                                      "Group Mode (Agency Only)",
+                                  ].map((f) {
+                                    return Text(
+                                      "• $f",
+                                      style: AppTypography.micro(
+                                        color: Colors.white24,
+                                      ),
+                                    );
+                                  }).toList(),
+                            ),
+                          ],
+
+                          // Price Anchoring Text
+                          if (_selectedPackage.id ==
+                              PortraitPackage.professionalShoot) ...[
+                            const SizedBox(height: 16),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.matteGold.withValues(
+                                  alpha: 0.1,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: AppColors.matteGold.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                ),
+                              ),
+                              child: Row(
                                 children: [
                                   Icon(
-                                    _getPackageIcon(pkg.id),
-                                    color: isSelected
-                                        ? AppColors.matteGold
-                                        : (isPro
-                                              ? AppColors.matteGold
-                                              : Colors.white54),
-                                    size: 28,
+                                    Icons.info_outline,
+                                    color: AppColors.matteGold,
+                                    size: 14,
                                   ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    pkg.name.toUpperCase(),
-                                    textAlign: TextAlign.center,
-                                    style:
-                                        AppTypography.microBold(
-                                          color: isSelected
-                                              ? Colors.white
-                                              : Colors.white70,
-                                        ).copyWith(
-                                          fontSize: 11,
-                                          shadows: [
-                                            Shadow(
-                                              color: Colors.black,
-                                              blurRadius: 4,
-                                              offset: Offset(1, 1),
-                                            ),
-                                          ],
-                                        ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    pkg.price,
-                                    style:
-                                        AppTypography.bodyMedium(
-                                          color: AppColors.matteGold,
-                                        ).copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          shadows: [
-                                            Shadow(
-                                              color: Colors.black,
-                                              blurRadius: 4,
-                                              offset: Offset(1, 1),
-                                            ),
-                                          ],
-                                        ),
+                                  SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      "Standard studio session value: \$500–\$1,200",
+                                      style: AppTypography.smallSemiBold(
+                                        color: AppColors.matteGold,
+                                      ).copyWith(fontSize: 11),
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
-                          ),
-                          // MOST POPULAR BADGE
-                          if (isPro)
-                            Positioned(
-                              top: -10,
-                              right: 0,
-                              left: 0,
-                              child: Center(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
+                          ],
+                          if (_selectedPackage.id ==
+                              PortraitPackage.agencyMaster) ...[
+                            const SizedBox(height: 16),
+                            Text(
+                              "Equivalent to a multi-day studio production (\$5,000+ value)",
+                              style: AppTypography.small(color: Colors.white54)
+                                  .copyWith(
+                                    fontSize: 11,
+                                    fontStyle: FontStyle.italic,
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.matteGold,
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: const [
-                                      BoxShadow(
-                                        color: Colors.black45,
-                                        blurRadius: 4,
-                                        offset: Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Text(
-                                    isEnterprise
-                                        ? "PROFESSIONAL PRODUCTION"
-                                        : "MOST POPULAR",
-                                    style: AppTypography.microBold(
-                                      color: Colors.black,
+                            ),
+                          ],
+
+                          const SizedBox(height: 24),
+
+                          // Action Button
+                          SizedBox(
+                            width: double.infinity,
+                            child: PremiumButton(
+                              onPressed: _isProcessing
+                                  ? null
+                                  : () => _handlePackageSelection(
+                                      _selectedPackage,
                                     ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-
-            // === SUBSCRIPTION SECTION ===
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Column(
-                children: [
-                  Text(
-                    isEnterprise ? "PRODUCTION TIERS" : "STUDIO PACKAGES",
-                    style: AppTypography.microBold(color: Colors.white54),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      _buildSubscriptionButton(
-                        "STARTER",
-                        "\$19/mo",
-                        "sub_monthly_19",
-                      ),
-                      const SizedBox(width: 8),
-                      _buildSubscriptionButton(
-                        "PRO",
-                        "\$49/mo",
-                        "sub_monthly_49",
-                      ),
-                      const SizedBox(width: 8),
-                      _buildSubscriptionButton(
-                        "UNLIMITED",
-                        "\$99/mo",
-                        "sub_monthly_99",
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // === BOTTOM DETAILS SECTION ===
-            Expanded(
-              flex: 3,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-                decoration: BoxDecoration(
-                  color: AppColors.softCharcoal,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 20,
-                      offset: Offset(0, -5),
-                    ),
-                  ],
-                ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Dynamic Image + Title Row
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.matteGold.withValues(
-                                    alpha: 0.2,
-                                  ),
-                                  blurRadius: 10,
-                                  spreadRadius: 1,
-                                ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
-                                _selectedPackage.exampleImage,
-                                width: 80,
-                                height: 100,
-                                fit: BoxFit.cover,
+                              isLoading: _isProcessing,
+                              child: Text(
+                                _selectedPackage.buttonLabel.toUpperCase(),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _selectedPackage.name.toUpperCase(),
-                                  style: AppTypography.h3Display(
-                                    color: AppColors.matteGold,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                RichText(
-                                  text: TextSpan(
-                                    children: [
-                                      TextSpan(
-                                        text: '\$',
-                                        style: AppTypography.priceDisplay()
-                                            .copyWith(fontSize: 16),
-                                      ),
-                                      TextSpan(
-                                        text: _selectedPackage.price.replaceAll(
-                                          '\$',
-                                          '',
-                                        ),
-                                        style: AppTypography.priceDisplay()
-                                            .copyWith(fontSize: 32),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  _selectedPackage.description,
-                                  style: AppTypography.small(
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
 
-                      // Features
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _selectedPackage.features.map((f) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.05),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Colors.white12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.check,
-                                  color: AppColors.matteGold,
-                                  size: 12,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  f,
-                                  style: AppTypography.smallSemiBold(
-                                    color: Colors.white70,
-                                  ).copyWith(fontSize: 10),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      ),
-
-                      // Missing Features (AOV - Loss Aversion)
-                      if (_selectedPackage.id != PortraitPackage.agencyMaster &&
-                          _selectedPackage.id !=
-                              PortraitPackage.professionalShoot) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          "MISSING IN THIS TIER:",
-                          style: AppTypography.microBold(color: Colors.white24),
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children:
-                              [
-                                if (_selectedPackage.id ==
-                                        PortraitPackage.socialQuick ||
-                                    _selectedPackage.id ==
-                                        PortraitPackage.creatorPack)
-                                  "4K Export (Pro Only)",
-                                if (_selectedPackage.id ==
-                                        PortraitPackage.socialQuick ||
-                                    _selectedPackage.id ==
-                                        PortraitPackage.creatorPack)
-                                  "Studio Lighting (Pro Only)",
-                                if (_selectedPackage.id !=
-                                    PortraitPackage.agencyMaster)
-                                  "Group Mode (Agency Only)",
-                              ].map((f) {
-                                return Text(
-                                  "• $f",
-                                  style: AppTypography.micro(
-                                    color: Colors.white24,
-                                  ),
-                                );
-                              }).toList(),
-                        ),
-                      ],
-
-                      // Price Anchoring Text
-                      if (_selectedPackage.id ==
-                          PortraitPackage.professionalShoot) ...[
-                        const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.matteGold.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: AppColors.matteGold.withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Row(
+                          const SizedBox(height: 16),
+                          // Micro-copy Reassurance
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.info_outline,
-                                color: AppColors.matteGold,
-                                size: 14,
-                              ),
-                              SizedBox(width: 8),
-                              Expanded(
+                              Flexible(
                                 child: Text(
-                                  "Standard studio session value: \$500–\$1,200",
-                                  style: AppTypography.smallSemiBold(
-                                    color: AppColors.matteGold,
-                                  ).copyWith(fontSize: 11),
+                                  isEnterprise
+                                      ? "No physical coordination. Scalable results. Brand compliant."
+                                      : "No photographer. No studio rental. No reshoots.",
+                                  style: AppTypography.micro(
+                                    color: Colors.white30,
+                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
-                      if (_selectedPackage.id ==
-                          PortraitPackage.agencyMaster) ...[
-                        const SizedBox(height: 16),
-                        Text(
-                          "Equivalent to a multi-day studio production (\$5,000+ value)",
-                          style: AppTypography.small(
-                            color: Colors.white54,
-                          ).copyWith(fontSize: 11, fontStyle: FontStyle.italic),
-                        ),
-                      ],
 
-                      const SizedBox(height: 24),
-
-                      // Action Button
-                      SizedBox(
-                        width: double.infinity,
-                        child: PremiumButton(
-                          onPressed: _isProcessing
-                              ? null
-                              : () => _handlePackageSelection(_selectedPackage),
-                          isLoading: _isProcessing,
-                          child: Text(
-                            _selectedPackage.buttonLabel.toUpperCase(),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-                      // Micro-copy Reassurance
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Flexible(
+                          const SizedBox(height: 12),
+                          Center(
                             child: Text(
-                              isEnterprise
-                                  ? "No physical coordination. Scalable results. Brand compliant."
-                                  : "No photographer. No studio rental. No reshoots.",
-                              style: AppTypography.micro(color: Colors.white30),
-                              textAlign: TextAlign.center,
+                              "SECURE PAYMENT VIA STRIPE",
+                              style: AppTypography.micro(
+                                color: Colors.white.withValues(alpha: 0.3),
+                              ),
                             ),
                           ),
+                          if (isEnterprise) ...[
+                            const SizedBox(height: 32),
+                            _buildEnterpriseUseGrid(),
+                            const SizedBox(height: 32),
+                            _buildTrustSignals(),
+                          ],
+
+                          const SizedBox(height: 12),
                         ],
                       ),
-
-                      const SizedBox(height: 12),
-                      Center(
-                        child: Text(
-                          "SECURE PAYMENT VIA STRIPE",
-                          style: AppTypography.micro(
-                            color: Colors.white.withValues(alpha: 0.3),
-                          ),
-                        ),
-                      ),
-                      if (isEnterprise) ...[
-                        const SizedBox(height: 32),
-                        _buildEnterpriseUseGrid(),
-                        const SizedBox(height: 32),
-                        _buildTrustSignals(),
-                      ],
-
-                      const SizedBox(height: 12),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
       // Hidden Toggle for Demo (Double tap footer or small button)
       floatingActionButton: Padding(
