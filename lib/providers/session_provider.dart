@@ -36,6 +36,10 @@ class SessionProvider extends ChangeNotifier {
   Uint8List? _clothingReferenceBytes;
   String? _clothingReferenceName;
 
+  // === CUSTOM BACKGROUND STATE ===
+  Uint8List? _backgroundReferenceBytes;
+  String? _backgroundReferenceName;
+
   // === USER PROFILE & CREDITS ===
   UserProfile? _userProfile;
 
@@ -60,6 +64,10 @@ class SessionProvider extends ChangeNotifier {
   Uint8List? get clothingReferenceBytes => _clothingReferenceBytes;
   String? get clothingReferenceName => _clothingReferenceName;
   bool get hasClothingReference => _clothingReferenceBytes != null;
+
+  Uint8List? get backgroundReferenceBytes => _backgroundReferenceBytes;
+  String? get backgroundReferenceName => _backgroundReferenceName;
+  bool get hasBackgroundReference => _backgroundReferenceBytes != null;
 
   UserProfile? get userProfile => _userProfile;
 
@@ -204,6 +212,19 @@ class SessionProvider extends ChangeNotifier {
   void clearClothingReference() {
     _clothingReferenceBytes = null;
     _clothingReferenceName = null;
+    notifyListeners();
+  }
+
+  // === BACKGROUND METHODS ===
+  void uploadBackgroundReference(Uint8List bytes, String name) {
+    _backgroundReferenceBytes = bytes;
+    _backgroundReferenceName = name;
+    notifyListeners();
+  }
+
+  void clearBackgroundReference() {
+    _backgroundReferenceBytes = null;
+    _backgroundReferenceName = null;
     notifyListeners();
   }
 

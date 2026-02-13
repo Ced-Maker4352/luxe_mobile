@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Luxe needs speech recognition for voice-to-prompt input.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Luxe needs microphone access for voice-to-prompt input.</string>
 </dict>
 </plist>

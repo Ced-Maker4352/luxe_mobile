@@ -16,6 +16,7 @@ import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../shared/web_helper.dart'
     if (dart.library.html) '../shared/web_helper_web.dart';
 
@@ -51,13 +52,17 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     0,
   ); // 0.0 to 1.0
 
+  // Voice Interaction
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _isListening = false;
+
   // NEW: Framing Options
   // NEW: Missing web features - Gender & Style
   String _gender = 'female'; // 'female', 'male', 'unspecified'
   String _styleTemperature = 'neutral'; // 'cool', 'warm', 'neutral'
   String _framingMode = 'portrait'; // 'portrait', 'full-body', 'head-to-toe'
   String _selectedClothingStyle = ''; // from promptCategories['Styling & Vibe']
-  Map<int, String> _stitchPersonStyles =
+  final Map<int, String> _stitchPersonStyles =
       {}; // per-person clothing styles for stitch mode
   String _selectedSchoolQuery = ''; // Filter for "Your School" wardrobe
 
@@ -121,6 +126,32 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     });
   }
 
+  Future<void> _listen() async {
+    if (!_isListening) {
+      bool available = await _speech.initialize(
+        onStatus: (val) => debugPrint('STT Status: $val'),
+        onError: (val) => debugPrint('STT Error: $val'),
+      );
+      if (available) {
+        setState(() => _isListening = true);
+        _speech.listen(
+          onResult: (val) {
+            setState(() {
+              _promptController.text = val.recognizedWords;
+              _customPrompt = val.recognizedWords;
+              if (val.hasConfidenceRating && val.confidence > 0) {
+                _voiceConfidence = val.confidence;
+              }
+            });
+          },
+        );
+      }
+    } else {
+      setState(() => _isListening = false);
+      _speech.stop();
+    }
+  }
+
   @override
   void dispose() {
     _promptController.dispose();
@@ -139,10 +170,12 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     );
 
     if (!session.hasUploadedImage || session.selectedPackage == null) {
-      if (!session.hasUploadedImage)
+      if (!session.hasUploadedImage) {
         debugPrint('Studio: FAILURE - Missing image bytes');
-      if (session.selectedPackage == null)
+      }
+      if (session.selectedPackage == null) {
         debugPrint('Studio: FAILURE - Missing package');
+      }
 
       // Auto-recover for testing if package is missing
       if (session.selectedPackage == null && packages.isNotEmpty) {
@@ -216,11 +249,16 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           .map((bytes) => base64Encode(bytes))
           .toList();
 
+      String? backgroundRef;
+      if (session.hasBackgroundReference) {
+        backgroundRef = base64Encode(session.backgroundReferenceBytes!);
+      }
+
       final resultText = await service.generatePortrait(
         referenceImagesBase64: identityImagesB64,
         basePrompt: fullPrompt,
         opticProtocol: session.selectedRig!.opticProtocol,
-        backgroundImageBase64: null, // TODO: Handle background image if needed
+        backgroundImageBase64: backgroundRef,
         clothingReferenceBase64: clothingRef,
         skinTexturePrompt: _selectedSkinTexture.prompt,
         preserveAgeAndBody: session.preserveAgeAndBody,
@@ -364,11 +402,16 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         clothingRef = base64Encode(session.clothingReferenceBytes!);
       }
 
+      String? backgroundRef;
+      if (session.hasBackgroundReference) {
+        backgroundRef = base64Encode(session.backgroundReferenceBytes!);
+      }
+
       final resultText = await service.generateGroupStitch(
         identityImagesBase64: imagesB64,
         prompt: fullPrompt,
         vibe: session.stitchVibe,
-        backgroundImageBase64: null,
+        backgroundImageBase64: backgroundRef,
         clothingReferenceBase64: clothingRef,
         perPersonStyles: perPersonStyles.isNotEmpty ? perPersonStyles : null,
         preserveAgeAndBody: session.preserveAgeAndBody,
@@ -959,12 +1002,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         onTap: () {
           // Toggle gender on tap
           setState(() {
-            if (_gender == 'female')
+            if (_gender == 'female') {
               _gender = 'male';
-            else if (_gender == 'male')
+            } else if (_gender == 'male') {
               _gender = 'unspecified';
-            else
+            } else {
               _gender = 'female';
+            }
             session.setSoloGender(_gender);
           });
         },
@@ -1011,6 +1055,15 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         _buildStackChip(
           Icons.palette,
           session.selectedStyle!.name,
+          onTap: () => setState(() => _activeControl = 'style'),
+          isActive: true,
+        ),
+      );
+    } else if (session.hasClothingReference) {
+      items.add(
+        _buildStackChip(
+          Icons.checkroom,
+          'Custom Outfit',
           onTap: () => setState(() => _activeControl = 'style'),
           isActive: true,
         ),
@@ -1504,6 +1557,95 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           'BACKDROP',
           () => setState(() => _activeControl = 'main'),
         ),
+        // CUSTOM BACKGROUND UPLOAD soul
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Consumer<SessionProvider>(
+            builder: (context, session, _) {
+              return GestureDetector(
+                onTap: _pickBackgroundReference,
+                child: Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: session.hasBackgroundReference
+                        ? AppColors.matteGold.withValues(alpha: 0.15)
+                        : AppColors.softPlatinum.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: session.hasBackgroundReference
+                          ? AppColors.matteGold
+                          : AppColors.softPlatinum.withValues(alpha: 0.1),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      if (session.hasBackgroundReference)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: Image.memory(
+                            session.backgroundReferenceBytes!,
+                            width: 40,
+                            height: 40,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      else
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: AppColors.softPlatinum.withValues(
+                              alpha: 0.1,
+                            ),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Icon(
+                            Icons.add_photo_alternate_outlined,
+                            color: AppColors.matteGold,
+                          ),
+                        ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'CUSTOM BACKDROP',
+                              style: AppTypography.microBold(
+                                color: AppColors.matteGold,
+                              ),
+                            ),
+                            Text(
+                              session.hasBackgroundReference
+                                  ? session.backgroundReferenceName!
+                                  : 'Upload your own reference',
+                              style: AppTypography.micro(
+                                color: AppColors.mutedGray,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (session.hasBackgroundReference)
+                        IconButton(
+                          icon: Icon(Icons.close, size: 18, color: Colors.red),
+                          onPressed: () {
+                            session.clearBackgroundReference();
+                            setState(() {
+                              _customBgPrompt = '';
+                              _bgPromptController.text = '';
+                            });
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
         Expanded(
           child: Stack(
             children: [
@@ -1642,23 +1784,16 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     suffixIcon: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Mic (Stub)
+                        // Mic (Functional STT)
                         IconButton(
                           icon: Icon(
-                            Icons.mic,
-                            color: AppColors.mutedGray,
+                            _isListening ? Icons.mic : Icons.mic_none,
+                            color: _isListening
+                                ? AppColors.matteGold
+                                : AppColors.mutedGray,
                             size: 20,
                           ),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'VOICE PROTOCOL: V-AURA Integration Coming Soon',
-                                ),
-                                backgroundColor: AppColors.matteGold,
-                              ),
-                            );
-                          },
+                          onPressed: _listen,
                         ),
                         // Enhance (Live — calls GeminiService.enhancePrompt)
                         IconButton(
@@ -1783,62 +1918,219 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 SizedBox(height: 14),
                 // AI Prompt Presets (from promptCategories)
                 ...promptCategories.entries.map((entry) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        entry.key.toUpperCase(),
-                        style: AppTypography.microBold(
-                          color: AppColors.softPlatinum.withValues(alpha: 0.24),
+                  final dynamic value = entry.value;
+
+                  if (value is Map<String, List<String>>) {
+                    // NESTED STRUCTURE (e.g., Styling & Vibe, Your School)
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          entry.key.toUpperCase(),
+                          style: AppTypography.microBold(
+                            color: AppColors.softPlatinum.withValues(
+                              alpha: 0.24,
+                            ),
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 8),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: entry.value.map((preset) {
-                          final isActive = _customPrompt == preset;
-                          return GestureDetector(
-                            onTap: () {
-                              _promptController.text = preset;
-                              setState(() => _customPrompt = preset);
-                            },
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
+                        SizedBox(height: 8),
+                        ...value.entries.map((subEntry) {
+                          return Theme(
+                            data: Theme.of(
+                              context,
+                            ).copyWith(dividerColor: Colors.transparent),
+                            child: ExpansionTile(
+                              title: Text(
+                                subEntry.key,
+                                style: AppTypography.smallSemiBold(
+                                  color: AppColors.matteGold,
+                                ),
                               ),
-                              decoration: BoxDecoration(
-                                color: isActive
-                                    ? Color(0xFFD4AF37).withValues(alpha: 0.15)
-                                    : AppColors.softPlatinum.withValues(
-                                        alpha: 0.05,
+                              tilePadding: EdgeInsets.zero,
+                              childrenPadding: EdgeInsets.only(bottom: 12),
+                              iconColor: AppColors.matteGold,
+                              collapsedIconColor: AppColors.mutedGray,
+                              children: [
+                                if (entry.key == 'Your School') ...[
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 8,
+                                    ),
+                                    child: TextField(
+                                      onChanged: (val) => setState(
+                                        () => _selectedSchoolQuery = val,
                                       ),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: isActive
-                                      ? AppColors.matteGold
-                                      : AppColors.softPlatinum.withValues(
-                                          alpha: 0.12,
+                                      style: AppTypography.small(
+                                        color: Colors.white,
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: 'Search University...',
+                                        hintStyle: TextStyle(
+                                          color: Colors.white24,
                                         ),
+                                        prefixIcon: Icon(
+                                          Icons.search,
+                                          color: AppColors.matteGold,
+                                          size: 18,
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.white.withValues(
+                                          alpha: 0.05,
+                                        ),
+                                        contentPadding: EdgeInsets.symmetric(
+                                          vertical: 8,
+                                        ),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                                Wrap(
+                                  spacing: 6,
+                                  runSpacing: 6,
+                                  children:
+                                      (entry.key == 'Your School'
+                                              ? universities
+                                                    .where(
+                                                      (u) => u
+                                                          .toLowerCase()
+                                                          .contains(
+                                                            _selectedSchoolQuery
+                                                                .toLowerCase(),
+                                                          ),
+                                                    )
+                                                    .take(8)
+                                                    .map((u) => '$u Jacket')
+                                                    .toList()
+                                              : subEntry.value)
+                                          .map((preset) {
+                                            final isActive =
+                                                _customPrompt == preset;
+                                            return GestureDetector(
+                                              onTap: () {
+                                                _promptController.text = preset;
+                                                setState(
+                                                  () => _customPrompt = preset,
+                                                );
+                                              },
+                                              child: Container(
+                                                padding: EdgeInsets.symmetric(
+                                                  horizontal: 10,
+                                                  vertical: 6,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: isActive
+                                                      ? Color(
+                                                          0xFFD4AF37,
+                                                        ).withValues(
+                                                          alpha: 0.15,
+                                                        )
+                                                      : AppColors.softPlatinum
+                                                            .withValues(
+                                                              alpha: 0.05,
+                                                            ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(16),
+                                                  border: Border.all(
+                                                    color: isActive
+                                                        ? AppColors.matteGold
+                                                        : AppColors.softPlatinum
+                                                              .withValues(
+                                                                alpha: 0.12,
+                                                              ),
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  preset,
+                                                  style: TextStyle(
+                                                    color: isActive
+                                                        ? AppColors.matteGold
+                                                        : AppColors.coolGray,
+                                                    fontSize: 11,
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          })
+                                          .toList(),
                                 ),
-                              ),
-                              child: Text(
-                                preset,
-                                style: TextStyle(
-                                  color: isActive
-                                      ? AppColors.matteGold
-                                      : AppColors.coolGray,
-                                  fontSize: 11,
-                                ),
-                              ),
+                              ],
                             ),
                           );
-                        }).toList(),
-                      ),
-                      SizedBox(height: 12),
-                    ],
-                  );
+                        }),
+                        SizedBox(height: 12),
+                      ],
+                    );
+                  } else if (value is List<String>) {
+                    // FLAT STRUCTURE
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          entry.key.toUpperCase(),
+                          style: AppTypography.microBold(
+                            color: AppColors.softPlatinum.withValues(
+                              alpha: 0.24,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: value.map((preset) {
+                            final isActive = _customPrompt == preset;
+                            return GestureDetector(
+                              onTap: () {
+                                _promptController.text = preset;
+                                setState(() => _customPrompt = preset);
+                              },
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isActive
+                                      ? Color(
+                                          0xFFD4AF37,
+                                        ).withValues(alpha: 0.15)
+                                      : AppColors.softPlatinum.withValues(
+                                          alpha: 0.05,
+                                        ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: isActive
+                                        ? AppColors.matteGold
+                                        : AppColors.softPlatinum.withValues(
+                                            alpha: 0.12,
+                                          ),
+                                  ),
+                                ),
+                                child: Text(
+                                  preset,
+                                  style: TextStyle(
+                                    color: isActive
+                                        ? AppColors.matteGold
+                                        : AppColors.coolGray,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        SizedBox(height: 12),
+                      ],
+                    );
+                  }
+                  return const SizedBox.shrink();
                 }),
                 SizedBox(height: 6),
                 // Location / Environment Presets
@@ -1983,29 +2275,34 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   }
 
   Widget _buildPickerHeader(String title, VoidCallback onClose) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: AppColors.softPlatinum.withValues(alpha: 0.1),
+    return SizedBox(
+      height: 48,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: AppColors.softPlatinum.withValues(alpha: 0.1),
+            ),
           ),
         ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: AppTypography.smallSemiBold(
-              color: AppColors.matteGold,
-            ).copyWith(letterSpacing: 2),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: AppTypography.smallSemiBold(
+                  color: AppColors.matteGold,
+                ).copyWith(letterSpacing: 2),
+              ),
+              GestureDetector(
+                onTap: onClose,
+                child: Icon(Icons.close, color: AppColors.softPlatinum),
+              ),
+            ],
           ),
-          GestureDetector(
-            onTap: onClose,
-            child: Icon(Icons.close, color: AppColors.softPlatinum),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -2287,6 +2584,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   // ═══════════════════════════════════════════════════════════
 
   Widget _buildAdjustmentsOverlay() {
+    final session = context.read<SessionProvider>();
     final tags = <String>[];
     if (_brightness.value != 100)
       tags.add('Brightness ${_brightness.value.toInt()}%');
@@ -2307,8 +2605,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     if (_selectedClothingStyle.isNotEmpty)
       tags.add('Style: $_selectedClothingStyle');
 
+    if (session.hasBackgroundReference) tags.add('Custom BG Active');
+    if (session.hasClothingReference) tags.add('Custom Wardrobe Active');
+
     // Stitch specific tags
-    final session = context.read<SessionProvider>();
     if (session.stitchImages.isNotEmpty) {
       if (_selectedGroupType.isNotEmpty) tags.add('Group: $_selectedGroupType');
       tags.add('Vibe: ${session.stitchVibe.toUpperCase()}');
@@ -2359,7 +2659,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     // Ensure selected category is valid
     if (!wardrobeMap.containsKey(_selectedWardrobeCategory) &&
         wardrobeCategories.isNotEmpty) {
-      if (!_selectedWardrobeCategory.isEmpty &&
+      if (_selectedWardrobeCategory.isNotEmpty &&
           wardrobeCategories.contains('Classic')) {
         _selectedWardrobeCategory = 'Classic';
       } else if (wardrobeCategories.isNotEmpty) {
@@ -2415,7 +2715,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 Switch(
                   value: session.preserveAgeAndBody,
                   onChanged: (val) => session.setPreserveAgeAndBody(val),
-                  activeColor: AppColors.matteGold,
+                  activeThumbColor: AppColors.matteGold,
                   activeTrackColor: AppColors.matteGold.withValues(alpha: 0.3),
                   inactiveThumbColor: AppColors.softPlatinum.withValues(
                     alpha: 0.24,
@@ -2518,7 +2818,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     },
                   ),
                 );
-              }).toList(),
+              }),
             ),
           ),
           const SizedBox(height: 16),
@@ -2620,40 +2920,104 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             ),
           ),
           SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: clothingOptions.map((style) {
-              final isActive = _selectedClothingStyle == style;
-              return GestureDetector(
-                onTap: () => setState(() {
-                  _selectedClothingStyle = isActive ? '' : style;
-                }),
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: isActive
-                        ? AppColors.matteGold.withValues(alpha: 0.15)
-                        : AppColors.softPlatinum.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isActive
-                          ? AppColors.matteGold
-                          : AppColors.softPlatinum.withValues(alpha: 0.12),
+          if (clothingOptions is Map<String, List<String>>)
+            ...clothingOptions.entries.map((entry) {
+              return Theme(
+                data: Theme.of(
+                  context,
+                ).copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  title: Text(
+                    entry.key,
+                    style: AppTypography.smallSemiBold(
+                      color: AppColors.matteGold,
                     ),
                   ),
-                  child: Text(
-                    style,
-                    style: AppTypography.microBold(
-                      color: isActive
-                          ? AppColors.matteGold
-                          : AppColors.coolGray,
-                    ).copyWith(fontSize: 10),
-                  ),
+                  tilePadding: EdgeInsets.zero,
+                  childrenPadding: EdgeInsets.only(bottom: 12),
+                  iconColor: AppColors.matteGold,
+                  collapsedIconColor: AppColors.mutedGray,
+                  children: [
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: entry.value.map((style) {
+                        final isActive = _selectedClothingStyle == style;
+                        return GestureDetector(
+                          onTap: () => setState(() {
+                            _selectedClothingStyle = isActive ? '' : style;
+                          }),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isActive
+                                  ? AppColors.matteGold.withValues(alpha: 0.15)
+                                  : AppColors.softPlatinum.withValues(
+                                      alpha: 0.05,
+                                    ),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: isActive
+                                    ? AppColors.matteGold
+                                    : AppColors.softPlatinum.withValues(
+                                        alpha: 0.12,
+                                      ),
+                              ),
+                            ),
+                            child: Text(
+                              style,
+                              style: AppTypography.microBold(
+                                color: isActive
+                                    ? AppColors.matteGold
+                                    : AppColors.coolGray,
+                              ).copyWith(fontSize: 10),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
                 ),
               );
-            }).toList(),
-          ),
+            }).toList()
+          else if (clothingOptions is List<String>)
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: clothingOptions.map((style) {
+                final isActive = _selectedClothingStyle == style;
+                return GestureDetector(
+                  onTap: () => setState(() {
+                    _selectedClothingStyle = isActive ? '' : style;
+                  }),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? AppColors.matteGold.withValues(alpha: 0.15)
+                          : AppColors.softPlatinum.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isActive
+                            ? AppColors.matteGold
+                            : AppColors.softPlatinum.withValues(alpha: 0.12),
+                      ),
+                    ),
+                    child: Text(
+                      style,
+                      style: AppTypography.microBold(
+                        color: isActive
+                            ? AppColors.matteGold
+                            : AppColors.coolGray,
+                      ).copyWith(fontSize: 10),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
           SizedBox(height: 20),
 
           // 3. COLOR GRADING
@@ -2701,9 +3065,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           ),
           SizedBox(height: 24),
 
-          // 4. VIRTUAL TRY-ON
+          // 4. CUSTOM WARDROBE soul
           Text(
-            'VIRTUAL TRY-ON',
+            'CUSTOM WARDROBE',
             style: TextStyle(
               color: AppColors.softPlatinum.withValues(alpha: 0.24),
               fontSize: 10,
@@ -3919,6 +4283,20 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     if (image != null) {
       final bytes = await image.readAsBytes();
       session.uploadClothingReference(bytes, image.name);
+    }
+  }
+
+  Future<void> _pickBackgroundReference() async {
+    final session = context.read<SessionProvider>();
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      final bytes = await image.readAsBytes();
+      session.uploadBackgroundReference(bytes, image.name);
+      setState(() {
+        _customBgPrompt = "Custom Backdrop: ${image.name}";
+        _bgPromptController.text = _customBgPrompt;
+      });
     }
   }
 

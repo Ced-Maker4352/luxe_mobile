@@ -410,7 +410,7 @@ const List<RetouchPreset> retouchPresets = [
 ];
 
 // === PROMPT CATEGORIES (From Web) ===
-const Map<String, List<String>> promptCategories = {
+const Map<String, dynamic> promptCategories = {
   'Lighting & Atmosphere': [
     'Golden hour sunlight with lens flares',
     'Dramatic side lighting (Chiaroscuro)',
@@ -442,16 +442,46 @@ const Map<String, List<String>> promptCategories = {
     'Beach golden hour',
     'Industrial warehouse loft',
   ],
-  'Styling & Vibe': [
-    'High fashion editorial',
-    'Casual streetwear cool',
-    'Corporate executive power',
-    'Bohemian artistic freedom',
-    'Glamorous red carpet',
-    'Minimalist Scandinavian',
-    'Vintage retro 70s',
-    'Futuristic tech aesthetic',
-  ],
+  'Styling & Vibe': {
+    'High Fashion': [
+      'Vogue editorial flagship',
+      'Avant-garde runway statement',
+      'Parisian chic minimalism',
+      'Milan luxury evening',
+      'High-end couture structure',
+    ],
+    'Casual Streetwear': [
+      'Urban techwear functional',
+      '90s oversized vintage',
+      'Skater cool street',
+      'Minimalist hypebeast',
+      'Tokyo Harajuku vibe',
+    ],
+    'Cool': [
+      'Leather jacket rebel',
+      'Sunglasses and attitude',
+      'Midnight urban aesthetic',
+      'Biker edgy grit',
+    ],
+    'Corporate': [
+      'Executive power suit',
+      'Modern business casual',
+      'Leadership presence',
+    ],
+    'Bohemian': [
+      'Artistic freedom flow',
+      'Indie festival soul',
+      'Ethereal nature vibe',
+    ],
+  },
+  'Your School': {
+    'Jackets': [
+      'Vintage Varsity Bomber',
+      'Classic Letterman',
+      'Modern Athletics Zip',
+      'Heavyweight Heritage Sweatshirt',
+    ],
+  },
 };
 
 // === STITCH GROUP PRESETS ===
