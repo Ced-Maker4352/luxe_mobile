@@ -287,35 +287,6 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                       ],
                     ),
                   ),
-
-                  if (!_isStitchMode) ...[
-                    const SizedBox(width: 12),
-                    // Gender Lock
-                    Consumer<SessionProvider>(
-                      builder: (context, session, _) {
-                        return Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white10,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white12),
-                          ),
-                          padding: const EdgeInsets.all(4),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _buildGenderToggle('MALE', 'male', session),
-                              _buildGenderToggle('FEMALE', 'female', session),
-                              _buildGenderToggle(
-                                'NEUTRAL',
-                                'unspecified',
-                                session,
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ],
                 ],
               ),
 
@@ -412,6 +383,29 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
               const SizedBox(height: 24),
 
               // Action Button
+              if (!_isStitchMode) ...[
+                Consumer<SessionProvider>(
+                  builder: (context, session, _) {
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 24),
+                      decoration: BoxDecoration(
+                        color: Colors.white10,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white12),
+                      ),
+                      padding: const EdgeInsets.all(4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildGenderToggle('MALE', 'male', session),
+                          _buildGenderToggle('FEMALE', 'female', session),
+                          _buildGenderToggle('NEUTRAL', 'unspecified', session),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
               Consumer<SessionProvider>(
                 builder: (context, session, _) {
                   final hasImages = session.identityImages.isNotEmpty;
