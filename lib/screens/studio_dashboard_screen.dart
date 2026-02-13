@@ -947,11 +947,172 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     );
   }
 
+  Widget _buildSelectionStack(SessionProvider session) {
+    // Collect active choices
+    final items = <Widget>[];
+
+    // 1. Gender
+    items.add(
+      _buildStackChip(
+        Icons.person,
+        _gender.toUpperCase(),
+        onTap: () {
+          // Toggle gender on tap
+          setState(() {
+            if (_gender == 'female')
+              _gender = 'male';
+            else if (_gender == 'male')
+              _gender = 'unspecified';
+            else
+              _gender = 'female';
+            session.setSoloGender(_gender);
+          });
+        },
+        isActive: true,
+      ),
+    );
+
+    // 2. Camera Rig
+    if (session.selectedRig != null) {
+      items.add(
+        _buildStackChip(
+          Icons.camera,
+          session.selectedRig!.name.split('|').first.trim(),
+          onTap: () => setState(() => _activeControl = 'camera'),
+          isActive: true,
+        ),
+      );
+    }
+
+    // 3. Backdrop
+    if (_selectedBackdrop != null) {
+      items.add(
+        _buildStackChip(
+          Icons.wallpaper,
+          _selectedBackdrop!.name,
+          onTap: () => setState(() => _activeControl = 'backdrop'),
+          isActive: true,
+        ),
+      );
+    } else if (_customBgPrompt.isNotEmpty) {
+      items.add(
+        _buildStackChip(
+          Icons.wallpaper,
+          'Custom BG',
+          onTap: () => setState(() => _activeControl = 'backdrop'),
+          isActive: true,
+        ),
+      );
+    }
+
+    // 4. Style
+    if (session.selectedStyle != null) {
+      items.add(
+        _buildStackChip(
+          Icons.palette,
+          session.selectedStyle!.name,
+          onTap: () => setState(() => _activeControl = 'style'),
+          isActive: true,
+        ),
+      );
+    }
+
+    // 5. Prompt
+    if (_customPrompt.isNotEmpty) {
+      items.add(
+        _buildStackChip(
+          Icons.edit_note,
+          'Custom Prompt',
+          onTap: () => setState(() => _activeControl = 'prompt'),
+          isActive: true,
+        ),
+      );
+    }
+
+    // 6. Retouch (Active Indicator)
+    final isRetouched =
+        _brightness.value != 100 ||
+        _contrast.value != 100 ||
+        _saturation.value != 100 ||
+        _temperature.value != 0 ||
+        _tint.value != 0 ||
+        _vignette.value != 0 ||
+        _selectedSkinTexture.id != 'soft'; // Assuming 'soft' is default
+
+    if (isRetouched) {
+      items.add(
+        _buildStackChip(
+          Icons.auto_fix_high,
+          'Retouched',
+          onTap: () => setState(() => _activeControl = 'retouch'),
+          isActive: true,
+          highlightColor: AppColors.matteGold,
+        ),
+      );
+    }
+
+    if (items.isEmpty) return SizedBox.shrink();
+
+    return Container(
+      height: 44,
+      margin: EdgeInsets.only(bottom: 8),
+      child: ListView.separated(
+        padding: EdgeInsets.symmetric(horizontal: 16),
+        scrollDirection: Axis.horizontal,
+        itemCount: items.length,
+        separatorBuilder: (_, __) => SizedBox(width: 8),
+        itemBuilder: (_, i) => items[i],
+      ),
+    );
+  }
+
+  Widget _buildStackChip(
+    IconData icon,
+    String label, {
+    VoidCallback? onTap,
+    bool isActive = false,
+    Color? highlightColor,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.softPlatinum.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color:
+                highlightColor ??
+                (isActive
+                    ? AppColors.matteGold.withValues(alpha: 0.5)
+                    : Colors.transparent),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: highlightColor ?? AppColors.matteGold),
+            SizedBox(width: 6),
+            Text(
+              label,
+              style: AppTypography.microBold(
+                color: highlightColor ?? AppColors.softPlatinum,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMainToolbar() {
     final session = context.watch<SessionProvider>();
     final isEnterprise = session.isEnterpriseMode;
     return Column(
       children: [
+        SizedBox(height: 12),
+        _buildSelectionStack(session),
+
         // Control Bar
         Container(
           padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1103,6 +1264,12 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     return GestureDetector(
       onTap: () {
         final session = context.read<SessionProvider>();
+
+        if (!session.canAccessFeature(controlKey)) {
+          _showUpgradeDialog(label);
+          return;
+        }
+
         setState(() {
           _activeControl = controlKey;
           // Auto-focus latest if retouching and none focused
@@ -1744,7 +1911,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           ),
           GestureDetector(
             onTap: onClose,
-            child: Icon(Icons.check, color: AppColors.softPlatinum),
+            child: Icon(Icons.close, color: AppColors.softPlatinum),
           ),
         ],
       ),
@@ -3669,6 +3836,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   ) async {
     if (session.isGenerating) return;
 
+    if (!session.canAccessFeature('video')) {
+      _showUpgradeDialog('Cinematic Video');
+      return;
+    }
+
     session.setGenerating(true);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -3738,5 +3910,39 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     } finally {
       session.setGenerating(false);
     }
+  }
+
+  void _showUpgradeDialog(String feature) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.softCharcoal,
+        title: Text(
+          'Unlock $feature',
+          style: AppTypography.h3Display(color: AppColors.matteGold),
+        ),
+        content: Text(
+          'This feature is available on Pro and Unlimited plans.',
+          style: AppTypography.bodyRegular(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Close', style: TextStyle(color: AppColors.coolGray)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.matteGold,
+              foregroundColor: Colors.black,
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/boutique');
+            },
+            child: Text('UPGRADE'),
+          ),
+        ],
+      ),
+    );
   }
 }

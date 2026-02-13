@@ -202,9 +202,37 @@ class SessionProvider extends ChangeNotifier {
   // === CREDIT METHODS ===
   Future<void> fetchUserProfile() async {
     final data = await AuthService().getUserProfile();
+    debugPrint("SessionProvider: Fetched user profile: $data");
     if (data != null) {
       _userProfile = UserProfile.fromJson(data);
+      debugPrint(
+        "SessionProvider: Parsed profile - Photos: ${_userProfile?.photoGenerations}, Video: ${_userProfile?.videoGenerations}",
+      );
       notifyListeners();
+    } else {
+      debugPrint("SessionProvider: User profile data is null");
+    }
+  }
+
+  // === ACCESS CONTROL ===
+  bool canAccessFeature(String feature) {
+    if (_userProfile == null) return false;
+    final tier = _userProfile!.subscriptionTier?.toLowerCase() ?? 'starter';
+
+    switch (feature) {
+      case 'video':
+        return tier == 'pro' || tier == 'unlimited' || tier == 'agency';
+      case 'stitch':
+        return tier == 'pro' || tier == 'unlimited' || tier == 'agency';
+      case 'retouch':
+        // Basic retouch is free, but maybe advanced is locked?
+        // For now, let's say Retouch is available to all, but maybe specific filters are locked.
+        // Keeping it open for now as per "per package" comment.
+        return true;
+      case 'unlimited_styles':
+        return tier == 'unlimited' || tier == 'agency';
+      default:
+        return true;
     }
   }
 

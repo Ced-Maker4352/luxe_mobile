@@ -228,53 +228,69 @@ class _CinematicSplashState extends State<CinematicSplash>
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Main ID Card
+                  // Main ID Card (Real Image with Lock Overlay)
                   Transform.translate(
                     offset: const Offset(0, 0),
                     child: Container(
                       width: 180,
                       height: 240,
                       decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        image: const DecorationImage(
+                          image: AssetImage('assets/images/hero_1.jpg'),
+                          fit: BoxFit.cover,
+                        ),
                         border: Border.all(
                           color: AppColors.matteGold,
                           width: 2,
                         ),
-                        borderRadius: BorderRadius.circular(16),
-                        color: Colors.black54,
-                      ),
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.lock,
-                            color: AppColors.matteGold,
-                            size: 48,
-                          ),
-                          SizedBox(height: 12),
-                          Text(
-                            "IDENTITY\nLOCKED",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: AppColors.matteGold,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 2,
-                            ),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black54,
+                            blurRadius: 20,
+                            offset: Offset(0, 10),
                           ),
                         ],
                       ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.4),
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.lock,
+                              color: AppColors.matteGold,
+                              size: 48,
+                            ),
+                            SizedBox(height: 12),
+                            Text(
+                              "IDENTITY\nLOCKED",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: AppColors.matteGold,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                  // Floating Selfies (Mock)
+                  // Floating Selfies (Real Images)
                   Positioned(
                     left: 20,
                     top: 40,
-                    child: _buildMockSelfie(Icons.face_3),
+                    child: _buildRealSelfie('assets/images/hero_2.jpg'),
                   ),
                   Positioned(
                     right: 20,
                     bottom: 60,
-                    child: _buildMockSelfie(Icons.face_6),
+                    child: _buildRealSelfie('assets/images/hero_3.jpg'),
                   ),
                 ],
               ),
@@ -295,7 +311,7 @@ class _CinematicSplashState extends State<CinematicSplash>
     );
   }
 
-  Widget _buildMockSelfie(IconData icon) {
+  Widget _buildRealSelfie(String assetPath) {
     return Container(
       width: 64,
       height: 64,
@@ -304,8 +320,8 @@ class _CinematicSplashState extends State<CinematicSplash>
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.white24),
         boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 10)],
+        image: DecorationImage(image: AssetImage(assetPath), fit: BoxFit.cover),
       ),
-      child: Icon(icon, color: Colors.white70),
     );
   }
 
@@ -321,25 +337,47 @@ class _CinematicSplashState extends State<CinematicSplash>
               height: 280,
               width: double.infinity,
               margin: const EdgeInsets.symmetric(horizontal: 24),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.white10),
-                borderRadius: BorderRadius.circular(20),
-                color: Colors.white.withOpacity(0.05),
-              ),
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  const Icon(Icons.groups, size: 80, color: Colors.white24),
-                  // Grid mock
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    alignment: WrapAlignment.center,
-                    children: [
-                      _buildMockSelfie(Icons.face),
-                      _buildMockSelfie(Icons.face_2),
-                      _buildMockSelfie(Icons.face_4),
-                    ],
+                  // Central Group Image (Composite Vibe)
+                  Container(
+                    width: 260,
+                    height: 180,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.matteGold.withOpacity(0.5),
+                      ),
+                      image: const DecorationImage(
+                        image: AssetImage(
+                          'assets/images/hero_6.jpg',
+                        ), // Using independent_artist or hero_6 as group vibe
+                        fit: BoxFit.cover,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.matteGold.withOpacity(0.1),
+                          blurRadius: 30,
+                          spreadRadius: 5,
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Individual Contributors (Orbiting)
+                  Positioned(
+                    top: 0,
+                    child: _buildRealSelfie('assets/images/hero_4.jpg'),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    left: 20,
+                    child: _buildRealSelfie('assets/images/hero_5.jpg'),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 20,
+                    child: _buildRealSelfie('assets/images/hero_7.jpg'),
                   ),
                 ],
               ),
