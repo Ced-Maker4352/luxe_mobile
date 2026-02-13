@@ -26,6 +26,12 @@ class AppColors {
 
   // 5. Trust Signal (Soft Shadows)
   static const Color shadow = Color(0x59000000); // rgba(0,0,0,0.35)
+
+  // 6. Enterprise Variant
+  static const Color enterpriseNavy = Color(0xFF0B1623);
+  static const Color enterpriseGold = Color(
+    0xFFB9A269,
+  ); // 15% Desaturated Matte Gold
 }
 
 class AppTypography {
@@ -187,6 +193,7 @@ class PremiumButton extends StatefulWidget {
   final double verticalPadding;
   final double borderRadius;
   final bool isLoading;
+  final bool isEnterprise;
 
   const PremiumButton({
     super.key,
@@ -197,6 +204,7 @@ class PremiumButton extends StatefulWidget {
     this.verticalPadding = 16,
     this.borderRadius = 12,
     this.isLoading = false,
+    this.isEnterprise = false,
   });
 
   @override
@@ -212,12 +220,12 @@ class _PremiumButtonState extends State<PremiumButton>
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 150),
+      duration: Duration(milliseconds: widget.isEnterprise ? 250 : 150),
       vsync: this,
     );
     _scaleAnimation = Tween<double>(
       begin: 1.0,
-      end: 0.98,
+      end: widget.isEnterprise ? 0.99 : 0.98,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
   }
 
@@ -246,9 +254,11 @@ class _PremiumButtonState extends State<PremiumButton>
             boxShadow: [
               if (widget.onPressed != null)
                 BoxShadow(
-                  color: widget.backgroundColor.withValues(alpha: 0.2),
-                  blurRadius: 12,
-                  spreadRadius: 2,
+                  color: widget.backgroundColor.withValues(
+                    alpha: widget.isEnterprise ? 0.1 : 0.2,
+                  ),
+                  blurRadius: widget.isEnterprise ? 8 : 12,
+                  spreadRadius: widget.isEnterprise ? 1 : 2,
                 ),
             ],
           ),

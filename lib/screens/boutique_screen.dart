@@ -287,8 +287,13 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final session = context.watch<SessionProvider>();
+    final isEnterprise = session.isEnterpriseMode;
+
     return Scaffold(
-      backgroundColor: AppColors.midnightNavy,
+      backgroundColor: isEnterprise
+          ? AppColors.enterpriseNavy
+          : AppColors.midnightNavy,
       body: SafeArea(
         child: Column(
           children: [
@@ -302,74 +307,85 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                   const HeroCarousel(),
 
                   // 2. TEXT OVERLAY LAYER
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withValues(alpha: 0.4),
-                          Colors.transparent,
-                          Colors.black.withValues(alpha: 0.8),
-                        ],
-                      ),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "LUXE AI STUDIO",
-                          textAlign: TextAlign.center,
-                          style:
-                              AppTypography.h2Display(
-                                color: AppColors.matteGold,
-                              ).copyWith(
-                                shadows: [
-                                  Shadow(
-                                    blurRadius: 10.0,
-                                    color: Colors.black,
-                                    offset: Offset(2.0, 2.0),
-                                  ),
-                                ],
-                              ),
+                  Consumer<SessionProvider>(
+                    builder: (context, session, child) {
+                      final isEnterprise = session.isEnterpriseMode;
+                      return Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withValues(alpha: 0.4),
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.8),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          "Your Vision. Professionally Realized.",
-                          textAlign: TextAlign.center,
-                          style:
-                              AppTypography.h3Display(
-                                color: Colors.white.withValues(alpha: 0.95),
-                              ).copyWith(
-                                shadows: const [
-                                  Shadow(
-                                    blurRadius: 4.0,
-                                    color: Colors.black,
-                                    offset: Offset(1.0, 1.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "LUXE AI STUDIO",
+                              textAlign: TextAlign.center,
+                              style:
+                                  AppTypography.h2Display(
+                                    color: isEnterprise
+                                        ? AppColors.enterpriseGold
+                                        : AppColors.matteGold,
+                                  ).copyWith(
+                                    shadows: [
+                                      Shadow(
+                                        blurRadius: 10.0,
+                                        color: Colors.black,
+                                        offset: Offset(2.0, 2.0),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          "Upload once. Create unlimited campaigns.\nFrom social content to executive portraits.",
-                          textAlign: TextAlign.center,
-                          style:
-                              AppTypography.small(
-                                color: Colors.white.withValues(alpha: 0.8),
-                              ).copyWith(
-                                shadows: const [
-                                  Shadow(
-                                    blurRadius: 4.0,
-                                    color: Colors.black,
-                                    offset: Offset(1.0, 1.0),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              isEnterprise
+                                  ? "Production-Ready Visual Systems for Modern Teams"
+                                  : "Your Vision. Professionally Realized.",
+                              textAlign: TextAlign.center,
+                              style:
+                                  AppTypography.h3Display(
+                                    color: Colors.white.withValues(alpha: 0.95),
+                                  ).copyWith(
+                                    shadows: const [
+                                      Shadow(
+                                        blurRadius: 4.0,
+                                        color: Colors.black,
+                                        offset: Offset(1.0, 1.0),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              isEnterprise
+                                  ? "Generate cohesive executive headshots, campaign imagery, and brand-consistent visuals — without scheduling studios or coordinating shoots."
+                                  : "Upload once. Create unlimited campaigns.\nFrom social content to executive portraits.",
+                              textAlign: TextAlign.center,
+                              style:
+                                  AppTypography.small(
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                  ).copyWith(
+                                    shadows: const [
+                                      Shadow(
+                                        blurRadius: 4.0,
+                                        color: Colors.black,
+                                        offset: Offset(1.0, 1.0),
+                                      ),
+                                    ],
+                                  ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -504,7 +520,9 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                                     ],
                                   ),
                                   child: Text(
-                                    "MOST POPULAR",
+                                    isEnterprise
+                                        ? "PROFESSIONAL PRODUCTION"
+                                        : "MOST POPULAR",
                                     style: AppTypography.microBold(
                                       color: Colors.black,
                                     ),
@@ -526,7 +544,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
               child: Column(
                 children: [
                   Text(
-                    "STUDIO MEMBERSHIP",
+                    isEnterprise ? "PRODUCTION TIERS" : "STUDIO PACKAGES",
                     style: AppTypography.microBold(color: Colors.white54),
                   ),
                   const SizedBox(height: 8),
@@ -791,7 +809,9 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            "No photographer. No studio rental. No reshoots.",
+                            isEnterprise
+                                ? "No physical coordination. Scalable results. Brand compliant."
+                                : "No photographer. No studio rental. No reshoots.",
                             style: AppTypography.micro(color: Colors.white30),
                           ),
                         ],
@@ -806,6 +826,14 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                           ),
                         ),
                       ),
+                      if (isEnterprise) ...[
+                        const SizedBox(height: 32),
+                        _buildEnterpriseUseGrid(),
+                        const SizedBox(height: 32),
+                        _buildTrustSignals(),
+                      ],
+
+                      const SizedBox(height: 12),
                     ],
                   ),
                 ),
@@ -813,6 +841,117 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
             ),
           ],
         ),
+      ),
+      // Hidden Toggle for Demo (Double tap footer or small button)
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 80),
+        child: FloatingActionButton.small(
+          onPressed: () => session.setEnterpriseMode(!isEnterprise),
+          backgroundColor: Colors.white10,
+          child: Icon(
+            isEnterprise ? Icons.business : Icons.person,
+            color: Colors.white24,
+            size: 16,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEnterpriseUseGrid() {
+    final uses = [
+      ("Executive Headshots", Icons.person_outline),
+      ("Corporate Directories", Icons.list_alt),
+      ("Music Group Campaigns", Icons.groups_3_outlined),
+      ("Agency Production", Icons.campaign_outlined),
+      ("Real Estate Teams", Icons.home_work_outlined),
+      ("Brand Ambassador", Icons.stars_outlined),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "BUILT FOR TEAMS",
+          style: AppTypography.microBold(color: AppColors.matteGold),
+        ),
+        const SizedBox(height: 16),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            childAspectRatio: 0.8,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+          ),
+          itemCount: uses.length,
+          itemBuilder: (context, index) {
+            return Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.03),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white10),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(uses[index].$2, color: AppColors.softPlatinum, size: 20),
+                  const SizedBox(height: 8),
+                  Text(
+                    uses[index].$1,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.small(
+                      color: AppColors.coolGray,
+                    ).copyWith(fontSize: 10),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTrustSignals() {
+    final signals = [
+      "Commercial Usage Included",
+      "Secure Cloud Processing",
+      "Scalable Batch Output",
+      "Brand Compliance Ready",
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Column(
+        children: signals.map((s) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.verified_user_outlined,
+                  color: AppColors.softPlatinum,
+                  size: 14,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  s,
+                  style: AppTypography.small(
+                    color: AppColors.coolGray,
+                  ).copyWith(fontSize: 11),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
       ),
     );
   }

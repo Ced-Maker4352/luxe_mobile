@@ -12,6 +12,7 @@ class SessionProvider extends ChangeNotifier {
   bool _isSingleStyleMode = false;
   String _soloGender = 'female';
   bool _preserveAgeAndBody = true;
+  bool _isEnterpriseMode = false;
 
   // === GENERATION STATE ===
   bool _isGenerating = false;
@@ -45,6 +46,7 @@ class SessionProvider extends ChangeNotifier {
   bool get isSingleStyleMode => _isSingleStyleMode;
   String get soloGender => _soloGender;
   bool get preserveAgeAndBody => _preserveAgeAndBody;
+  bool get isEnterpriseMode => _isEnterpriseMode;
 
   bool get isGenerating => _isGenerating;
   List<GenerationResult> get results => List.unmodifiable(_results);
@@ -90,6 +92,11 @@ class SessionProvider extends ChangeNotifier {
 
   void setPreserveAgeAndBody(bool value) {
     _preserveAgeAndBody = value;
+    notifyListeners();
+  }
+
+  void setEnterpriseMode(bool value) {
+    _isEnterpriseMode = value;
     notifyListeners();
   }
 

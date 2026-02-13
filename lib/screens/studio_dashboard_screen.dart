@@ -528,18 +528,19 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    final session = context.watch<SessionProvider>();
+    final isEnterprise = session.isEnterpriseMode;
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         if (_activeControl != 'main') {
-          // Close any open drawer first
           setState(() {
             _activeControl = 'main';
             _focusedResult = null;
           });
         } else {
-          // We're on main — navigate back safely
           if (Navigator.canPop(context)) {
             Navigator.pop(context);
           } else {
@@ -548,14 +549,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.midnightNavy,
+        backgroundColor: isEnterprise
+            ? AppColors.enterpriseNavy
+            : AppColors.midnightNavy,
         body: SafeArea(
           child: Column(
             children: [
-              // Custom App Bar
               _buildAppBar(),
-
-              // 1. TOP: IMAGE AREA (Always Visible, Expanded)
               Expanded(
                 flex: 6,
                 child: Consumer<SessionProvider>(
@@ -573,8 +573,6 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   },
                 ),
               ),
-
-              // 2. BOTTOM: CONTROL CENTER (Persistent 40%)
               Expanded(
                 flex: 4,
                 child: Container(
@@ -586,11 +584,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                       ),
                     ),
                   ),
-                  child: _buildControlCenter(),
+                  child: _buildControlCenter(isEnterprise),
                 ),
               ),
-
-              // 3. BOTTOM NAV (Persistent)
               _buildBottomNav(),
             ],
           ),
@@ -908,7 +904,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     });
   }
 
-  Widget _buildControlCenter() {
+  Widget _buildControlCenter(bool isEnterprise) {
     switch (_activeControl) {
       case 'camera':
         return _buildCameraPicker();
@@ -919,9 +915,15 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       case 'retouch':
         return _buildDrawerWithHeader('RETOUCH LAB', _buildRetouchDrawer());
       case 'style':
-        return _buildDrawerWithHeader('STYLE STUDIO', _buildStyleDrawer());
+        return _buildDrawerWithHeader(
+          isEnterprise ? 'BRAND MATCHING' : 'STYLE STUDIO',
+          _buildStyleDrawer(),
+        );
       case 'stitch':
-        return _buildDrawerWithHeader('STITCH STUDIO', _buildStitchDrawer());
+        return _buildDrawerWithHeader(
+          isEnterprise ? 'CORPORATE TEAM GENERATOR™' : 'STITCH STUDIO',
+          _buildStitchDrawer(),
+        );
       case 'print':
         return _buildDrawerWithHeader('LUXE PRINT LAB', _buildPrintDrawer());
       case 'download':
@@ -944,6 +946,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
   Widget _buildMainToolbar() {
     final session = context.watch<SessionProvider>();
+    final isEnterprise = session.isEnterpriseMode;
     return Column(
       children: [
         // Control Bar
@@ -1007,12 +1010,25 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildToolIcon(Icons.style_outlined, 'Style', 'style'),
-                _buildToolIcon(Icons.auto_fix_high, 'Retouch', 'retouch'),
-                _buildToolIcon(Icons.merge_type, 'Stitch', 'stitch'),
-                _buildToolIcon(Icons.print_outlined, 'Print', 'print'),
-                _buildToolIcon(Icons.download_outlined, 'Save', 'download'),
-                _buildToolIcon(Icons.share_outlined, 'Share', 'share'),
+                if (isEnterprise) ...[
+                  _buildToolIcon(Icons.groups_3_outlined, 'Team Gen', 'stitch'),
+                  _buildToolIcon(
+                    Icons.palette_outlined,
+                    'Brand Match',
+                    'style',
+                  ),
+                  _buildToolIcon(Icons.layers_outlined, 'Batch', 'batch'),
+                  _buildToolIcon(Icons.auto_fix_high, 'Retouch', 'retouch'),
+                  _buildToolIcon(Icons.download_outlined, 'Export', 'download'),
+                  _buildToolIcon(Icons.share_outlined, 'Share', 'share'),
+                ] else ...[
+                  _buildToolIcon(Icons.style_outlined, 'Style', 'style'),
+                  _buildToolIcon(Icons.auto_fix_high, 'Retouch', 'retouch'),
+                  _buildToolIcon(Icons.merge_type, 'Stitch', 'stitch'),
+                  _buildToolIcon(Icons.print_outlined, 'Print', 'print'),
+                  _buildToolIcon(Icons.download_outlined, 'Save', 'download'),
+                  _buildToolIcon(Icons.share_outlined, 'Share', 'share'),
+                ],
               ],
             ),
           ),
