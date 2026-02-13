@@ -1030,31 +1030,46 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               itemBuilder: (context, index) {
                 final result = session.results[index];
                 final isSelected = _focusedResult?.id == result.id;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _focusedResult = result;
-                    });
-                    _decodeFocusedImage();
+                // STAGGERED ENTRY
+                return TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: Duration(milliseconds: 400 + (index * 50)),
+                  curve: AppMotion.cinematic,
+                  builder: (context, value, child) {
+                    return Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, 10 * (1 - value)),
+                        child: child,
+                      ),
+                    );
                   },
-                  child: Container(
-                    width: 80,
-                    margin: EdgeInsets.only(right: 12),
-                    decoration: BoxDecoration(
-                      border: isSelected
-                          ? Border.all(color: AppColors.matteGold, width: 2)
-                          : null,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: result.imageUrl.startsWith('data:')
-                          ? Image.memory(
-                              base64Decode(result.imageUrl.split(',')[1]),
-                              fit: BoxFit.cover,
-                              gaplessPlayback: true,
-                            )
-                          : Image.network(result.imageUrl, fit: BoxFit.cover),
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _focusedResult = result;
+                      });
+                      _decodeFocusedImage();
+                    },
+                    child: Container(
+                      width: 80,
+                      margin: EdgeInsets.only(right: 12),
+                      decoration: BoxDecoration(
+                        border: isSelected
+                            ? Border.all(color: AppColors.matteGold, width: 2)
+                            : null,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: result.imageUrl.startsWith('data:')
+                            ? Image.memory(
+                                base64Decode(result.imageUrl.split(',')[1]),
+                                fit: BoxFit.cover,
+                                gaplessPlayback: true,
+                              )
+                            : Image.network(result.imageUrl, fit: BoxFit.cover),
+                      ),
                     ),
                   ),
                 );
@@ -1797,7 +1812,15 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const CircularProgressIndicator(color: AppColors.matteGold),
+          // Thin luxury loader
+          Container(
+            width: 200,
+            height: 2,
+            child: LinearProgressIndicator(
+              backgroundColor: Colors.white10,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.matteGold),
+            ),
+          ),
           SizedBox(height: 30),
           Text(
             'INITIATING OPTIC PROTOCOL...',
@@ -2444,7 +2467,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             builder: (context, session, child) {
               return SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
+                child: PremiumButton(
                   onPressed: session.isGenerating
                       ? null
                       : () {
@@ -2458,24 +2481,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                             _generatePortrait(session);
                           }
                         },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.matteGold,
-                    foregroundColor: Colors.black,
-                    padding: EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: session.isGenerating
-                      ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.black,
-                          ),
-                        )
-                      : Text('APPLY STYLE', style: AppTypography.button()),
+                  isLoading: session.isGenerating,
+                  child: Text('APPLY STYLE'),
                 ),
               );
             },
@@ -2654,7 +2661,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             builder: (context, session, child) {
               return SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
+                child: PremiumButton(
                   onPressed: session.isGenerating
                       ? null
                       : () {
@@ -2670,24 +2677,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                             _generatePortrait(session);
                           }
                         },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.matteGold,
-                    foregroundColor: Colors.black,
-                    padding: EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: session.isGenerating
-                      ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.black,
-                          ),
-                        )
-                      : Text('APPLY RETOUCH', style: AppTypography.button()),
+                  isLoading: session.isGenerating,
+                  child: Text('APPLY RETOUCH'),
                 ),
               );
             },

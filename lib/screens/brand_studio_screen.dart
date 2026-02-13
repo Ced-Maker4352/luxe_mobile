@@ -245,7 +245,16 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
 
           if (_isLoadingStrategy)
             const Center(
-              child: CircularProgressIndicator(color: AppColors.matteGold),
+              child: SizedBox(
+                width: 120,
+                height: 2,
+                child: LinearProgressIndicator(
+                  backgroundColor: Colors.white10,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppColors.matteGold,
+                  ),
+                ),
+              ),
             )
           else if (_brandStrategy != null) ...[
             _buildInfoCard('AESTHETIC', _brandStrategy!['aesthetic']),
@@ -278,17 +287,10 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
             ),
 
           const SizedBox(height: 32),
-          ElevatedButton(
-            onPressed: _generateStrategy,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.matteGold,
-              foregroundColor: Colors.black,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-            child: Text(
-              'GENERATE BRAND STRATEGY',
-              style: AppTypography.button(),
-            ),
+          PremiumButton(
+            onPressed: _isLoadingStrategy ? null : _generateStrategy,
+            isLoading: _isLoadingStrategy,
+            child: Text('GENERATE BRAND STRATEGY'),
           ),
         ],
       ),
@@ -344,17 +346,22 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
           const SizedBox(height: 32),
           if (_isGeneratingLogo)
             const Center(
-              child: CircularProgressIndicator(color: AppColors.matteGold),
+              child: SizedBox(
+                width: 120,
+                height: 2,
+                child: LinearProgressIndicator(
+                  backgroundColor: Colors.white10,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppColors.matteGold,
+                  ),
+                ),
+              ),
             )
           else
-            ElevatedButton(
-              onPressed: _generateLogo,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.matteGold,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: Text('CREATE LOGO', style: AppTypography.button()),
+            PremiumButton(
+              onPressed: _isGeneratingLogo ? null : _generateLogo,
+              isLoading: _isGeneratingLogo,
+              child: Text('CREATE LOGO'),
             ),
         ],
       ),

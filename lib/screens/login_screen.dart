@@ -143,26 +143,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 24),
 
                 // Primary Action Button
-                ElevatedButton(
+                PremiumButton(
                   onPressed: _isLoading ? null : _handleEmailAuth,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.matteGold,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(
-                          _isLogin ? 'SIGN IN' : 'SIGN UP',
-                          style: AppTypography.button(),
-                        ),
+                  isLoading: _isLoading,
+                  child: Text(_isLogin ? 'SIGN IN' : 'SIGN UP'),
                 ),
                 const SizedBox(height: 16),
 

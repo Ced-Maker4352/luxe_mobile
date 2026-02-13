@@ -401,7 +401,9 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          Container(
+                          AnimatedContainer(
+                            duration: AppMotion.micro,
+                            curve: AppMotion.cinematic,
                             decoration: BoxDecoration(
                               color: isSelected
                                   ? AppColors.matteGold.withValues(alpha: 0.15)
@@ -437,38 +439,45 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                             ),
                             alignment: Alignment.center,
                             padding: const EdgeInsets.all(12),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  _getPackageIcon(pkg.id),
-                                  color: isSelected
-                                      ? AppColors.matteGold
-                                      : (isPro
-                                            ? AppColors.matteGold
-                                            : Colors.white54),
-                                  size: 28,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  pkg.name.toUpperCase(),
-                                  textAlign: TextAlign.center,
-                                  style: AppTypography.microBold(
+                            child: AnimatedScale(
+                              scale: isSelected ? 1.02 : 1.0,
+                              duration: AppMotion.micro,
+                              curve: AppMotion.cinematic,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    _getPackageIcon(pkg.id),
                                     color: isSelected
                                         ? AppColors.matteGold
-                                        : Colors.white70,
+                                        : (isPro
+                                              ? AppColors.matteGold
+                                              : Colors.white54),
+                                    size: 28,
                                   ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  pkg.price,
-                                  style: AppTypography.bodyMedium(
-                                    color: Colors.white.withValues(alpha: 0.9),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    pkg.name.toUpperCase(),
+                                    textAlign: TextAlign.center,
+                                    style: AppTypography.microBold(
+                                      color: isSelected
+                                          ? AppColors.matteGold
+                                          : Colors.white70,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    pkg.price,
+                                    style: AppTypography.bodyMedium(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.9,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                           // MOST POPULAR BADGE
@@ -765,36 +774,14 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                       // Action Button
                       SizedBox(
                         width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () =>
-                              _handlePackageSelection(_selectedPackage),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.matteGold,
-                            foregroundColor: Colors.black,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 5,
-                            shadowColor: AppColors.matteGold.withValues(
-                              alpha: 0.4,
-                            ),
+                        child: PremiumButton(
+                          onPressed: _isProcessing
+                              ? null
+                              : () => _handlePackageSelection(_selectedPackage),
+                          isLoading: _isProcessing,
+                          child: Text(
+                            _selectedPackage.buttonLabel.toUpperCase(),
                           ),
-                          child: _isProcessing
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.black,
-                                    ),
-                                  ),
-                                )
-                              : Text(
-                                  _selectedPackage.buttonLabel.toUpperCase(),
-                                  style: AppTypography.button(),
-                                ),
                         ),
                       ),
 
@@ -834,7 +821,9 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
     return Expanded(
       child: GestureDetector(
         onTap: () => _handlePackageSelection(_selectedPackage, tierId: tierId),
-        child: Container(
+        child: AnimatedContainer(
+          duration: AppMotion.micro,
+          curve: AppMotion.cinematic,
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.05),
@@ -890,68 +879,71 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
-          builder: (context) => Container(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Badge
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
+          builder: (context) => TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: AppMotion.standard,
+            curve: AppMotion.cinematic,
+            builder: (context, value, child) {
+              return Transform.translate(
+                offset: Offset(0, AppMotion.modalRise * (1 - value)),
+                child: Opacity(opacity: value, child: child),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Badge
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.matteGold,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        savings,
+                        style: AppTypography.microBold(
+                          color: Colors.black,
+                        ).copyWith(fontSize: 10),
+                      ),
                     ),
-                    decoration: BoxDecoration(
-                      color: AppColors.matteGold,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.h3Display(),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    content,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.bodyRegular(
+                      color: Colors.white70,
+                    ).copyWith(height: 1.5),
+                  ),
+                  const SizedBox(height: 30),
+                  PremiumButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: Text(confirmText),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
                     child: Text(
-                      savings,
-                      style: AppTypography.microBold(
-                        color: Colors.black,
-                      ).copyWith(fontSize: 10),
+                      cancelText,
+                      style: AppTypography.small(color: Colors.white30),
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: AppTypography.h3Display(),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  content,
-                  textAlign: TextAlign.center,
-                  style: AppTypography.bodyRegular(
-                    color: Colors.white70,
-                  ).copyWith(height: 1.5),
-                ),
-                const SizedBox(height: 30),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.matteGold,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(confirmText, style: AppTypography.button()),
-                ),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: Text(
-                    cancelText,
-                    style: AppTypography.small(color: Colors.white30),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
           ),
         ) ??

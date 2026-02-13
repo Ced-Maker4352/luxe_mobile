@@ -136,6 +136,145 @@ class AppTypography {
   );
 }
 
+class AppMotion {
+  // 1. TIMING SYSTEM
+  static const Duration micro = Duration(milliseconds: 250);
+  static const Duration standard = Duration(milliseconds: 400);
+  static const Duration major = Duration(milliseconds: 600);
+
+  // 2. EASING CURVES
+  // Cubic-bezier(0.4, 0.0, 0.2, 1) - Decelerates gently
+  static const Curve cinematic = Cubic(0.4, 0.0, 0.2, 1.0);
+
+  // 3. COMMON TRANSLATIONS
+  static const double modalRise = 6.0;
+  static const double pageRise = 8.0;
+  static const double lift = 5.0; // For small hovers
+}
+
+/// Standardized cinematic transition for page changes
+class CinematicPageRoute<T> extends PageRouteBuilder<T> {
+  final Widget page;
+
+  CinematicPageRoute({required this.page})
+    : super(
+        pageBuilder: (context, animation, secondaryAnimation) => page,
+        transitionDuration: AppMotion.standard,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: AnimatedBuilder(
+              animation: animation,
+              builder: (context, child) {
+                return Transform.translate(
+                  offset: Offset(0, 8 * (1 - animation.value)),
+                  child: child,
+                );
+              },
+              child: child,
+            ),
+          );
+        },
+      );
+}
+
+/// A premium, cinematic button with scale and glow interactions
+class PremiumButton extends StatefulWidget {
+  final VoidCallback? onPressed;
+  final Widget child;
+  final Color backgroundColor;
+  final Color foregroundColor;
+  final double verticalPadding;
+  final double borderRadius;
+  final bool isLoading;
+
+  const PremiumButton({
+    super.key,
+    required this.onPressed,
+    required this.child,
+    this.backgroundColor = AppColors.matteGold,
+    this.foregroundColor = Colors.black,
+    this.verticalPadding = 16,
+    this.borderRadius = 12,
+    this.isLoading = false,
+  });
+
+  @override
+  State<PremiumButton> createState() => _PremiumButtonState();
+}
+
+class _PremiumButtonState extends State<PremiumButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.98,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => widget.onPressed != null ? _controller.forward() : null,
+      onTapUp: (_) => _controller.reverse(),
+      onTapCancel: () => _controller.reverse(),
+      onTap: widget.onPressed,
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            color: widget.onPressed == null
+                ? widget.backgroundColor.withValues(alpha: 0.5)
+                : widget.backgroundColor,
+            borderRadius: BorderRadius.circular(widget.borderRadius),
+            boxShadow: [
+              if (widget.onPressed != null)
+                BoxShadow(
+                  color: widget.backgroundColor.withValues(alpha: 0.2),
+                  blurRadius: 12,
+                  spreadRadius: 2,
+                ),
+            ],
+          ),
+          padding: EdgeInsets.symmetric(vertical: widget.verticalPadding),
+          alignment: Alignment.center,
+          child: widget.isLoading
+              ? SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      widget.foregroundColor,
+                    ),
+                  ),
+                )
+              : DefaultTextStyle(
+                  style: AppTypography.button(color: widget.foregroundColor),
+                  child: widget.child,
+                ),
+        ),
+      ),
+    );
+  }
+}
+
 class BackgroundPreset {
   final String id;
   final String name;

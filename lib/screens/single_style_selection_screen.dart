@@ -162,80 +162,94 @@ class _SingleStyleSelectionScreenState
                 final style = widget.package.styles[index];
                 final isSelected = style.id == _selectedStyle?.id;
 
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedStyle = style),
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: AppColors.softCharcoal,
-                      borderRadius: BorderRadius.circular(12),
-                      border: isSelected
-                          ? Border.all(color: AppColors.matteGold, width: 2)
-                          : Border.all(color: Colors.white10),
-                    ),
-                    child: Row(
-                      children: [
-                        // Image Preview
-                        ClipRRect(
-                          borderRadius: const BorderRadius.horizontal(
-                            left: Radius.circular(12),
-                          ),
-                          child: Image.network(
-                            style.image,
-                            width: 100,
-                            height: 100,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
+                return TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: Duration(milliseconds: 400 + (index * 50)),
+                  curve: AppMotion.cinematic,
+                  builder: (context, value, child) {
+                    return Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, 10 * (1 - value)),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedStyle = style),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.softCharcoal,
+                        borderRadius: BorderRadius.circular(12),
+                        border: isSelected
+                            ? Border.all(color: AppColors.matteGold, width: 2)
+                            : Border.all(color: Colors.white10),
+                      ),
+                      child: Row(
+                        children: [
+                          // Image Preview
+                          ClipRRect(
+                            borderRadius: const BorderRadius.horizontal(
+                              left: Radius.circular(12),
+                            ),
+                            child: Image.network(
+                              style.image,
                               width: 100,
                               height: 100,
-                              color: Colors.grey[900],
-                              child: const Icon(
-                                Icons.image,
-                                color: Colors.white24,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                width: 100,
+                                height: 100,
+                                color: Colors.grey[900],
+                                child: const Icon(
+                                  Icons.image,
+                                  color: Colors.white24,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        // Text Details
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                style.name,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                          const SizedBox(width: 16),
+                          // Text Details
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  style.name,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                style.description,
-                                style: const TextStyle(
-                                  color: Colors.white54,
-                                  fontSize: 12,
+                                const SizedBox(height: 4),
+                                Text(
+                                  style.description,
+                                  style: const TextStyle(
+                                    color: Colors.white54,
+                                    fontSize: 12,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        // Checkbox
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Icon(
-                            isSelected
-                                ? Icons.radio_button_checked
-                                : Icons.radio_button_unchecked,
-                            color: isSelected
-                                ? AppColors.matteGold
-                                : Colors.white24,
+                          // Checkbox
+                          Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Icon(
+                              isSelected
+                                  ? Icons.radio_button_checked
+                                  : Icons.radio_button_unchecked,
+                              color: isSelected
+                                  ? AppColors.matteGold
+                                  : Colors.white24,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 );
@@ -253,35 +267,10 @@ class _SingleStyleSelectionScreenState
             child: SafeArea(
               child: SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
+                child: PremiumButton(
                   onPressed: _isProcessing ? null : _handlePayment,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.matteGold,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: _isProcessing
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.black,
-                            ),
-                          ),
-                        )
-                      : Text(
-                          'PAY ${widget.package.payAsYouGoPrice}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.5,
-                          ),
-                        ),
+                  isLoading: _isProcessing,
+                  child: Text('PAY ${widget.package.payAsYouGoPrice}'),
                 ),
               ),
             ),
