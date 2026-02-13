@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'shared/constants.dart';
 import 'package:provider/provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/boutique_screen.dart';
@@ -41,8 +43,9 @@ class MainApp extends StatelessWidget {
       title: 'Luxe AI Studio',
       theme: ThemeData(
         brightness: Brightness.dark,
-        primaryColor: const Color(0xFFD4AF37),
-        scaffoldBackgroundColor: const Color(0xFF0A0A0A),
+        primaryColor: AppColors.matteGold,
+        scaffoldBackgroundColor: AppColors.midnightNavy,
+        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
       ),
       home: const SplashScreen(),
       routes: {

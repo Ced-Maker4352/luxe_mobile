@@ -40,14 +40,11 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              const Text(
+              Text(
                 'ADD IDENTITY ANCHOR',
-                style: TextStyle(
+                style: AppTypography.microBold(
                   color: Colors.white,
-                  letterSpacing: 2,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
+                ).copyWith(fontSize: 14),
               ),
               const SizedBox(height: 24),
               ListTile(
@@ -57,21 +54,18 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                     color: AppColors.matteGold.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.camera_alt_outlined,
                     color: AppColors.matteGold,
                   ),
                 ),
-                title: const Text(
+                title: Text(
                   'Take Photo',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: AppTypography.smallSemiBold(color: Colors.white),
                 ),
-                subtitle: const Text(
+                subtitle: Text(
                   'Capture a new selfie',
-                  style: TextStyle(color: Colors.white38, fontSize: 12),
+                  style: AppTypography.small(color: Colors.white38),
                 ),
                 onTap: () {
                   Navigator.pop(context);
@@ -86,21 +80,18 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                     color: AppColors.matteGold.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.photo_library_outlined,
                     color: AppColors.matteGold,
                   ),
                 ),
-                title: const Text(
+                title: Text(
                   'Choose from Gallery',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: AppTypography.smallSemiBold(color: Colors.white),
                 ),
-                subtitle: const Text(
+                subtitle: Text(
                   'Select up to 5 photos',
-                  style: TextStyle(color: Colors.white38, fontSize: 12),
+                  style: AppTypography.small(color: Colors.white38),
                 ),
                 onTap: () {
                   Navigator.pop(context);
@@ -198,7 +189,7 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                   color: Colors.black54,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.close, size: 14, color: Colors.white),
+                child: Icon(Icons.close, size: 14, color: Colors.white),
               ),
             ),
           ),
@@ -222,12 +213,9 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
         ),
         child: Text(
           title,
-          style: TextStyle(
+          style: AppTypography.microBold(
             color: isSelected ? Colors.black : Colors.white54,
-            fontWeight: FontWeight.bold,
-            fontSize: 11,
-            letterSpacing: 1,
-          ),
+          ).copyWith(fontSize: 11),
         ),
       ),
     );
@@ -246,14 +234,11 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
               const SizedBox(height: 20),
 
               // Header
-              const Text(
+              Text(
                 'IDENTITY STUDIO™',
-                style: TextStyle(
+                style: AppTypography.h3Display(
                   color: Colors.white,
-                  letterSpacing: 4,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                ).copyWith(letterSpacing: 4, fontSize: 16),
               ),
 
               const SizedBox(height: 24),
@@ -283,11 +268,7 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                     ? 'Create group photos with multiple people.'
                     : 'Upload 1-5 selfies to lock in your identity logic. More photos = higher facial fidelity.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white54,
-                  fontSize: 13,
-                  height: 1.5,
-                ),
+                style: AppTypography.small(color: Colors.white54),
               ),
 
               const SizedBox(height: 24),
@@ -356,13 +337,11 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
 
                               if (images.isNotEmpty) ...[
                                 const SizedBox(height: 16),
-                                const Text(
+                                Text(
                                   "Photos locked. AI will triangulate features.",
-                                  style: TextStyle(
+                                  style: AppTypography.micro(
                                     color: AppColors.matteGold,
-                                    fontSize: 12,
-                                    fontStyle: FontStyle.italic,
-                                  ),
+                                  ).copyWith(fontStyle: FontStyle.italic),
                                 ),
                               ],
                             ],
@@ -407,10 +386,7 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                         _isStitchMode
                             ? 'ENTER GROUP STUDIO'
                             : 'INITIATE SESSION (${session.identityImages.length}/5)',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 2,
-                        ),
+                        style: AppTypography.button(),
                       ),
                     ),
                   );
@@ -440,26 +416,17 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
             size: 56,
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'ADD PEOPLE IN STUDIO',
-            style: TextStyle(
-              color: AppColors.matteGold,
-              letterSpacing: 2,
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-            ),
+            style: AppTypography.microBold(color: AppColors.matteGold),
           ),
           const SizedBox(height: 8),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 32),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Text(
               'Tap below to enter the Studio, then add up to 5 different identity photos for your group.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white38,
-                fontSize: 11,
-                height: 1.5,
-              ),
+              style: AppTypography.micro(color: Colors.white38),
             ),
           ),
         ],

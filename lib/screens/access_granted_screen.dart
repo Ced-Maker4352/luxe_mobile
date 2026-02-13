@@ -99,11 +99,7 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.check,
-                        color: Colors.black,
-                        size: 60,
-                      ),
+                      child: Icon(Icons.check, color: Colors.black, size: 60),
                     ),
                   );
                 },
@@ -122,23 +118,16 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                           : (widget.singleStyleMode
                                 ? 'STYLE UNLOCKED'
                                 : 'PAYMENT ACCEPTED'),
-                      style: const TextStyle(
+                      style: AppTypography.h2Display(
                         color: AppColors.matteGold,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 3,
-                      ),
+                      ).copyWith(fontSize: 24, letterSpacing: 3),
                     ),
                     const SizedBox(height: 16),
                     Text(
                       widget.singleStyleMode
                           ? 'Get ready to create'
                           : 'Welcome to ${widget.package.name}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: AppTypography.h3Display(color: Colors.white),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -146,11 +135,7 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                           ? 'Your single style session is ready.'
                           : widget.package.description,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.5),
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
+                      style: AppTypography.small(color: Colors.white54),
                     ),
                   ],
                 ),
@@ -173,13 +158,9 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'YOUR PACKAGE INCLUDES:',
-                        style: TextStyle(
-                          color: Colors.white54,
-                          fontSize: 11,
-                          letterSpacing: 2,
-                        ),
+                        style: AppTypography.microBold(color: Colors.white54),
                       ),
                       const SizedBox(height: 16),
                       ...widget.package.features
@@ -189,7 +170,7 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                               padding: const EdgeInsets.only(bottom: 12),
                               child: Row(
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.diamond_outlined,
                                     color: AppColors.matteGold,
                                     size: 16,
@@ -198,9 +179,8 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                                   Expanded(
                                     child: Text(
                                       feature,
-                                      style: const TextStyle(
+                                      style: AppTypography.small(
                                         color: Colors.white70,
-                                        fontSize: 13,
                                       ),
                                     ),
                                   ),
@@ -226,7 +206,7 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.info_outline,
                         color: AppColors.matteGold,
                         size: 20,
@@ -235,11 +215,7 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                       Expanded(
                         child: Text(
                           'Next step: Upload your reference photo to begin your AI portrait session.',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.7),
-                            fontSize: 12,
-                            height: 1.4,
-                          ),
+                          style: AppTypography.micro(color: Colors.white70),
                         ),
                       ),
                     ],
@@ -262,12 +238,9 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'CONTINUE TO UPLOAD',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2,
-                    ),
+                    style: AppTypography.button(),
                   ),
                 ),
               ),

@@ -318,59 +318,55 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
+                        Text(
                           "LUXE AI STUDIO",
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: 'Serif',
-                            color: AppColors.matteGold,
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 2.0,
-                            height: 1.2,
-                            shadows: [
-                              Shadow(
-                                blurRadius: 10.0,
-                                color: Colors.black,
-                                offset: Offset(2.0, 2.0),
+                          style:
+                              AppTypography.h2Display(
+                                color: AppColors.matteGold,
+                              ).copyWith(
+                                shadows: [
+                                  Shadow(
+                                    blurRadius: 10.0,
+                                    color: Colors.black,
+                                    offset: Offset(2.0, 2.0),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
                         ),
                         const SizedBox(height: 12),
                         Text(
                           "Your Vision. Professionally Realized.",
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.95),
-                            fontSize: 16,
-                            letterSpacing: 1.2,
-                            fontWeight: FontWeight.w600,
-                            shadows: const [
-                              Shadow(
-                                blurRadius: 4.0,
-                                color: Colors.black,
-                                offset: Offset(1.0, 1.0),
+                          style:
+                              AppTypography.h3Display(
+                                color: Colors.white.withValues(alpha: 0.95),
+                              ).copyWith(
+                                shadows: const [
+                                  Shadow(
+                                    blurRadius: 4.0,
+                                    color: Colors.black,
+                                    offset: Offset(1.0, 1.0),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           "Upload once. Create unlimited campaigns.\nFrom social content to executive portraits.",
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8),
-                            fontSize: 12,
-                            height: 1.4,
-                            shadows: const [
-                              Shadow(
-                                blurRadius: 4.0,
-                                color: Colors.black,
-                                offset: Offset(1.0, 1.0),
+                          style:
+                              AppTypography.small(
+                                color: Colors.white.withValues(alpha: 0.8),
+                              ).copyWith(
+                                shadows: const [
+                                  Shadow(
+                                    blurRadius: 4.0,
+                                    color: Colors.black,
+                                    offset: Offset(1.0, 1.0),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
                         ),
                       ],
                     ),
@@ -457,15 +453,10 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                                 Text(
                                   pkg.name.toUpperCase(),
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(
+                                  style: AppTypography.microBold(
                                     color: isSelected
                                         ? AppColors.matteGold
                                         : Colors.white70,
-                                    fontSize: 11,
-                                    fontWeight: isPro
-                                        ? FontWeight.w900
-                                        : FontWeight.bold,
-                                    letterSpacing: 1.0,
                                   ),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
@@ -473,10 +464,8 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                                 const SizedBox(height: 4),
                                 Text(
                                   pkg.price,
-                                  style: TextStyle(
+                                  style: AppTypography.bodyMedium(
                                     color: Colors.white.withValues(alpha: 0.9),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ],
@@ -505,13 +494,10 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                                       ),
                                     ],
                                   ),
-                                  child: const Text(
+                                  child: Text(
                                     "MOST POPULAR",
-                                    style: TextStyle(
+                                    style: AppTypography.microBold(
                                       color: Colors.black,
-                                      fontSize: 8,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: 0.5,
                                     ),
                                   ),
                                 ),
@@ -530,14 +516,9 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Column(
                 children: [
-                  const Text(
+                  Text(
                     "STUDIO MEMBERSHIP",
-                    style: TextStyle(
-                      color: Colors.white54,
-                      fontSize: 10,
-                      letterSpacing: 1.5,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: AppTypography.microBold(color: Colors.white54),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -622,29 +603,35 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                               children: [
                                 Text(
                                   _selectedPackage.name.toUpperCase(),
-                                  style: const TextStyle(
+                                  style: AppTypography.h3Display(
                                     color: AppColors.matteGold,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.0,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-                                Text(
-                                  _selectedPackage.price,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w300,
+                                RichText(
+                                  text: TextSpan(
+                                    children: [
+                                      TextSpan(
+                                        text: '\$',
+                                        style: AppTypography.priceDisplay()
+                                            .copyWith(fontSize: 16),
+                                      ),
+                                      TextSpan(
+                                        text: _selectedPackage.price.replaceAll(
+                                          '\$',
+                                          '',
+                                        ),
+                                        style: AppTypography.priceDisplay()
+                                            .copyWith(fontSize: 32),
+                                      ),
+                                    ],
                                   ),
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
                                   _selectedPackage.description,
-                                  style: const TextStyle(
+                                  style: AppTypography.small(
                                     color: Colors.white70,
-                                    fontSize: 12,
-                                    height: 1.4,
                                   ),
                                 ),
                               ],
@@ -680,11 +667,9 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                                 const SizedBox(width: 6),
                                 Text(
                                   f,
-                                  style: const TextStyle(
+                                  style: AppTypography.smallSemiBold(
                                     color: Colors.white70,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                  ).copyWith(fontSize: 10),
                                 ),
                               ],
                             ),
@@ -697,13 +682,9 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                           _selectedPackage.id !=
                               PortraitPackage.professionalShoot) ...[
                         const SizedBox(height: 12),
-                        const Text(
+                        Text(
                           "MISSING IN THIS TIER:",
-                          style: TextStyle(
-                            color: Colors.white24,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: AppTypography.microBold(color: Colors.white24),
                         ),
                         const SizedBox(height: 8),
                         Wrap(
@@ -726,10 +707,9 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                                   "Group Mode (Agency Only)",
                               ].map((f) {
                                 return Text(
-                                  "• \$f",
-                                  style: const TextStyle(
-                                    color: Colors.white24, // Grayed out
-                                    fontSize: 10,
+                                  "• $f",
+                                  style: AppTypography.micro(
+                                    color: Colors.white24,
                                   ),
                                 );
                               }).toList(),
@@ -749,7 +729,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                               color: AppColors.matteGold.withValues(alpha: 0.3),
                             ),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
                               Icon(
                                 Icons.info_outline,
@@ -760,11 +740,9 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                               Expanded(
                                 child: Text(
                                   "Standard studio session value: \$500–\$1,200",
-                                  style: TextStyle(
+                                  style: AppTypography.smallSemiBold(
                                     color: AppColors.matteGold,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                  ).copyWith(fontSize: 11),
                                 ),
                               ),
                             ],
@@ -774,13 +752,11 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                       if (_selectedPackage.id ==
                           PortraitPackage.agencyMaster) ...[
                         const SizedBox(height: 16),
-                        const Text(
+                        Text(
                           "Equivalent to a multi-day studio production (\$5,000+ value)",
-                          style: TextStyle(
+                          style: AppTypography.small(
                             color: Colors.white54,
-                            fontSize: 11,
-                            fontStyle: FontStyle.italic,
-                          ),
+                          ).copyWith(fontSize: 11, fontStyle: FontStyle.italic),
                         ),
                       ],
 
@@ -816,27 +792,20 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                                   ),
                                 )
                               : Text(
-                                  _selectedPackage.buttonLabel,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.5,
-                                  ),
+                                  _selectedPackage.buttonLabel.toUpperCase(),
+                                  style: AppTypography.button(),
                                 ),
                         ),
                       ),
 
                       const SizedBox(height: 16),
                       // Micro-copy Reassurance
-                      const Row(
+                      Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
                             "No photographer. No studio rental. No reshoots.",
-                            style: TextStyle(
-                              color: Colors.white30,
-                              fontSize: 10,
-                            ),
+                            style: AppTypography.micro(color: Colors.white30),
                           ),
                         ],
                       ),
@@ -845,10 +814,8 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                       Center(
                         child: Text(
                           "SECURE PAYMENT VIA STRIPE",
-                          style: TextStyle(
+                          style: AppTypography.micro(
                             color: Colors.white.withValues(alpha: 0.3),
-                            fontSize: 10,
-                            letterSpacing: 1.0,
                           ),
                         ),
                       ),
@@ -878,21 +845,14 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
             children: [
               Text(
                 label,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
-                ),
+                style: AppTypography.microBold(color: Colors.white70),
               ),
               const SizedBox(height: 2),
               Text(
                 price,
-                style: const TextStyle(
+                style: AppTypography.smallSemiBold(
                   color: AppColors.matteGold,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
+                ).copyWith(fontSize: 12),
               ),
             ],
           ),
@@ -949,11 +909,9 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                     ),
                     child: Text(
                       savings,
-                      style: const TextStyle(
+                      style: AppTypography.microBold(
                         color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 10,
-                      ),
+                      ).copyWith(fontSize: 10),
                     ),
                   ),
                 ),
@@ -961,22 +919,15 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                 Text(
                   title,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.0,
-                  ),
+                  style: AppTypography.h3Display(),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   content,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: AppTypography.bodyRegular(
                     color: Colors.white70,
-                    fontSize: 14,
-                    height: 1.5,
-                  ),
+                  ).copyWith(height: 1.5),
                 ),
                 const SizedBox(height: 30),
                 ElevatedButton(
@@ -989,20 +940,14 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Text(
-                    confirmText,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
+                  child: Text(confirmText, style: AppTypography.button()),
                 ),
                 const SizedBox(height: 12),
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
                   child: Text(
                     cancelText,
-                    style: const TextStyle(color: Colors.white30),
+                    style: AppTypography.small(color: Colors.white30),
                   ),
                 ),
                 const SizedBox(height: 16),

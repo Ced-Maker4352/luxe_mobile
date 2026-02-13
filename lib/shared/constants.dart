@@ -1,4 +1,5 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../models/types.dart';
 
 class AppColors {
@@ -25,6 +26,114 @@ class AppColors {
 
   // 5. Trust Signal (Soft Shadows)
   static const Color shadow = Color(0x59000000); // rgba(0,0,0,0.35)
+}
+
+class AppTypography {
+  // 1. DISPLAY STYLES (Playfair Display)
+  // Luxury, Editorial, Authority
+
+  static TextStyle h1Display({Color color = AppColors.softPlatinum}) =>
+      GoogleFonts.playfairDisplay(
+        color: color,
+        fontSize: 48,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 1.0,
+        height: 1.1,
+      );
+
+  static TextStyle h2Display({Color color = AppColors.softPlatinum}) =>
+      GoogleFonts.playfairDisplay(
+        color: color,
+        fontSize: 32,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.8,
+      );
+
+  static TextStyle h3Display({Color color = AppColors.softPlatinum}) =>
+      GoogleFonts.playfairDisplay(
+        color: color,
+        fontSize: 24,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.5,
+      );
+
+  static TextStyle priceDisplay({Color color = AppColors.matteGold}) =>
+      GoogleFonts.playfairDisplay(
+        color: color,
+        fontSize: 28,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.5,
+      );
+
+  // 2. BODY STYLES (Inter)
+  // Modern, Professional, Clear
+
+  static TextStyle bodyLarge({Color color = AppColors.softPlatinum}) =>
+      GoogleFonts.inter(
+        color: color,
+        fontSize: 18,
+        fontWeight: FontWeight.w400,
+      );
+
+  static TextStyle bodyRegular({Color color = AppColors.softPlatinum}) =>
+      GoogleFonts.inter(
+        color: color,
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+      );
+
+  static TextStyle bodyMedium({Color color = AppColors.softPlatinum}) =>
+      GoogleFonts.inter(
+        color: color,
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+      );
+
+  static TextStyle small({Color color = AppColors.coolGray}) =>
+      GoogleFonts.inter(
+        color: color,
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+      );
+
+  static TextStyle smallSemiBold({Color color = AppColors.coolGray}) =>
+      GoogleFonts.inter(
+        color: color,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+      );
+
+  static TextStyle micro({Color color = AppColors.mutedGray}) =>
+      GoogleFonts.inter(
+        color: color,
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 0.5,
+      );
+
+  static TextStyle microBold({Color color = AppColors.mutedGray}) =>
+      GoogleFonts.inter(
+        color: color,
+        fontSize: 10,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 1.5,
+      );
+
+  // 3. SPECIAL STYLES
+
+  static TextStyle button({Color color = Colors.black}) => GoogleFonts.inter(
+    color: color,
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.5,
+  );
+
+  static TextStyle labelGold({bool active = true}) => GoogleFonts.inter(
+    color: active ? AppColors.matteGold : AppColors.mutedGray,
+    fontSize: 10,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 1.5,
+  );
 }
 
 class BackgroundPreset {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/auth_service.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import '../shared/constants.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -94,23 +94,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 Text(
                   'LUXE AI STUDIO',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.cinzel(
-                    // Using serif font similar to design
-                    color: AppColors.matteGold,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 2.0,
-                  ),
+                  style: AppTypography.h2Display(),
                 ),
                 const SizedBox(height: 48),
 
                 // Email Field
                 TextField(
                   controller: _emailController,
-                  style: const TextStyle(color: Colors.white),
+                  style: AppTypography.bodyRegular(),
                   decoration: InputDecoration(
                     labelText: 'Email',
-                    labelStyle: const TextStyle(color: Colors.white70),
+                    labelStyle: AppTypography.small(color: Colors.white70),
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide(color: Colors.white24),
                       borderRadius: BorderRadius.circular(12),
@@ -129,10 +123,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Password Field
                 TextField(
                   controller: _passwordController,
-                  style: const TextStyle(color: Colors.white),
+                  style: AppTypography.bodyRegular(),
                   decoration: InputDecoration(
                     labelText: 'Password',
-                    labelStyle: const TextStyle(color: Colors.white70),
+                    labelStyle: AppTypography.small(color: Colors.white70),
                     enabledBorder: OutlineInputBorder(
                       borderSide: BorderSide(color: Colors.white24),
                       borderRadius: BorderRadius.circular(12),
@@ -167,11 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         )
                       : Text(
                           _isLogin ? 'SIGN IN' : 'SIGN UP',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.0,
-                          ),
+                          style: AppTypography.button(),
                         ),
                 ),
                 const SizedBox(height: 16),
@@ -183,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     _isLogin
                         ? 'Don\'t have an account? Sign Up'
                         : 'Already have an account? Sign In',
-                    style: const TextStyle(color: Colors.white70),
+                    style: AppTypography.small(color: Colors.white70),
                   ),
                 ),
 
@@ -195,10 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Expanded(child: Divider(color: Colors.white24)),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        'OR',
-                        style: TextStyle(color: Colors.white54),
-                      ),
+                      child: Text('OR', style: AppTypography.micro()),
                     ),
                     Expanded(child: Divider(color: Colors.white24)),
                   ],
@@ -213,7 +200,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     Icons.g_mobiledata,
                     size: 28,
                   ), // Placeholder icon
-                  label: const Text('Continue with Google'),
+                  label: Text(
+                    'Continue with Google',
+                    style: AppTypography.bodyMedium(color: Colors.white),
+                  ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
                     side: const BorderSide(color: Colors.white24),

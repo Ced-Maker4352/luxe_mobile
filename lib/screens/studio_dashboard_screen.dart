@@ -850,14 +850,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         children: [
           Icon(icon, size: 12, color: AppColors.matteGold),
           SizedBox(width: 4),
-          Text(
-            '$count',
-            style: TextStyle(
-              color: AppColors.softPlatinum,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text('$count', style: AppTypography.microBold()),
         ],
       ),
     );
@@ -885,12 +878,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           ),
           Text(
             'STUDIO',
-            style: TextStyle(
+            style: AppTypography.microBold(
               color: AppColors.softPlatinum,
-              letterSpacing: 4,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
+            ).copyWith(letterSpacing: 4),
           ),
           Consumer<SessionProvider>(
             builder: (context, session, _) {
@@ -1095,14 +1085,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         children: [
           Icon(icon, color: AppColors.coolGray, size: 20),
           SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: AppColors.mutedGray,
-              fontSize: 9,
-              letterSpacing: 0.5,
-            ),
-          ),
+          Text(label, style: AppTypography.micro(color: AppColors.mutedGray)),
         ],
       ),
     );
@@ -1173,15 +1156,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                               children: [
                                 Text(
                                   rig.name,
-                                  style: TextStyle(
+                                  style: AppTypography.bodyMedium(
                                     color: isSelected
                                         ? AppColors.matteGold
                                         : AppColors.coolGray,
-                                    fontSize: isSelected ? 16 : 13,
-                                    fontWeight: isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                    letterSpacing: 0.3,
                                   ),
                                 ),
                                 if (isSelected)
@@ -1189,11 +1167,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                                     padding: EdgeInsets.only(top: 2),
                                     child: Text(
                                       '${rig.specs.lens}  •  ${rig.specs.sensor}',
-                                      style: TextStyle(
+                                      style: AppTypography.micro(
                                         color: AppColors.softPlatinum
                                             .withValues(alpha: 0.35),
-                                        fontSize: 10,
-                                        letterSpacing: 0.5,
                                       ),
                                     ),
                                   ),
@@ -1344,7 +1320,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 // Text input
                 TextField(
                   controller: _promptController,
-                  style: TextStyle(color: AppColors.softPlatinum, fontSize: 14),
+                  style: AppTypography.bodyRegular(),
                   maxLines: 2,
                   decoration: InputDecoration(
                     hintText: 'Describe your vision...',
@@ -1501,12 +1477,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                             ),
                             child: Text(
                               item['label']!,
-                              style: TextStyle(
+                              style: AppTypography.smallSemiBold(
                                 color: isActive
                                     ? Colors.black
                                     : AppColors.coolGray,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
@@ -1521,11 +1495,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     children: [
                       Text(
                         entry.key.toUpperCase(),
-                        style: TextStyle(
+                        style: AppTypography.microBold(
                           color: AppColors.softPlatinum.withValues(alpha: 0.24),
-                          fontSize: 9,
-                          letterSpacing: 2,
-                          fontWeight: FontWeight.bold,
                         ),
                       ),
                       SizedBox(height: 8),
@@ -1597,12 +1568,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                         padding: EdgeInsets.only(bottom: 6),
                         child: Text(
                           entry.key.toUpperCase(),
-                          style: TextStyle(
+                          style: AppTypography.microBold(
                             color: AppColors.softPlatinum.withValues(
                               alpha: 0.3,
                             ),
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
@@ -1700,14 +1669,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                           ),
                           child: Text(
                             tex.label,
-                            style: TextStyle(
+                            style: AppTypography.smallSemiBold(
                               color: isActive
                                   ? AppColors.matteGold
                                   : AppColors.coolGray,
-                              fontSize: 11,
-                              fontWeight: isActive
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
                             ),
                           ),
                         ),
@@ -1739,11 +1704,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         children: [
           Text(
             title,
-            style: TextStyle(
+            style: AppTypography.smallSemiBold(
               color: AppColors.matteGold,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 2,
-            ),
+            ).copyWith(letterSpacing: 2),
           ),
           GestureDetector(
             onTap: onClose,
@@ -1771,11 +1734,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               SizedBox(height: 4),
               Text(
                 label.length > 10 ? '${label.substring(0, 10)}...' : label,
-                style: TextStyle(
-                  color: AppColors.coolGray,
-                  fontSize: 9,
-                  letterSpacing: 0.5,
-                ),
+                style: AppTypography.micro(color: AppColors.coolGray),
                 overflow: TextOverflow.ellipsis,
               ),
             ],
@@ -1842,18 +1801,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           SizedBox(height: 30),
           Text(
             'INITIATING OPTIC PROTOCOL...',
-            style: TextStyle(
-              color: AppColors.softPlatinum,
-              letterSpacing: 2,
-              fontSize: 10,
-            ),
+            style: AppTypography.microBold(color: AppColors.softPlatinum),
           ),
           SizedBox(height: 10),
           Text(
             'Developing high-fidelity asset...',
-            style: TextStyle(
+            style: AppTypography.small(
               color: AppColors.softPlatinum.withValues(alpha: 0.3),
-              fontSize: 11,
             ),
           ),
         ],
@@ -2147,15 +2101,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   children: [
                     Text(
                       'PRESERVE AGE & BODY',
-                      style: TextStyle(
+                      style: AppTypography.microBold(
                         color: AppColors.matteGold,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
                       'Locks age and body type',
-                      style: TextStyle(color: AppColors.mutedGray, fontSize: 9),
+                      style: AppTypography.micro(color: AppColors.mutedGray),
                     ),
                   ],
                 ),
@@ -2212,13 +2164,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   ),
                   child: Text(
                     g.toUpperCase(),
-                    style: TextStyle(
+                    style: AppTypography.microBold(
                       color: isActive
                           ? AppColors.matteGold
                           : AppColors.coolGray,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    ).copyWith(fontSize: 10),
                   ),
                 ),
               );
@@ -2249,10 +2199,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   child: ChoiceChip(
                     label: Text(
                       cat,
-                      style: TextStyle(
+                      style: AppTypography.small(
                         color: isActive ? Colors.black : AppColors.coolGray,
-                        fontSize: 11,
-                      ),
+                      ).copyWith(fontSize: 11),
                     ),
                     selected: isActive,
                     selectedColor: AppColors.matteGold,
@@ -2297,12 +2246,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     item,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: AppTypography.micro(
                       color: isActive
                           ? AppColors.matteGold
                           : AppColors.coolGray,
-                      fontSize: 10,
-                    ),
+                    ).copyWith(fontSize: 10),
                   ),
                 ),
               );
@@ -2346,15 +2294,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   ),
                   child: Text(
                     style,
-                    style: TextStyle(
+                    style: AppTypography.microBold(
                       color: isActive
                           ? AppColors.matteGold
                           : AppColors.coolGray,
-                      fontSize: 10,
-                      fontWeight: isActive
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                    ),
+                    ).copyWith(fontSize: 10),
                   ),
                 ),
               );
@@ -2395,13 +2339,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   ),
                   child: Text(
                     s.toUpperCase(),
-                    style: TextStyle(
+                    style: AppTypography.microBold(
                       color: isActive
                           ? AppColors.matteGold
                           : AppColors.coolGray,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    ).copyWith(fontSize: 10),
                   ),
                 ),
               );
@@ -2475,11 +2417,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                           SizedBox(width: 8),
                           Text(
                             "ADD CLOTHING PHOTO",
-                            style: TextStyle(
+                            style: AppTypography.microBold(
                               color: AppColors.matteGold,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1,
                             ),
                           ),
                         ],
@@ -2490,7 +2429,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 Text(
                   "Upload a photo of a garment to apply it to your generation.",
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.mutedGray, fontSize: 9),
+                  style: AppTypography.micro(
+                    color: AppColors.mutedGray,
+                  ).copyWith(fontSize: 9),
                 ),
               ],
             ),
@@ -2534,14 +2475,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                             color: Colors.black,
                           ),
                         )
-                      : Text(
-                          'APPLY STYLE',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 2,
-                            fontSize: 12,
-                          ),
-                        ),
+                      : Text('APPLY STYLE', style: AppTypography.button()),
                 ),
               );
             },
@@ -2591,15 +2525,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   ),
                   child: Text(
                     tex.label,
-                    style: TextStyle(
+                    style: AppTypography.microBold(
                       color: isActive
                           ? AppColors.matteGold
                           : AppColors.coolGray,
-                      fontSize: 10,
-                      fontWeight: isActive
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                    ),
+                    ).copyWith(fontSize: 10),
                   ),
                 ),
               );
@@ -2655,11 +2585,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   ),
                   child: Text(
                     preset.label,
-                    style: TextStyle(
+                    style: AppTypography.microBold(
                       color: isMatch ? AppColors.matteGold : AppColors.coolGray,
-                      fontSize: 10,
-                      fontWeight: isMatch ? FontWeight.bold : FontWeight.normal,
-                    ),
+                    ).copyWith(fontSize: 10),
                   ),
                 ),
               );
@@ -2673,11 +2601,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           // COLOR BALANCE
           Text(
             'COLOR BALANCE',
-            style: TextStyle(
+            style: AppTypography.microBold(
               color: AppColors.softPlatinum.withValues(alpha: 0.24),
-              fontSize: 10,
-              letterSpacing: 2,
-              fontWeight: FontWeight.bold,
             ),
           ),
           SizedBox(height: 12),
@@ -2695,11 +2620,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           // EFFECTS
           Text(
             'EFFECTS',
-            style: TextStyle(
+            style: AppTypography.microBold(
               color: AppColors.softPlatinum.withValues(alpha: 0.24),
-              fontSize: 10,
-              letterSpacing: 2,
-              fontWeight: FontWeight.bold,
             ),
           ),
           SizedBox(height: 12),
@@ -2716,11 +2638,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           // FINE TUNE
           Text(
             'FINE TUNE',
-            style: TextStyle(
+            style: AppTypography.microBold(
               color: AppColors.softPlatinum.withValues(alpha: 0.24),
-              fontSize: 10,
-              letterSpacing: 2,
-              fontWeight: FontWeight.bold,
             ),
           ),
           SizedBox(height: 12),
@@ -2768,14 +2687,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                             color: Colors.black,
                           ),
                         )
-                      : Text(
-                          'APPLY RETOUCH',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 2,
-                            fontSize: 12,
-                          ),
-                        ),
+                      : Text('APPLY RETOUCH', style: AppTypography.button()),
                 ),
               );
             },
@@ -2815,7 +2727,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 ),
                 Text(
                   valueText,
-                  style: TextStyle(color: AppColors.matteGold, fontSize: 10),
+                  style: AppTypography.micro(color: AppColors.matteGold),
                 ),
               ],
             ),
@@ -2997,11 +2909,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           // ── 3. STITCH PROMPT ──
           Text(
             'GROUP PROMPT',
-            style: TextStyle(
+            style: AppTypography.microBold(
               color: AppColors.softPlatinum.withValues(alpha: 0.24),
-              fontSize: 10,
-              letterSpacing: 2,
-              fontWeight: FontWeight.bold,
             ),
           ),
           SizedBox(height: 8),
@@ -3018,10 +2927,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 Expanded(
                   child: TextField(
                     controller: _stitchPromptController,
-                    style: TextStyle(
-                      color: AppColors.softPlatinum,
-                      fontSize: 12,
-                    ),
+                    style: AppTypography.micro(color: AppColors.softPlatinum),
                     maxLines: 2,
                     minLines: 1,
                     decoration: InputDecoration(
@@ -3096,20 +3002,16 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             children: [
               Text(
                 'STITCH SQUAD (${session.stitchImages.length}/5)',
-                style: TextStyle(
+                style: AppTypography.microBold(
                   color: AppColors.softPlatinum.withValues(alpha: 0.24),
-                  fontSize: 10,
-                  letterSpacing: 2,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
               if (session.stitchImages.isNotEmpty)
                 Text(
                   'TAP TO REMOVE',
-                  style: TextStyle(
-                    fontSize: 8,
+                  style: AppTypography.micro(
                     color: AppColors.softPlatinum.withValues(alpha: 0.12),
-                  ),
+                  ).copyWith(fontSize: 8),
                 ),
             ],
           ),
@@ -3153,11 +3055,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                             SizedBox(height: 2),
                             Text(
                               'ADD',
-                              style: TextStyle(
+                              style: AppTypography.microBold(
                                 color: Color(0xFFD4AF37),
-                                fontSize: 8,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              ).copyWith(fontSize: 8),
                             ),
                           ],
                         ),
@@ -3214,11 +3114,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             SizedBox(height: 12),
             Text(
               'PER-PERSON STYLE',
-              style: TextStyle(
+              style: AppTypography.microBold(
                 color: AppColors.softPlatinum.withValues(alpha: 0.24),
-                fontSize: 10,
-                letterSpacing: 2,
-                fontWeight: FontWeight.bold,
               ),
             ),
             SizedBox(height: 6),
@@ -3253,10 +3150,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                         SizedBox(width: 8),
                         Text(
                           'P${idx + 1}',
-                          style: TextStyle(
+                          style: AppTypography.microBold(
                             color: AppColors.softPlatinum,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
                           ),
                         ),
                         const Spacer(),
@@ -3299,14 +3194,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                                     SizedBox(width: 2),
                                     Text(
                                       g.toUpperCase(),
-                                      style: TextStyle(
+                                      style: AppTypography.microBold(
                                         color: isGActive
                                             ? Colors.black
                                             : AppColors.coolGray,
-                                        fontSize: 8,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 0.5,
-                                      ),
+                                      ).copyWith(fontSize: 8),
                                     ),
                                   ],
                                 ),
@@ -3372,15 +3264,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                                       ),
                                       child: Text(
                                         style.toUpperCase(),
-                                        style: TextStyle(
+                                        style: AppTypography.microBold(
                                           color: isActive
                                               ? AppColors.matteGold
                                               : AppColors.mutedGray,
-                                          fontSize: 8,
-                                          fontWeight: isActive
-                                              ? FontWeight.bold
-                                              : FontWeight.normal,
-                                        ),
+                                        ).copyWith(fontSize: 8),
                                       ),
                                     ),
                                   );
@@ -3450,14 +3338,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                         color: Colors.black,
                       ),
                     )
-                  : Text(
-                      'GENERATE GROUP PHOTO',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 2,
-                        fontSize: 12,
-                      ),
-                    ),
+                  : Text('GENERATE GROUP PHOTO', style: AppTypography.button()),
             ),
           ),
         ],
@@ -3482,11 +3363,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       ),
       child: Text(
         label,
-        style: TextStyle(
+        style: AppTypography.microBold(
           color: isActive ? AppColors.matteGold : AppColors.coolGray,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-        ),
+        ).copyWith(fontSize: 10),
       ),
     );
   }
@@ -3502,15 +3381,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           dense: true,
           title: Text(
             product.name,
-            style: TextStyle(
+            style: AppTypography.smallSemiBold(
               color: AppColors.softPlatinum,
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-            ),
+            ).copyWith(fontSize: 13),
           ),
           subtitle: Text(
             '${product.material} • FROM \$${product.price.toInt()}',
-            style: TextStyle(color: AppColors.coolGray, fontSize: 10),
+            style: AppTypography.micro(color: AppColors.coolGray),
           ),
           trailing: Icon(
             Icons.arrow_forward_ios,
@@ -3541,7 +3418,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             SizedBox(height: 12),
             Text(
               'Save to your device',
-              style: TextStyle(color: AppColors.coolGray, fontSize: 11),
+              style: AppTypography.small(
+                color: AppColors.coolGray,
+              ).copyWith(fontSize: 11),
             ),
             SizedBox(height: 16),
             Row(
@@ -3576,17 +3455,14 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           children: [
             Text(
               label,
-              style: TextStyle(
-                color: Color(0xFFD4AF37),
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1,
-              ),
+              style: AppTypography.microBold(color: Color(0xFFD4AF37)),
             ),
             SizedBox(height: 4),
             Text(
               subtitle,
-              style: TextStyle(color: AppColors.mutedGray, fontSize: 9),
+              style: AppTypography.micro(
+                color: AppColors.mutedGray,
+              ).copyWith(fontSize: 9),
             ),
           ],
         ),
@@ -3605,7 +3481,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             SizedBox(height: 12),
             Text(
               'Share your creation',
-              style: TextStyle(color: AppColors.coolGray, fontSize: 11),
+              style: AppTypography.small(
+                color: AppColors.coolGray,
+              ).copyWith(fontSize: 11),
             ),
             SizedBox(height: 16),
             Row(
@@ -3643,11 +3521,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           SizedBox(height: 6),
           Text(
             label,
-            style: TextStyle(
+            style: AppTypography.micro(
               color: AppColors.mutedGray,
-              fontSize: 8,
-              letterSpacing: 0.5,
-            ),
+            ).copyWith(fontSize: 8),
           ),
         ],
       ),
@@ -3707,13 +3583,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           SizedBox(height: 4),
           Text(
             label,
-            style: TextStyle(
+            style: AppTypography.microBold(
               color: isActive
                   ? AppColors.matteGold
                   : AppColors.softPlatinum.withValues(alpha: 0.24),
-              fontSize: 9,
-              letterSpacing: 1,
-            ),
+            ).copyWith(fontSize: 9),
           ),
         ],
       ),

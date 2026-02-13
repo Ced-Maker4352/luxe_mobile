@@ -57,9 +57,7 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
     final session = context.read<SessionProvider>();
     if (!session.hasUploadedImage) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please upload a portrait in Studio first.'),
-        ),
+        SnackBar(content: Text('Please upload a portrait in Studio first.')),
       );
       return;
     }
@@ -91,7 +89,7 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
   Future<void> _generateLogo() async {
     if (_logoStyleController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please describe the logo style.')),
+        SnackBar(content: Text('Please describe the logo style.')),
       );
       return;
     }
@@ -169,7 +167,7 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
         } else {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Storage permission denied.')),
+              SnackBar(content: Text('Storage permission denied.')),
             );
           }
         }
@@ -193,29 +191,22 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+          icon: Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'BRAND STUDIO',
-          style: TextStyle(
+          style: AppTypography.microBold(
             color: Colors.white,
-            letterSpacing: 3,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
+          ).copyWith(letterSpacing: 3, fontSize: 14),
         ),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppColors.matteGold,
           labelColor: AppColors.matteGold,
           unselectedLabelColor: Colors.white38,
-          labelStyle: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1,
-          ),
-          tabs: const [
+          labelStyle: AppTypography.microBold(),
+          tabs: [
             Tab(text: 'STRATEGY'),
             Tab(text: 'LOGO LAB'),
             Tab(text: 'ASSETS'),
@@ -235,18 +226,14 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
+          Text(
             'IDENTITY ARCHITECT',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontFamily: 'Serif',
-            ),
+            style: AppTypography.h3Display(color: Colors.white),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'AI-powered brand analysis based on your portrait style.',
-            style: TextStyle(color: Colors.white54, fontSize: 12),
+            style: AppTypography.micro(color: Colors.white54),
           ),
           const SizedBox(height: 24),
 
@@ -274,11 +261,11 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
               ),
               child: Column(
                 children: [
-                  const Icon(Icons.psychology, color: Colors.white24, size: 48),
+                  Icon(Icons.psychology, color: Colors.white24, size: 48),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'Analyze your vibe',
-                    style: TextStyle(color: Colors.white54),
+                    style: AppTypography.small(color: Colors.white54),
                   ),
                 ],
               ),
@@ -292,9 +279,9 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
               foregroundColor: Colors.black,
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
-            child: const Text(
+            child: Text(
               'GENERATE BRAND STRATEGY',
-              style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
+              style: AppTypography.button(),
             ),
           ),
         ],
@@ -308,22 +295,18 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
+          Text(
             'LOGO CREATION',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontFamily: 'Serif',
-            ),
+            style: AppTypography.h3Display(color: Colors.white),
           ),
           const SizedBox(height: 24),
 
           TextField(
             controller: _brandNameController,
             style: const TextStyle(color: Colors.white),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'BRAND NAME',
-              labelStyle: TextStyle(color: Colors.white54),
+              labelStyle: AppTypography.microBold(color: Colors.white54),
               enabledBorder: OutlineInputBorder(
                 borderSide: BorderSide(color: Colors.white24),
               ),
@@ -341,8 +324,8 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
               labelText: 'VISUAL STYLE / PROMPT',
               hintText:
                   'e.g. Minimalist monogram, intertwining letters, gold foil texture...',
-              hintStyle: TextStyle(color: Colors.white12),
-              labelStyle: TextStyle(color: Colors.white54),
+              hintStyle: AppTypography.micro(color: Colors.white12),
+              labelStyle: AppTypography.microBold(color: Colors.white54),
               enabledBorder: OutlineInputBorder(
                 borderSide: BorderSide(color: Colors.white24),
               ),
@@ -365,10 +348,7 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
                 foregroundColor: Colors.black,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: const Text(
-                'CREATE LOGO',
-                style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
-              ),
+              child: Text('CREATE LOGO', style: AppTypography.button()),
             ),
         ],
       ),
@@ -381,7 +361,7 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
         child: Text(
           'No assets yet.\nCreate a logo to get started.',
           textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.white38),
+          style: AppTypography.small(color: Colors.white38),
         ),
       );
     }
@@ -404,11 +384,7 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
           children: [
             Text(
               'ASSET ${index + 1} • $label',
-              style: const TextStyle(
-                color: Colors.white54,
-                fontSize: 10,
-                letterSpacing: 1,
-              ),
+              style: AppTypography.micro(color: Colors.white54),
             ),
             const SizedBox(height: 8),
             Container(
@@ -428,10 +404,11 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    icon: const Icon(Icons.download, size: 16),
-                    label: const Text('PNG (HD)'),
+                    icon: Icon(Icons.download, size: 16),
+                    label: Text('PNG (HD)'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white,
+                      textStyle: AppTypography.microBold(color: Colors.white),
                       side: const BorderSide(color: Colors.white24),
                     ),
                     onPressed: () => _downloadImage(image),
@@ -440,10 +417,13 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton.icon(
-                    icon: const Icon(Icons.code, size: 16),
-                    label: const Text('VECTOR (SVG)'),
+                    icon: Icon(Icons.code, size: 16),
+                    label: Text('VECTOR (SVG)'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.matteGold,
+                      textStyle: AppTypography.microBold(
+                        color: AppColors.matteGold,
+                      ),
                       side: const BorderSide(color: AppColors.matteGold),
                     ),
                     onPressed: () {
@@ -451,7 +431,7 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
                       // For now downloading PNG but naming it vector-like/high-res
                       _downloadImage(image);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
+                        SnackBar(
                           content: Text(
                             'Vector format simulated (Hi-Res PNG saved). True SVG conversion requires external tool.',
                           ),
@@ -481,21 +461,10 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
         children: [
           Text(
             label,
-            style: const TextStyle(
-              color: AppColors.matteGold,
-              fontSize: 10,
-              letterSpacing: 1,
-            ),
+            style: AppTypography.microBold(color: AppColors.matteGold),
           ),
           const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontFamily: 'Serif',
-            ),
-          ),
+          Text(value, style: AppTypography.bodyMedium(color: Colors.white)),
         ],
       ),
     );

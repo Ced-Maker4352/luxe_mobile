@@ -90,16 +90,9 @@ class _SplashScreenState extends State<SplashScreen>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text(
-                          'LUXE AI',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 48,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 8,
-                            fontFamily:
-                                'Playfair Display', // We will add fonts later
-                          ),
+                        Text(
+                          'LUXE AI STUDIO',
+                          style: AppTypography.h1Display(),
                         ),
                         const SizedBox(height: 10),
                         Container(
@@ -108,14 +101,9 @@ class _SplashScreenState extends State<SplashScreen>
                           color: AppColors.matteGold,
                         ),
                         const SizedBox(height: 20),
-                        const Text(
+                        Text(
                           'PORTRAIT BOUTIQUE',
-                          style: TextStyle(
-                            color: Colors.white54,
-                            fontSize: 12,
-                            letterSpacing: 4,
-                            fontWeight: FontWeight.w300,
-                          ),
+                          style: AppTypography.microBold(color: Colors.white54),
                         ),
                       ],
                     ),
@@ -132,13 +120,9 @@ class _SplashScreenState extends State<SplashScreen>
             child: Center(
               child: FadeTransition(
                 opacity: _fadeAnimation,
-                child: const Text(
+                child: Text(
                   'BEYOND PHOTOGRAPHY',
-                  style: TextStyle(
-                    color: Colors.white24,
-                    fontSize: 10,
-                    letterSpacing: 2,
-                  ),
+                  style: AppTypography.micro(color: Colors.white24),
                 ),
               ),
             ),
