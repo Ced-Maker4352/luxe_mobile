@@ -59,6 +59,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   String _selectedClothingStyle = ''; // from promptCategories['Styling & Vibe']
   Map<int, String> _stitchPersonStyles =
       {}; // per-person clothing styles for stitch mode
+  String _selectedSchoolQuery = ''; // Filter for "Your School" wardrobe
 
   // Stitch Studio state
   String _selectedGroupType = ''; // key from stitchGroupPresets
@@ -107,7 +108,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       }
 
       // Sync local gender with session
-      _gender = session.soloGender;
+      setState(() {
+        _gender = session.soloGender;
+      });
 
       // Fetch user profile for credits
       session.fetchUserProfile();
@@ -186,7 +189,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
       if (session.isSingleStyleMode && session.selectedStyle != null) {
         fullPrompt =
-            '${session.selectedPackage!.basePrompt} ${session.selectedStyle!.promptAddition} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""} \nTarget Gender: $_gender \nColor Temperature: $_styleTemperature \nFRAMING: $framingText';
+            '${session.selectedPackage!.basePrompt} ${session.selectedStyle!.promptAddition} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""} ${_selectedClothingStyle.isNotEmpty ? "\nClothing Style: $_selectedClothingStyle" : ""} \nTarget Gender: $_gender \nColor Temperature: $_styleTemperature \nFRAMING: $framingText';
         debugPrint('Studio: Using Single Style Prompt: $fullPrompt');
       } else {
         fullPrompt =
@@ -2234,7 +2237,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               children: wardrobeCategories.map((cat) {
                 final isActive = _selectedWardrobeCategory == cat;
                 return Padding(
-                  padding: EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.only(right: 8),
                   child: ChoiceChip(
                     label: Text(
                       cat,
@@ -2248,53 +2251,102 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                       alpha: 0.1,
                     ),
                     onSelected: (val) {
-                      if (val) setState(() => _selectedWardrobeCategory = cat);
+                      if (val) {
+                        setState(() {
+                          _selectedWardrobeCategory = cat;
+                        });
+                      }
                     },
                   ),
                 );
               }).toList(),
             ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 16),
+
+          // Search for "Your School" if selected
+          if (_selectedWardrobeCategory == 'Your School') ...[
+            TextField(
+              onChanged: (val) => setState(() => _selectedSchoolQuery = val),
+              style: AppTypography.small(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Search University...',
+                hintStyle: TextStyle(color: Colors.white24),
+                prefixIcon: Icon(Icons.search, color: AppColors.matteGold),
+                filled: true,
+                fillColor: Colors.white.withValues(alpha: 0.05),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
 
           // Wardrobe Items
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: wardrobeItems.map((item) {
-              final isActive = _selectedClothingStyle == item;
-              return GestureDetector(
-                onTap: () => setState(() {
-                  _selectedClothingStyle = isActive ? '' : item;
-                }),
-                child: Container(
-                  width: (MediaQuery.of(context).size.width - 48) / 2,
-                  padding: EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: isActive
-                        ? AppColors.matteGold.withValues(alpha: 0.15)
-                        : AppColors.softPlatinum.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isActive
-                          ? AppColors.matteGold
-                          : AppColors.softPlatinum.withValues(alpha: 0.12),
-                    ),
-                  ),
-                  child: Text(
-                    item,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.micro(
-                      color: isActive
-                          ? AppColors.matteGold
-                          : AppColors.coolGray,
-                    ).copyWith(fontSize: 10),
-                  ),
+          if (wardrobeItems.isNotEmpty)
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: wardrobeItems
+                  .where((item) {
+                    if (_selectedWardrobeCategory == 'Your School') {
+                      final query = _selectedSchoolQuery.toLowerCase();
+                      return item.toLowerCase().contains(query);
+                    }
+                    return true;
+                  })
+                  .take(_selectedWardrobeCategory == 'Your School' ? 12 : 100)
+                  .map((item) {
+                    final isActive = _selectedClothingStyle == item;
+                    return GestureDetector(
+                      onTap: () => setState(() {
+                        _selectedClothingStyle = isActive ? '' : item;
+                      }),
+                      child: Container(
+                        width: (MediaQuery.of(context).size.width - 48) / 2,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: isActive
+                              ? AppColors.matteGold.withValues(alpha: 0.15)
+                              : AppColors.softPlatinum.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isActive
+                                ? AppColors.matteGold
+                                : AppColors.softPlatinum.withValues(
+                                    alpha: 0.12,
+                                  ),
+                          ),
+                        ),
+                        child: Text(
+                          item
+                              .split(' vintage')
+                              .first, // Shorter display for school
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.micro(
+                            color: isActive
+                                ? AppColors.matteGold
+                                : AppColors.coolGray,
+                          ).copyWith(fontSize: 10),
+                        ),
+                      ),
+                    );
+                  })
+                  .toList(),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: Text(
+                  'No items found',
+                  style: AppTypography.small(color: Colors.white24),
                 ),
-              );
-            }).toList(),
-          ),
+              ),
+            ),
 
           SizedBox(height: 24),
 

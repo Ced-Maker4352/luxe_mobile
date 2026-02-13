@@ -202,7 +202,6 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
     return GestureDetector(
       onTap: () => setState(() {
         _isStitchMode = isStitch;
-        // Don't clear images when switching modes anymore
       }),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -216,6 +215,31 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
           style: AppTypography.microBold(
             color: isSelected ? Colors.black : Colors.white54,
           ).copyWith(fontSize: 11),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGenderToggle(
+    String title,
+    String gender,
+    SessionProvider session,
+  ) {
+    final isSelected = session.soloGender == gender;
+    return GestureDetector(
+      onTap: () => session.setSoloGender(gender),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.matteGold : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          title,
+          style: AppTypography.microBold(
+            color: isSelected ? Colors.black : Colors.white54,
+          ).copyWith(fontSize: 10),
         ),
       ),
     );
@@ -243,21 +267,56 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
 
               const SizedBox(height: 24),
 
-              // Mode Toggle
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white10,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white12),
-                ),
-                padding: const EdgeInsets.all(4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildModeToggle('IDENTITY LOCK', false),
-                    _buildModeToggle('GROUP MODE', true),
+              // Mode & Gender Controls
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Mode Toggle
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white10,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white12),
+                    ),
+                    padding: const EdgeInsets.all(4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildModeToggle('IDENTITY LOCK', false),
+                        _buildModeToggle('GROUP MODE', true),
+                      ],
+                    ),
+                  ),
+
+                  if (!_isStitchMode) ...[
+                    const SizedBox(width: 12),
+                    // Gender Lock
+                    Consumer<SessionProvider>(
+                      builder: (context, session, _) {
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white10,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white12),
+                          ),
+                          padding: const EdgeInsets.all(4),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _buildGenderToggle('MALE', 'male', session),
+                              _buildGenderToggle('FEMALE', 'female', session),
+                              _buildGenderToggle(
+                                'NEUTRAL',
+                                'unspecified',
+                                session,
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ],
-                ),
+                ],
               ),
 
               const SizedBox(height: 24),
