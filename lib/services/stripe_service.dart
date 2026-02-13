@@ -91,17 +91,18 @@ class StripeService {
   static String? getPaymentLink(String packageId, {String? promoCode}) {
     // These match the test links in your web app's paymentLinks.ts
     const links = {
-      'socialQuick': 'https://buy.stripe.com/test_28E5kv5eigiD04N0lW7N600',
-      'creatorPack': 'https://buy.stripe.com/test_eVq5kv36ac2naJrfgQ7N601',
-      'professionalShoot':
-          'https://buy.stripe.com/test_5kQ9AL7mqc2n04N5Gg7N603',
-      'agencyMaster': 'https://buy.stripe.com/test_fZubIT0Y2eavaJrecM7N604',
+      'socialQuick': 'https://buy.stripe.com/14A4gr11S25B6m89LqfEk00',
+      'creatorPack': 'https://buy.stripe.com/3cI00bdOEdOjfWI6zefEk01',
+      'professionalShoot': 'https://buy.stripe.com/00w28j7qg39FfWI6zefEk02',
+      'agencyMaster':
+          'https://buy.stripe.com/test_fZubIT0Y2eavaJrecM7N604', // Keeping test link for high-ticket item primarily for now? Or should I create one? User didn't ask for this one, but I should probably keep it as is or ask. User only asked for $5, $29, $99. Agency is $299. I'll leave it as test for now since I didn't create a real one.
       // Subscriptions
-      'sub_monthly_19': 'https://buy.stripe.com/test_28E5kv5eigiD04N0lW7N600',
-      'sub_monthly_49': 'https://buy.stripe.com/test_eVq5kv36ac2naJrfgQ7N601',
-      'sub_monthly_99': 'https://buy.stripe.com/test_5kQ9AL7mqc2n04N5Gg7N603',
+      'sub_monthly_19': 'https://buy.stripe.com/dRm28jeSIdOj39Wf5KfEk03',
+      'sub_monthly_49': 'https://buy.stripe.com/bJe3cndOEaC7fWI4r6fEk04',
+      'sub_monthly_99': 'https://buy.stripe.com/cNi14f3a05hNfWI7DifEk05',
       // Legacy / Fallback
-      'branding': 'https://buy.stripe.com/test_eVq5kv36ac2naJrfgQ7N601',
+      'branding':
+          'https://buy.stripe.com/00w28j7qg39FfWI6zefEk02', // Fallback to pro shoot
     };
 
     String? baseUrl = links[packageId];
