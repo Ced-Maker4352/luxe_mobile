@@ -967,6 +967,8 @@ final List<PackageDetails> packages = [
     ],
     exampleImage:
         "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=800&h=1000",
+    thumbnail:
+        "https://images.unsplash.com/photo-1620932900342-60bd06374092?auto=format&fit=crop&q=80&w=400",
     basePrompt:
         "IDENTITY INTEGRITY: 1:1 facial identity. COMPOSITION: Professional studio portrait.",
     buttonLabel: "UPGRADE YOUR LOOK",
@@ -1001,6 +1003,8 @@ final List<PackageDetails> packages = [
     ],
     exampleImage:
         "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=800&h=1000",
+    thumbnail:
+        "https://images.unsplash.com/photo-1614283233556-f35b0c801ef1?auto=format&fit=crop&q=80&w=400",
     basePrompt:
         "IDENTITY INTEGRITY: 1:1 facial identity. COMPOSITION: High-end editorial.",
     buttonLabel: "GET PROFESSIONAL RESULTS",
@@ -1033,6 +1037,8 @@ final List<PackageDetails> packages = [
     ],
     exampleImage:
         "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=800&h=1000",
+    thumbnail:
+        "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=400",
     basePrompt:
         "IDENTITY INTEGRITY: 1:1 facial identity. COMPOSITION: Masterpiece quality portrait.",
     buttonLabel: "SCALE YOUR BRAND",
@@ -1065,6 +1071,8 @@ final List<PackageDetails> packages = [
       "No watermark",
     ],
     exampleImage: "assets/images/independent_artist.jpg",
+    thumbnail:
+        "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=400",
     basePrompt:
         "IDENTITY INTEGRITY: 1:1 facial identity. COMPOSITION: Candid, clear social media portrait.",
     buttonLabel: "TRY IT OUT",

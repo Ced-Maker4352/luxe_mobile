@@ -428,30 +428,40 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                                             alpha: 0.05,
                                           )
                                         : Colors.transparent),
+                              image: DecorationImage(
+                                image: NetworkImage(pkg.thumbnail),
+                                fit: BoxFit.cover,
+                                opacity: isSelected ? 0.6 : 0.3,
+                                colorFilter: ColorFilter.mode(
+                                  Colors.black.withValues(
+                                    alpha: isSelected ? 0.2 : 0.5,
+                                  ),
+                                  BlendMode.darken,
+                                ),
+                              ),
                               border: Border.all(
                                 color: isSelected
                                     ? AppColors.matteGold
                                     : (isPro
                                           ? AppColors.matteGold.withValues(
-                                              alpha: 0.2,
+                                              alpha: 0.4,
                                             )
                                           : AppColors.matteGold.withValues(
                                               alpha: 0.1,
                                             )),
-                                width: isSelected ? 2.0 : (isPro ? 1.5 : 0.5),
+                                width: isSelected ? 2.5 : (isPro ? 1.5 : 0.5),
                               ),
                               borderRadius: BorderRadius.circular(12),
-                              boxShadow: isPro && isSelected
-                                  ? [
-                                      BoxShadow(
-                                        color: AppColors.matteGold.withValues(
-                                          alpha: 0.2,
-                                        ),
-                                        blurRadius: 10,
-                                        spreadRadius: 2,
-                                      ),
-                                    ]
-                                  : null,
+                              boxShadow: [
+                                if (isSelected)
+                                  BoxShadow(
+                                    color: AppColors.matteGold.withValues(
+                                      alpha: 0.3,
+                                    ),
+                                    blurRadius: isPro ? 15 : 10,
+                                    spreadRadius: 2,
+                                  ),
+                              ],
                             ),
                             alignment: Alignment.center,
                             padding: const EdgeInsets.all(12),
@@ -475,22 +485,40 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                                   Text(
                                     pkg.name.toUpperCase(),
                                     textAlign: TextAlign.center,
-                                    style: AppTypography.microBold(
-                                      color: isSelected
-                                          ? AppColors.matteGold
-                                          : Colors.white70,
-                                    ),
+                                    style:
+                                        AppTypography.microBold(
+                                          color: isSelected
+                                              ? Colors.white
+                                              : Colors.white70,
+                                        ).copyWith(
+                                          fontSize: 11,
+                                          shadows: [
+                                            Shadow(
+                                              color: Colors.black,
+                                              blurRadius: 4,
+                                              offset: Offset(1, 1),
+                                            ),
+                                          ],
+                                        ),
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     pkg.price,
-                                    style: AppTypography.bodyMedium(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.9,
-                                      ),
-                                    ),
+                                    style:
+                                        AppTypography.bodyMedium(
+                                          color: AppColors.matteGold,
+                                        ).copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          shadows: [
+                                            Shadow(
+                                              color: Colors.black,
+                                              blurRadius: 4,
+                                              offset: Offset(1, 1),
+                                            ),
+                                          ],
+                                        ),
                                   ),
                                 ],
                               ),
@@ -966,6 +994,17 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.05),
+            image: DecorationImage(
+              image: NetworkImage(
+                tierId == 'sub_monthly_19'
+                    ? "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200"
+                    : (tierId == 'sub_monthly_49'
+                          ? "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200"
+                          : "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200"),
+              ),
+              fit: BoxFit.cover,
+              opacity: 0.2,
+            ),
             border: Border.all(color: Colors.white24),
             borderRadius: BorderRadius.circular(8),
           ),
@@ -973,14 +1012,18 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
             children: [
               Text(
                 label,
-                style: AppTypography.microBold(color: Colors.white70),
+                style: AppTypography.microBold(color: Colors.white).copyWith(
+                  shadows: [Shadow(color: Colors.black, blurRadius: 2)],
+                ),
               ),
               const SizedBox(height: 2),
               Text(
                 price,
-                style: AppTypography.smallSemiBold(
-                  color: AppColors.matteGold,
-                ).copyWith(fontSize: 12),
+                style: AppTypography.smallSemiBold(color: AppColors.matteGold)
+                    .copyWith(
+                      fontSize: 12,
+                      shadows: [Shadow(color: Colors.black, blurRadius: 2)],
+                    ),
               ),
             ],
           ),

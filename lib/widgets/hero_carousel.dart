@@ -124,6 +124,7 @@ class _HeroCarouselState extends State<HeroCarousel> {
         Image.asset(
           item.assetPath,
           fit: BoxFit.cover,
+          alignment: Alignment.topCenter,
           errorBuilder: (context, error, stackTrace) => Container(
             color: Colors.grey[900],
             child: const Center(

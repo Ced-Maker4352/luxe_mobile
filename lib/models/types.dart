@@ -122,6 +122,7 @@ class PackageDetails {
   final List<String> features;
   final String basePrompt;
   final String exampleImage;
+  final String thumbnail;
   final List<StyleOption> styles;
   final String buttonLabel;
 
@@ -136,6 +137,7 @@ class PackageDetails {
     required this.features,
     required this.basePrompt,
     required this.exampleImage,
+    required this.thumbnail,
     required this.styles,
     this.buttonLabel = 'SELECT PACKAGE',
   });

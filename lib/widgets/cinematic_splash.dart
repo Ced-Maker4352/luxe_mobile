@@ -228,6 +228,7 @@ class _CinematicSplashState extends State<CinematicSplash>
                         'assets/images/hero_1.jpg',
                       ), // Placeholder for diverse selfies
                       fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
                     ),
                   ),
                 ),
@@ -337,6 +338,7 @@ class _CinematicSplashState extends State<CinematicSplash>
                     image: DecorationImage(
                       image: AssetImage('assets/images/hero_5.jpg'),
                       fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
                     ),
                   ),
                 ),
