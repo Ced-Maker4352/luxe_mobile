@@ -300,13 +300,15 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
             physics: const ClampingScrollPhysics(),
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: IntrinsicHeight(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(bottom: 100),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // === TOP HERO SECTION ===
                     SizedBox(
-                      height: constraints.maxHeight * 0.35,
+                      height:
+                          constraints.maxHeight *
+                          0.45, // Increased height for better visibility
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
@@ -625,9 +627,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-
-                    Spacer(),
+                    const SizedBox(height: 20),
 
                     // === BOTTOM DETAILS SECTION ===
                     Container(

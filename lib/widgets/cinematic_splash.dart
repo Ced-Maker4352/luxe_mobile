@@ -216,43 +216,96 @@ class _CinematicSplashState extends State<CinematicSplash>
   Widget _buildSplitScene() {
     return KeyedSubtree(
       key: const ValueKey('split'),
-      child: Stack(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage(
-                        'assets/images/hero_1.jpg',
-                      ), // Placeholder for diverse selfies
-                      fit: BoxFit.cover,
-                      alignment: Alignment.topCenter,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Identity Lock Visualization
+            Container(
+              height: 300,
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(horizontal: 24),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Main ID Card
+                  Transform.translate(
+                    offset: const Offset(0, 0),
+                    child: Container(
+                      width: 180,
+                      height: 240,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: AppColors.matteGold,
+                          width: 2,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        color: Colors.black54,
+                      ),
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.lock,
+                            color: AppColors.matteGold,
+                            size: 48,
+                          ),
+                          SizedBox(height: 12),
+                          Text(
+                            "IDENTITY\nLOCKED",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: AppColors.matteGold,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ),
-              Expanded(
-                child: Container(
-                  color: Colors.black,
-                  alignment: Alignment.center,
-                  child: const Text(
-                    'EMPTY STUDIO',
-                    style: TextStyle(color: Colors.white10),
+                  // Floating Selfies (Mock)
+                  Positioned(
+                    left: 20,
+                    top: 40,
+                    child: _buildMockSelfie(Icons.face_3),
                   ),
-                ),
+                  Positioned(
+                    right: 20,
+                    bottom: 60,
+                    child: _buildMockSelfie(Icons.face_6),
+                  ),
+                ],
               ),
-            ],
-          ),
-          Center(
-            child: Text(
-              'Different locations. One studio.',
-              style: AppTypography.h3Display(color: Colors.white),
             ),
-          ),
-        ],
+            const SizedBox(height: 32),
+            Text(
+              'Identity Lock™',
+              style: AppTypography.h2Display(color: AppColors.matteGold),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Your Face. Every Style.',
+              style: AppTypography.bodyRegular(color: Colors.white70),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildMockSelfie(IconData icon) {
+    return Container(
+      width: 64,
+      height: 64,
+      decoration: BoxDecoration(
+        color: AppColors.softCharcoal,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white24),
+        boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 10)],
+      ),
+      child: Icon(icon, color: Colors.white70),
     );
   }
 
@@ -263,11 +316,40 @@ class _CinematicSplashState extends State<CinematicSplash>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Group Mode Visualization
+            Container(
+              height: 280,
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(horizontal: 24),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white10),
+                borderRadius: BorderRadius.circular(20),
+                color: Colors.white.withOpacity(0.05),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  const Icon(Icons.groups, size: 80, color: Colors.white24),
+                  // Grid mock
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      _buildMockSelfie(Icons.face),
+                      _buildMockSelfie(Icons.face_2),
+                      _buildMockSelfie(Icons.face_4),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
             Text(
               'Group Mode™',
               style: AppTypography.h2Display(color: AppColors.matteGold),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
               'Bring everyone into the same studio.',
               style: AppTypography.bodyRegular(color: Colors.white70),
