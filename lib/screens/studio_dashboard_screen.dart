@@ -1106,7 +1106,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   }
 
   Widget _buildBodyTypeSelector(SessionProvider session, bool isEnterprise) {
-    // Body Types Map - Simple & Tasteful Icons
+    // Body Types Map - Simple & Tasteful Icons (Verified clean)
     final List<Map<String, dynamic>> bodyTypes = [
       {'label': 'Skinny', 'icon': Icons.spa_outlined},
       {'label': 'Toned', 'icon': Icons.directions_walk},
