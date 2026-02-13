@@ -836,11 +836,14 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            isEnterprise
-                                ? "No physical coordination. Scalable results. Brand compliant."
-                                : "No photographer. No studio rental. No reshoots.",
-                            style: AppTypography.micro(color: Colors.white30),
+                          Flexible(
+                            child: Text(
+                              isEnterprise
+                                  ? "No physical coordination. Scalable results. Brand compliant."
+                                  : "No photographer. No studio rental. No reshoots.",
+                              style: AppTypography.micro(color: Colors.white30),
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                         ],
                       ),
