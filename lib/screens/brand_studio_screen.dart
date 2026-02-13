@@ -33,7 +33,7 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
   bool _isGeneratingLogo = false;
 
   // Assets State (Simple list of last generated)
-  List<String> _logoHistory = [];
+  final List<String> _logoHistory = [];
 
   @override
   void initState() {
@@ -78,11 +78,13 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
         // Maybe use slogan?
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Strategy failed: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Strategy failed: $e')));
+      }
     } finally {
-      setState(() => _isLoadingStrategy = false);
+      if (mounted) setState(() => _isLoadingStrategy = false);
     }
   }
 
@@ -114,11 +116,13 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
       // Auto-generate Clearback version
       _generateClearback(logo);
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Logo generation failed: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Logo generation failed: $e')));
+      }
     } finally {
-      setState(() => _isGeneratingLogo = false);
+      if (mounted) setState(() => _isGeneratingLogo = false);
     }
   }
 
@@ -173,9 +177,11 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Download failed: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Download failed: $e')));
+      }
     }
   }
 
@@ -320,16 +326,16 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
             controller: _logoStyleController,
             maxLines: 3,
             style: const TextStyle(color: Colors.white),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'VISUAL STYLE / PROMPT',
               hintText:
                   'e.g. Minimalist monogram, intertwining letters, gold foil texture...',
               hintStyle: AppTypography.micro(color: Colors.white12),
               labelStyle: AppTypography.microBold(color: Colors.white54),
-              enabledBorder: OutlineInputBorder(
+              enabledBorder: const OutlineInputBorder(
                 borderSide: BorderSide(color: Colors.white24),
               ),
-              focusedBorder: OutlineInputBorder(
+              focusedBorder: const OutlineInputBorder(
                 borderSide: BorderSide(color: AppColors.matteGold),
               ),
             ),
@@ -357,7 +363,7 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
 
   Widget _buildAssetsTab() {
     if (_logoHistory.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           'No assets yet.\nCreate a logo to get started.',
           textAlign: TextAlign.center,
@@ -471,7 +477,7 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
   }
 
   Widget _buildColorsPreview(List<dynamic> colors) {
-    return Container(
+    return SizedBox(
       height: 60,
       child: Row(
         children: colors.map<Widget>((c) {
