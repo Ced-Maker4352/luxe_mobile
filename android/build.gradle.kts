@@ -17,18 +17,6 @@ subprojects {
 }
 
 subprojects {
-    afterEvaluate {
-        if (project.hasProperty("android")) {
-            val android = project.extensions.getByName("android") as com.android.build.gradle.BaseExtension
-            if (android.namespace == null) {
-                android.namespace = "com.luck.image.gallery.saver" // Specific fix for image_gallery_saver if identified, or generic package name
-                // Alternatively, use a more robust check or fallback
-            }
-        }
-    }
-}
-
-subprojects {
     project.evaluationDependsOn(":app")
 }
 

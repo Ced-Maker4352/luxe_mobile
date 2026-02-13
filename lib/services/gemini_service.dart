@@ -314,7 +314,7 @@ User Idea: "$draftPrompt"''',
     );
 
     promptBuffer.writeln(
-      "  2. ${preserveAgeAndBody ? 'AGE & BODY (STRICT)' : 'BODY'} (second priority): ${preserveAgeAndBody ? "Strictly lock the subject's apparent age and natural body weight, shape, and proportions. Do NOT 'beautify', slim, or alter the body type or age." : "Strictly preserve the subject's natural body weight, shape, and proportions. Do NOT slim or alter the body type to fit fashion standards."}",
+      "  2. ${preserveAgeAndBody ? 'AGE & BODY (STRICT)' : 'BODY'} (second priority): ${preserveAgeAndBody ? "Maintain the subject's apparent age. Respect the 'Body Type' specified below if it differs from the reference images, but keep the overall anatomic structure consistent." : "Strictly preserve the subject's natural body weight, shape, and proportions. Do NOT slim or alter the body type to fit fashion standards."}",
     );
     promptBuffer.writeln(
       "  3. HAIR: Maintain exact hair color, texture, length, and style from the references.",

@@ -12,7 +12,7 @@ import 'dart:typed_data';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -461,7 +461,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           return;
         }
 
-        final result = await ImageGallerySaver.saveImage(bytes);
+        final result = await ImageGallerySaverPlus.saveImage(bytes);
         if (mounted) {
           ScaffoldMessenger.of(
             context,
@@ -560,7 +560,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             children: [
               _buildAppBar(),
               Expanded(
-                flex: 6,
+                flex: 5, // Changed from 6 to 5
                 child: Consumer<SessionProvider>(
                   builder: (context, session, child) {
                     if (session.isGenerating && session.results.isEmpty) {
@@ -577,7 +577,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 ),
               ),
               Expanded(
-                flex: 4,
+                flex: 5, // Changed from 4 to 5
                 child: Container(
                   decoration: BoxDecoration(
                     color: AppColors.softCharcoal,
@@ -1108,17 +1108,20 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   Widget _buildBodyTypeSelector(SessionProvider session, bool isEnterprise) {
     // Body Types Map - Simple & Tasteful Icons (Verified clean)
     final List<Map<String, dynamic>> bodyTypes = [
-      {'label': 'Skinny', 'icon': Icons.spa_outlined},
-      {'label': 'Toned', 'icon': Icons.directions_walk},
-      {'label': 'Fit', 'icon': Icons.fitness_center},
+      {'label': 'Skinny', 'icon': Icons.person_outline},
+      {'label': 'Toned', 'icon': Icons.accessibility_new},
+      {'label': 'Fit', 'icon': Icons.person},
       {'label': 'Athletic', 'icon': Icons.directions_run},
-      {'label': 'Built', 'icon': Icons.shield_outlined}, // Strength
-      {'label': 'Strong Fat', 'icon': Icons.circle_outlined}, // Solid
-      {'label': 'Chubby', 'icon': Icons.cloud_outlined}, // Soft
+      {
+        'label': 'Built',
+        'icon': Icons.person_add_alt_1,
+      }, // Broad shouldered silhouette
+      {'label': 'Strong Fat', 'icon': Icons.person_search}, // Solid silhouette
+      {'label': 'Chubby', 'icon': Icons.person_3}, // Soft silhouette
     ];
 
     return Container(
-      height: 70,
+      height: 95,
       margin: EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1330,10 +1333,14 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                         child: result.imageUrl.startsWith('data:')
                             ? Image.memory(
                                 base64Decode(result.imageUrl.split(',')[1]),
-                                fit: BoxFit.cover,
+                                fit: BoxFit
+                                    .contain, // Changed from cover to contain
                                 gaplessPlayback: true,
                               )
-                            : Image.network(result.imageUrl, fit: BoxFit.cover),
+                            : Image.network(
+                                result.imageUrl,
+                                fit: BoxFit.contain,
+                              ), // Changed from cover to contain
                       ),
                     ),
                   ),

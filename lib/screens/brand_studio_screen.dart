@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:permission_handler/permission_handler.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import '../shared/web_helper.dart'
     if (dart.library.html) '../shared/web_helper_web.dart';
 import '../providers/session_provider.dart';
@@ -162,7 +162,7 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
         }
 
         if (hasPermission) {
-          final result = await ImageGallerySaver.saveImage(bytes);
+          final result = await ImageGallerySaverPlus.saveImage(bytes);
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Saved to Gallery: $result')),
