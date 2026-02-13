@@ -139,9 +139,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             setState(() {
               _promptController.text = val.recognizedWords;
               _customPrompt = val.recognizedWords;
-              if (val.hasConfidenceRating && val.confidence > 0) {
-                _voiceConfidence = val.confidence;
-              }
+              // Removed voice confidence tracking
             });
           },
         );
@@ -2715,7 +2713,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 Switch(
                   value: session.preserveAgeAndBody,
                   onChanged: (val) => session.setPreserveAgeAndBody(val),
-                  activeThumbColor: AppColors.matteGold,
+                  activeColor: AppColors.matteGold,
                   activeTrackColor: AppColors.matteGold.withValues(alpha: 0.3),
                   inactiveThumbColor: AppColors.softPlatinum.withValues(
                     alpha: 0.24,
@@ -2818,7 +2816,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     },
                   ),
                 );
-              }),
+              }).toList(),
             ),
           ),
           const SizedBox(height: 16),
