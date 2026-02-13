@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:luxe_mobile/models/types.dart';
+import '../shared/constants.dart';
 
 class AccessGrantedScreen extends StatefulWidget {
   final PackageDetails package;
@@ -63,7 +64,7 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: AppColors.midnightNavy,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -86,15 +87,13 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            const Color(0xFFD4AF37),
-                            const Color(0xFFB8860B),
+                            AppColors.matteGold,
+                            AppColors.matteGold.withValues(alpha: 0.8),
                           ],
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(
-                              0xFFD4AF37,
-                            ).withValues(alpha: 0.3),
+                            color: AppColors.matteGold.withValues(alpha: 0.3),
                             blurRadius: 30,
                             spreadRadius: 5,
                           ),
@@ -124,7 +123,7 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                                 ? 'STYLE UNLOCKED'
                                 : 'PAYMENT ACCEPTED'),
                       style: const TextStyle(
-                        color: Color(0xFFD4AF37),
+                        color: AppColors.matteGold,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 3,
@@ -165,10 +164,10 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                 child: Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF141414),
+                    color: AppColors.softCharcoal,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
+                      color: AppColors.matteGold.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Column(
@@ -192,7 +191,7 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                                 children: [
                                   const Icon(
                                     Icons.diamond_outlined,
-                                    color: Color(0xFFD4AF37),
+                                    color: AppColors.matteGold,
                                     size: 16,
                                   ),
                                   const SizedBox(width: 12),
@@ -222,14 +221,14 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFD4AF37).withValues(alpha: 0.1),
+                    color: AppColors.matteGold.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
                       const Icon(
                         Icons.info_outline,
-                        color: Color(0xFFD4AF37),
+                        color: AppColors.matteGold,
                         size: 20,
                       ),
                       const SizedBox(width: 12),
@@ -256,7 +255,7 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                 child: ElevatedButton(
                   onPressed: _proceedToUpload,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD4AF37),
+                    backgroundColor: AppColors.matteGold,
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     shape: RoundedRectangleBorder(

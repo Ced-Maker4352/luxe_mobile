@@ -153,10 +153,10 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
               context: context,
               barrierDismissible: false,
               builder: (context) => AlertDialog(
-                backgroundColor: const Color(0xFF141824),
+                backgroundColor: AppColors.softCharcoal,
                 title: const Text(
                   'Complete Payment',
-                  style: TextStyle(color: Color(0xFFD4AF37)),
+                  style: TextStyle(color: AppColors.matteGold),
                 ),
                 content: const Text(
                   'Please complete the payment in the new tab.\n\nOnce done, click "I Have Paid" to continue.',
@@ -173,7 +173,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context, true), // Confirm
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD4AF37),
+                      backgroundColor: AppColors.matteGold,
                     ),
                     child: const Text(
                       'I Have Paid',
@@ -288,7 +288,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: AppColors.midnightNavy,
       body: SafeArea(
         child: Column(
           children: [
@@ -323,7 +323,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontFamily: 'Serif',
-                            color: Color(0xFFD4AF37),
+                            color: AppColors.matteGold,
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 2.0,
@@ -408,33 +408,31 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                           Container(
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? const Color(
-                                      0xFFD4AF37,
-                                    ).withValues(alpha: 0.15)
+                                  ? AppColors.matteGold.withValues(alpha: 0.15)
                                   : (isPro
-                                        ? const Color(
-                                            0xFFD4AF37,
-                                          ).withValues(alpha: 0.05)
+                                        ? AppColors.matteGold.withValues(
+                                            alpha: 0.05,
+                                          )
                                         : Colors.transparent),
                               border: Border.all(
                                 color: isSelected
-                                    ? const Color(0xFFD4AF37)
+                                    ? AppColors.matteGold
                                     : (isPro
-                                          ? const Color(
-                                              0xFFD4AF37,
-                                            ).withValues(alpha: 0.2)
-                                          : const Color(
-                                              0xFFD4AF37,
-                                            ).withValues(alpha: 0.1)),
+                                          ? AppColors.matteGold.withValues(
+                                              alpha: 0.2,
+                                            )
+                                          : AppColors.matteGold.withValues(
+                                              alpha: 0.1,
+                                            )),
                                 width: isSelected ? 2.0 : (isPro ? 1.5 : 0.5),
                               ),
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: isPro && isSelected
                                   ? [
                                       BoxShadow(
-                                        color: const Color(
-                                          0xFFD4AF37,
-                                        ).withValues(alpha: 0.2),
+                                        color: AppColors.matteGold.withValues(
+                                          alpha: 0.2,
+                                        ),
                                         blurRadius: 10,
                                         spreadRadius: 2,
                                       ),
@@ -449,9 +447,9 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                                 Icon(
                                   _getPackageIcon(pkg.id),
                                   color: isSelected
-                                      ? const Color(0xFFD4AF37)
+                                      ? AppColors.matteGold
                                       : (isPro
-                                            ? const Color(0xFFD4AF37)
+                                            ? AppColors.matteGold
                                             : Colors.white54),
                                   size: 28,
                                 ),
@@ -461,7 +459,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: isSelected
-                                        ? const Color(0xFFD4AF37)
+                                        ? AppColors.matteGold
                                         : Colors.white70,
                                     fontSize: 11,
                                     fontWeight: isPro
@@ -497,7 +495,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFD4AF37),
+                                    color: AppColors.matteGold,
                                     borderRadius: BorderRadius.circular(12),
                                     boxShadow: const [
                                       BoxShadow(
@@ -574,8 +572,8 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF141824),
+                decoration: BoxDecoration(
+                  color: AppColors.softCharcoal,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
                   boxShadow: [
                     BoxShadow(
@@ -599,9 +597,9 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                               borderRadius: BorderRadius.circular(8),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(
-                                    0xFFD4AF37,
-                                  ).withValues(alpha: 0.2),
+                                  color: AppColors.matteGold.withValues(
+                                    alpha: 0.2,
+                                  ),
                                   blurRadius: 10,
                                   spreadRadius: 1,
                                 ),
@@ -625,7 +623,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                                 Text(
                                   _selectedPackage.name.toUpperCase(),
                                   style: const TextStyle(
-                                    color: Color(0xFFD4AF37),
+                                    color: AppColors.matteGold,
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 1.0,
@@ -676,7 +674,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                               children: [
                                 const Icon(
                                   Icons.check,
-                                  color: Color(0xFFD4AF37),
+                                  color: AppColors.matteGold,
                                   size: 12,
                                 ),
                                 const SizedBox(width: 6),
@@ -745,21 +743,17 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(
-                              0xFFD4AF37,
-                            ).withValues(alpha: 0.1),
+                            color: AppColors.matteGold.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: const Color(
-                                0xFFD4AF37,
-                              ).withValues(alpha: 0.3),
+                              color: AppColors.matteGold.withValues(alpha: 0.3),
                             ),
                           ),
                           child: const Row(
                             children: [
                               Icon(
                                 Icons.info_outline,
-                                color: Color(0xFFD4AF37),
+                                color: AppColors.matteGold,
                                 size: 14,
                               ),
                               SizedBox(width: 8),
@@ -767,7 +761,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                                 child: Text(
                                   "Standard studio session value: \$500–\$1,200",
                                   style: TextStyle(
-                                    color: Color(0xFFD4AF37),
+                                    color: AppColors.matteGold,
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -799,16 +793,16 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                           onPressed: () =>
                               _handlePackageSelection(_selectedPackage),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFD4AF37),
+                            backgroundColor: AppColors.matteGold,
                             foregroundColor: Colors.black,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             elevation: 5,
-                            shadowColor: const Color(
-                              0xFFD4AF37,
-                            ).withValues(alpha: 0.4),
+                            shadowColor: AppColors.matteGold.withValues(
+                              alpha: 0.4,
+                            ),
                           ),
                           child: _isProcessing
                               ? const SizedBox(
@@ -895,7 +889,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
               Text(
                 price,
                 style: const TextStyle(
-                  color: Color(0xFFD4AF37),
+                  color: AppColors.matteGold,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -931,7 +925,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
   }) async {
     return await showModalBottomSheet<bool>(
           context: context,
-          backgroundColor: const Color(0xFF141824),
+          backgroundColor: AppColors.softCharcoal,
           isScrollControlled: true,
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -950,7 +944,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFD4AF37),
+                      color: AppColors.matteGold,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -988,7 +982,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context, true),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD4AF37),
+                    backgroundColor: AppColors.matteGold,
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(

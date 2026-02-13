@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/session_provider.dart';
+import '../shared/constants.dart';
 import 'studio_dashboard_screen.dart';
 
 class IdentityReferenceScreen extends StatefulWidget {
@@ -20,7 +21,7 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
   Future<void> _pickImageSource() async {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1A1A1A),
+      backgroundColor: AppColors.softCharcoal,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -53,12 +54,12 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                 leading: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
+                    color: AppColors.matteGold.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
                     Icons.camera_alt_outlined,
-                    color: Color(0xFFD4AF37),
+                    color: AppColors.matteGold,
                   ),
                 ),
                 title: const Text(
@@ -82,12 +83,12 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                 leading: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFD4AF37).withValues(alpha: 0.15),
+                    color: AppColors.matteGold.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
                     Icons.photo_library_outlined,
-                    color: Color(0xFFD4AF37),
+                    color: AppColors.matteGold,
                   ),
                 ),
                 title: const Text(
@@ -165,12 +166,10 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
       children: [
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF141414),
+            color: AppColors.softCharcoal,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: imageBytes != null
-                  ? const Color(0xFFD4AF37)
-                  : Colors.white10,
+              color: imageBytes != null ? AppColors.matteGold : Colors.white10,
               width: imageBytes != null ? 1 : 1,
             ),
           ),
@@ -218,7 +217,7 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFD4AF37) : Colors.transparent,
+          color: isSelected ? AppColors.matteGold : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
@@ -237,7 +236,7 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: AppColors.midnightNavy,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -360,7 +359,7 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                                 const Text(
                                   "Photos locked. AI will triangulate features.",
                                   style: TextStyle(
-                                    color: Color(0xFFD4AF37),
+                                    color: AppColors.matteGold,
                                     fontSize: 12,
                                     fontStyle: FontStyle.italic,
                                   ),
@@ -395,7 +394,7 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
                             }
                           : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFD4AF37),
+                        backgroundColor: AppColors.matteGold,
                         foregroundColor: Colors.black,
                         disabledBackgroundColor: Colors.white10,
                         disabledForegroundColor: Colors.white38,
@@ -428,25 +427,23 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFF141414),
+        color: AppColors.softCharcoal,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: AppColors.matteGold.withValues(alpha: 0.2)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.group_outlined,
-            color: const Color(0xFFD4AF37).withValues(alpha: 0.6),
+            color: AppColors.matteGold.withValues(alpha: 0.6),
             size: 56,
           ),
           const SizedBox(height: 16),
           const Text(
             'ADD PEOPLE IN STUDIO',
             style: TextStyle(
-              color: Color(0xFFD4AF37),
+              color: AppColors.matteGold,
               letterSpacing: 2,
               fontSize: 11,
               fontWeight: FontWeight.bold,

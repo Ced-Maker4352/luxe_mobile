@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../shared/constants.dart';
 import 'login_screen.dart';
 import 'boutique_screen.dart';
 
@@ -12,11 +13,11 @@ class AuthGate extends StatelessWidget {
       stream: Supabase.instance.client.auth.onAuthStateChange,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            backgroundColor: Color(0xFF0A0A0A),
+          return Scaffold(
+            backgroundColor: AppColors.midnightNavy,
             body: Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFD4AF37)),
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.matteGold),
               ),
             ),
           );

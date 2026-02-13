@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/types.dart';
+import '../shared/constants.dart';
 
 class AssetEditorScreen extends StatefulWidget {
   final GenerationResult result;
@@ -43,9 +44,9 @@ class _AssetEditorScreenState extends State<AssetEditorScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: AppColors.midnightNavy,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0A0A0A),
+        backgroundColor: AppColors.midnightNavy,
         title: const Text(
           'RETOUCH LAB',
           style: TextStyle(
@@ -65,7 +66,7 @@ class _AssetEditorScreenState extends State<AssetEditorScreen> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFD4AF37).withValues(alpha: 0.1),
+                    color: AppColors.matteGold.withValues(alpha: 0.1),
                     blurRadius: 40,
                   ),
                 ],
@@ -85,7 +86,7 @@ class _AssetEditorScreenState extends State<AssetEditorScreen> {
                         color: Colors.black54,
                         child: const Center(
                           child: CircularProgressIndicator(
-                            color: Color(0xFFD4AF37),
+                            color: AppColors.matteGold,
                           ),
                         ),
                       ),
@@ -97,8 +98,8 @@ class _AssetEditorScreenState extends State<AssetEditorScreen> {
 
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-            decoration: const BoxDecoration(
-              color: Color(0xFF141414),
+            decoration: BoxDecoration(
+              color: AppColors.softCharcoal,
               borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
             ),
             child: Column(
@@ -132,7 +133,7 @@ class _AssetEditorScreenState extends State<AssetEditorScreen> {
                         ? null
                         : () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD4AF37),
+                      backgroundColor: AppColors.matteGold,
                       foregroundColor: Colors.black,
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       shape: RoundedRectangleBorder(
@@ -166,8 +167,8 @@ class _AssetEditorScreenState extends State<AssetEditorScreen> {
         ),
         onSelected: (val) => _applyRetouch(label),
         backgroundColor: Colors.transparent,
-        selectedColor: const Color(0xFFD4AF37),
-        side: BorderSide(color: const Color(0xFFD4AF37).withValues(alpha: 0.3)),
+        selectedColor: AppColors.matteGold,
+        side: BorderSide(color: AppColors.matteGold.withValues(alpha: 0.3)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );

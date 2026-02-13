@@ -11,11 +11,11 @@ class CameraSelectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: AppColors.midnightNavy,
       body: CustomScrollView(
         slivers: [
           const SliverAppBar(
-            backgroundColor: const Color(0xFF0A0A0A),
+            backgroundColor: AppColors.midnightNavy,
             pinned: true,
             title: Text(
               'SELECT OPTIC RIG',
@@ -56,7 +56,7 @@ class CameraSelectionScreen extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 20),
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: const Color(0xFF141414),
+          color: AppColors.softCharcoal,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
         ),
@@ -74,7 +74,7 @@ class CameraSelectionScreen extends StatelessWidget {
                       Text(
                         rig.name.toUpperCase(),
                         style: const TextStyle(
-                          color: Color(0xFFD4AF37),
+                          color: AppColors.matteGold,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1.5,
                         ),

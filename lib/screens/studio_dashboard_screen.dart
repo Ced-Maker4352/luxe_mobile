@@ -548,7 +548,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFF0A0A0A),
+        backgroundColor: AppColors.midnightNavy,
         body: SafeArea(
           child: Column(
             children: [
@@ -578,9 +578,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               Expanded(
                 flex: 4,
                 child: Container(
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF141414),
-                    border: Border(top: BorderSide(color: Colors.white12)),
+                  decoration: BoxDecoration(
+                    color: AppColors.softCharcoal,
+                    border: Border(
+                      top: BorderSide(
+                        color: AppColors.softPlatinum.withValues(alpha: 0.12),
+                      ),
+                    ),
                   ),
                   child: _buildControlCenter(),
                 ),
@@ -626,15 +630,17 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               // Compare Toggle
               if (session.hasUploadedImage)
                 Padding(
-                  padding: const EdgeInsets.only(right: 12),
+                  padding: EdgeInsets.only(right: 12),
                   child: FloatingActionButton.small(
                     heroTag: 'compare_btn',
                     backgroundColor: _isComparing
-                        ? const Color(0xFFD4AF37)
+                        ? AppColors.matteGold
                         : Colors.black54,
                     child: Icon(
                       Icons.compare,
-                      color: _isComparing ? Colors.black : Colors.white,
+                      color: _isComparing
+                          ? Colors.black
+                          : AppColors.softPlatinum,
                     ),
                     onPressed: () =>
                         setState(() => _isComparing = !_isComparing),
@@ -645,7 +651,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               FloatingActionButton.small(
                 heroTag: 'motion_btn',
                 backgroundColor: Colors.black54,
-                child: const Icon(Icons.videocam, color: Colors.white),
+                child: Icon(Icons.videocam, color: AppColors.softPlatinum),
                 onPressed: () => _generateCinematicVideo(session, result),
               ),
             ],
@@ -831,21 +837,23 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
   Widget _buildCreditBadge(IconData icon, int count) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white10,
+        color: AppColors.softPlatinum.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white24),
+        border: Border.all(
+          color: AppColors.softPlatinum.withValues(alpha: 0.24),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: const Color(0xFFD4AF37)),
-          const SizedBox(width: 4),
+          Icon(icon, size: 12, color: AppColors.matteGold),
+          SizedBox(width: 4),
           Text(
             '$count',
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AppColors.softPlatinum,
               fontSize: 10,
               fontWeight: FontWeight.bold,
             ),
@@ -857,7 +865,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
   Widget _buildAppBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -869,16 +877,16 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 Navigator.pushReplacementNamed(context, '/boutique');
               }
             },
-            child: const Icon(
+            child: Icon(
               Icons.arrow_back_ios,
-              color: Colors.white54,
+              color: AppColors.coolGray,
               size: 20,
             ),
           ),
-          const Text(
+          Text(
             'STUDIO',
             style: TextStyle(
-              color: Colors.white,
+              color: AppColors.softPlatinum,
               letterSpacing: 4,
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -891,13 +899,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               return Row(
                 children: [
                   _buildCreditBadge(Icons.camera_alt, p),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   _buildCreditBadge(Icons.videocam, v),
                 ],
               );
             },
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
         ],
       ),
     );
@@ -950,7 +958,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       children: [
         // Control Bar
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
               _buildControlButton(
@@ -990,7 +998,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   });
                 },
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               _buildGenerateButton(session),
             ],
           ),
@@ -998,9 +1006,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         // Post-Generation Tools Row
         if (session.results.isNotEmpty)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: Colors.white10)),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  color: AppColors.softPlatinum.withValues(alpha: 0.1),
+                ),
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1014,13 +1026,16 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               ],
             ),
           ),
-        const Divider(color: Colors.white12, height: 1),
+        Divider(
+          color: AppColors.softPlatinum.withValues(alpha: 0.12),
+          height: 1,
+        ),
         // Recent results thumbnail strip
         if (session.results.isNotEmpty)
           Expanded(
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(12),
               itemCount: session.results.length,
               itemBuilder: (context, index) {
                 final result = session.results[index];
@@ -1034,10 +1049,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   },
                   child: Container(
                     width: 80,
-                    margin: const EdgeInsets.only(right: 12),
+                    margin: EdgeInsets.only(right: 12),
                     decoration: BoxDecoration(
                       border: isSelected
-                          ? Border.all(color: const Color(0xFFD4AF37), width: 2)
+                          ? Border.all(color: AppColors.matteGold, width: 2)
                           : null,
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -1078,12 +1093,12 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.white54, size: 20),
-          const SizedBox(height: 4),
+          Icon(icon, color: AppColors.coolGray, size: 20),
+          SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white38,
+            style: TextStyle(
+              color: AppColors.mutedGray,
               fontSize: 9,
               letterSpacing: 0.5,
             ),
@@ -1113,14 +1128,14 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   decoration: BoxDecoration(
                     border: Border.symmetric(
                       horizontal: BorderSide(
-                        color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
+                        color: AppColors.matteGold.withValues(alpha: 0.3),
                       ),
                     ),
                     gradient: LinearGradient(
                       colors: [
-                        const Color(0xFFD4AF37).withValues(alpha: 0.05),
-                        const Color(0xFFD4AF37).withValues(alpha: 0.12),
-                        const Color(0xFFD4AF37).withValues(alpha: 0.05),
+                        AppColors.matteGold.withValues(alpha: 0.05),
+                        AppColors.matteGold.withValues(alpha: 0.12),
+                        AppColors.matteGold.withValues(alpha: 0.05),
                       ],
                     ),
                   ),
@@ -1141,7 +1156,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     final rig = cameraRigs[index];
                     final isSelected = session.selectedRig?.id == rig.id;
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      padding: EdgeInsets.symmetric(horizontal: 24),
                       child: Row(
                         children: [
                           // Camera icon
@@ -1149,7 +1164,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                             rig.icon,
                             style: TextStyle(fontSize: isSelected ? 22 : 16),
                           ),
-                          const SizedBox(width: 14),
+                          SizedBox(width: 14),
                           // Name + specs subtitle
                           Expanded(
                             child: Column(
@@ -1160,8 +1175,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                                   rig.name,
                                   style: TextStyle(
                                     color: isSelected
-                                        ? const Color(0xFFD4AF37)
-                                        : Colors.white54,
+                                        ? AppColors.matteGold
+                                        : AppColors.coolGray,
                                     fontSize: isSelected ? 16 : 13,
                                     fontWeight: isSelected
                                         ? FontWeight.bold
@@ -1171,13 +1186,12 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                                 ),
                                 if (isSelected)
                                   Padding(
-                                    padding: const EdgeInsets.only(top: 2),
+                                    padding: EdgeInsets.only(top: 2),
                                     child: Text(
                                       '${rig.specs.lens}  •  ${rig.specs.sensor}',
                                       style: TextStyle(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.35,
-                                        ),
+                                        color: AppColors.softPlatinum
+                                            .withValues(alpha: 0.35),
                                         fontSize: 10,
                                         letterSpacing: 0.5,
                                       ),
@@ -1191,8 +1205,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                             Container(
                               width: 6,
                               height: 6,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFD4AF37),
+                              decoration: BoxDecoration(
+                                color: AppColors.matteGold,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -1231,14 +1245,14 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   decoration: BoxDecoration(
                     border: Border.symmetric(
                       horizontal: BorderSide(
-                        color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
+                        color: AppColors.matteGold.withValues(alpha: 0.3),
                       ),
                     ),
                     gradient: LinearGradient(
                       colors: [
-                        const Color(0xFFD4AF37).withValues(alpha: 0.05),
-                        const Color(0xFFD4AF37).withValues(alpha: 0.12),
-                        const Color(0xFFD4AF37).withValues(alpha: 0.05),
+                        AppColors.matteGold.withValues(alpha: 0.05),
+                        AppColors.matteGold.withValues(alpha: 0.12),
+                        AppColors.matteGold.withValues(alpha: 0.05),
                       ],
                     ),
                   ),
@@ -1263,7 +1277,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     final preset = flatPresets[index];
                     final isSelected = _selectedBackdrop?.id == preset.id;
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      padding: EdgeInsets.symmetric(horizontal: 24),
                       child: Row(
                         children: [
                           // Color dot indicator
@@ -1273,18 +1287,20 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: isSelected
-                                  ? const Color(0xFFD4AF37)
-                                  : Colors.white24,
+                                  ? AppColors.matteGold
+                                  : AppColors.softPlatinum.withValues(
+                                      alpha: 0.24,
+                                    ),
                             ),
                           ),
-                          const SizedBox(width: 14),
+                          SizedBox(width: 14),
                           Expanded(
                             child: Text(
                               preset.name,
                               style: TextStyle(
                                 color: isSelected
-                                    ? const Color(0xFFD4AF37)
-                                    : Colors.white54,
+                                    ? AppColors.matteGold
+                                    : AppColors.coolGray,
                                 fontSize: isSelected ? 15 : 13,
                                 fontWeight: isSelected
                                     ? FontWeight.bold
@@ -1294,9 +1310,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                             ),
                           ),
                           if (isSelected)
-                            const Icon(
+                            Icon(
                               Icons.check_circle,
-                              color: Color(0xFFD4AF37),
+                              color: AppColors.matteGold,
                               size: 16,
                             ),
                         ],
@@ -1321,41 +1337,47 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         ),
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Text input
                 TextField(
                   controller: _promptController,
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: TextStyle(color: AppColors.softPlatinum, fontSize: 14),
                   maxLines: 2,
                   decoration: InputDecoration(
                     hintText: 'Describe your vision...',
-                    hintStyle: const TextStyle(color: Colors.white24),
+                    hintStyle: TextStyle(
+                      color: AppColors.softPlatinum.withValues(alpha: 0.24),
+                    ),
                     filled: true,
-                    fillColor: Colors.white.withValues(alpha: 0.05),
+                    fillColor: AppColors.softPlatinum.withValues(alpha: 0.05),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.white12),
+                      borderSide: BorderSide(
+                        color: AppColors.softPlatinum.withValues(alpha: 0.12),
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Colors.white12),
+                      borderSide: BorderSide(
+                        color: AppColors.softPlatinum.withValues(alpha: 0.12),
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFD4AF37)),
+                      borderSide: BorderSide(color: AppColors.matteGold),
                     ),
-                    contentPadding: const EdgeInsets.all(14),
+                    contentPadding: EdgeInsets.all(14),
                     suffixIcon: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // Mic (Stub)
                         IconButton(
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.mic,
-                            color: Colors.white38,
+                            color: AppColors.mutedGray,
                             size: 20,
                           ),
                           onPressed: () {
@@ -1364,16 +1386,16 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                                 content: Text(
                                   'VOICE PROTOCOL: V-AURA Integration Coming Soon',
                                 ),
-                                backgroundColor: Color(0xFFD4AF37),
+                                backgroundColor: AppColors.matteGold,
                               ),
                             );
                           },
                         ),
                         // Enhance (Live — calls GeminiService.enhancePrompt)
                         IconButton(
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.auto_fix_high,
-                            color: Color(0xFFD4AF37),
+                            color: AppColors.matteGold,
                             size: 20,
                           ),
                           onPressed: () async {
@@ -1404,7 +1426,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content: Text('✨ Prompt enhanced!'),
-                                    backgroundColor: Color(0xFFD4AF37),
+                                    backgroundColor: AppColors.matteGold,
                                   ),
                                 );
                               }
@@ -1420,9 +1442,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                         // Clear (Functional)
                         if (_promptController.text.isNotEmpty)
                           IconButton(
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.close,
-                              color: Colors.white38,
+                              color: AppColors.mutedGray,
                               size: 20,
                             ),
                             onPressed: () {
@@ -1435,18 +1457,18 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   ),
                   onChanged: (val) => setState(() => _customPrompt = val),
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14),
                 // Framing mode chips
-                const Text(
+                Text(
                   'FRAMING',
                   style: TextStyle(
-                    color: Colors.white24,
+                    color: AppColors.softPlatinum.withValues(alpha: 0.24),
                     fontSize: 9,
                     letterSpacing: 2,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   children:
@@ -1460,25 +1482,29 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                           onTap: () =>
                               setState(() => _framingMode = item['value']!),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(
+                            padding: EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
                               color: isActive
-                                  ? const Color(0xFFD4AF37)
+                                  ? AppColors.matteGold
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
                                 color: isActive
-                                    ? const Color(0xFFD4AF37)
-                                    : Colors.white24,
+                                    ? AppColors.matteGold
+                                    : AppColors.softPlatinum.withValues(
+                                        alpha: 0.24,
+                                      ),
                               ),
                             ),
                             child: Text(
                               item['label']!,
                               style: TextStyle(
-                                color: isActive ? Colors.black : Colors.white54,
+                                color: isActive
+                                    ? Colors.black
+                                    : AppColors.coolGray,
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -1487,7 +1513,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                         );
                       }).toList(),
                 ),
-                const SizedBox(height: 14),
+                SizedBox(height: 14),
                 // AI Prompt Presets (from promptCategories)
                 ...promptCategories.entries.map((entry) {
                   return Column(
@@ -1495,14 +1521,14 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     children: [
                       Text(
                         entry.key.toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white24,
+                        style: TextStyle(
+                          color: AppColors.softPlatinum.withValues(alpha: 0.24),
                           fontSize: 9,
                           letterSpacing: 2,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       Wrap(
                         spacing: 6,
                         runSpacing: 6,
@@ -1514,29 +1540,31 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                               setState(() => _customPrompt = preset);
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
+                              padding: EdgeInsets.symmetric(
                                 horizontal: 10,
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
                                 color: isActive
-                                    ? const Color(
-                                        0xFFD4AF37,
-                                      ).withValues(alpha: 0.15)
-                                    : Colors.white.withValues(alpha: 0.05),
+                                    ? Color(0xFFD4AF37).withValues(alpha: 0.15)
+                                    : AppColors.softPlatinum.withValues(
+                                        alpha: 0.05,
+                                      ),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: isActive
-                                      ? const Color(0xFFD4AF37)
-                                      : Colors.white12,
+                                      ? AppColors.matteGold
+                                      : AppColors.softPlatinum.withValues(
+                                          alpha: 0.12,
+                                        ),
                                 ),
                               ),
                               child: Text(
                                 preset,
                                 style: TextStyle(
                                   color: isActive
-                                      ? const Color(0xFFD4AF37)
-                                      : Colors.white54,
+                                      ? AppColors.matteGold
+                                      : AppColors.coolGray,
                                   fontSize: 11,
                                 ),
                               ),
@@ -1544,33 +1572,35 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                           );
                         }).toList(),
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                     ],
                   );
                 }),
-                const SizedBox(height: 6),
+                SizedBox(height: 6),
                 // Location / Environment Presets
                 // Location / Environment Presets
-                const Text(
+                Text(
                   'LOCATIONS',
                   style: TextStyle(
-                    color: Colors.white24,
+                    color: AppColors.softPlatinum.withValues(alpha: 0.24),
                     fontSize: 9,
                     letterSpacing: 2,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 ...environmentPromptTips.entries.map((entry) {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
+                        padding: EdgeInsets.only(bottom: 6),
                         child: Text(
                           entry.key.toUpperCase(),
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.3),
+                            color: AppColors.softPlatinum.withValues(
+                              alpha: 0.3,
+                            ),
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                           ),
@@ -1591,29 +1621,31 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                               });
                             },
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
+                              padding: EdgeInsets.symmetric(
                                 horizontal: 10,
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
                                 color: isActive
-                                    ? const Color(
-                                        0xFFD4AF37,
-                                      ).withValues(alpha: 0.15)
-                                    : Colors.white.withValues(alpha: 0.05),
+                                    ? Color(0xFFD4AF37).withValues(alpha: 0.15)
+                                    : AppColors.softPlatinum.withValues(
+                                        alpha: 0.05,
+                                      ),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
                                   color: isActive
-                                      ? const Color(0xFFD4AF37)
-                                      : Colors.white12,
+                                      ? AppColors.matteGold
+                                      : AppColors.softPlatinum.withValues(
+                                          alpha: 0.12,
+                                        ),
                                 ),
                               ),
                               child: Text(
                                 tip,
                                 style: TextStyle(
                                   color: isActive
-                                      ? const Color(0xFFD4AF37)
-                                      : Colors.white54,
+                                      ? AppColors.matteGold
+                                      : AppColors.coolGray,
                                   fontSize: 11,
                                 ),
                               ),
@@ -1621,22 +1653,22 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                           );
                         }).toList(),
                       ),
-                      const SizedBox(height: 10),
+                      SizedBox(height: 10),
                     ],
                   );
                 }),
-                const SizedBox(height: 14),
+                SizedBox(height: 14),
                 // Skin texture selector
-                const Text(
+                Text(
                   'SKIN ARCHITECTURE',
                   style: TextStyle(
-                    color: Colors.white24,
+                    color: AppColors.softPlatinum.withValues(alpha: 0.24),
                     fontSize: 9,
                     letterSpacing: 2,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 SizedBox(
                   height: 36,
                   child: ListView.builder(
@@ -1648,30 +1680,30 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                       return GestureDetector(
                         onTap: () => setState(() => _selectedSkinTexture = tex),
                         child: Container(
-                          margin: const EdgeInsets.only(right: 8),
-                          padding: const EdgeInsets.symmetric(
+                          margin: EdgeInsets.only(right: 8),
+                          padding: EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
                             color: isActive
-                                ? const Color(
-                                    0xFFD4AF37,
-                                  ).withValues(alpha: 0.15)
+                                ? AppColors.matteGold.withValues(alpha: 0.15)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(18),
                             border: Border.all(
                               color: isActive
-                                  ? const Color(0xFFD4AF37)
-                                  : Colors.white24,
+                                  ? AppColors.matteGold
+                                  : AppColors.softPlatinum.withValues(
+                                      alpha: 0.24,
+                                    ),
                             ),
                           ),
                           child: Text(
                             tex.label,
                             style: TextStyle(
                               color: isActive
-                                  ? const Color(0xFFD4AF37)
-                                  : Colors.white54,
+                                  ? AppColors.matteGold
+                                  : AppColors.coolGray,
                               fontSize: 11,
                               fontWeight: isActive
                                   ? FontWeight.bold
@@ -1683,7 +1715,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     },
                   ),
                 ),
-                const SizedBox(height: 100), // Bottom safety padding
+                SizedBox(height: 100), // Bottom safety padding
               ],
             ),
           ),
@@ -1694,24 +1726,28 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
   Widget _buildPickerHeader(String title, VoidCallback onClose) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.white10)),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: AppColors.softPlatinum.withValues(alpha: 0.1),
+          ),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: Color(0xFFD4AF37),
+            style: TextStyle(
+              color: AppColors.matteGold,
               fontWeight: FontWeight.bold,
               letterSpacing: 2,
             ),
           ),
           GestureDetector(
             onTap: onClose,
-            child: const Icon(Icons.check, color: Colors.white),
+            child: Icon(Icons.check, color: AppColors.softPlatinum),
           ),
         ],
       ),
@@ -1727,16 +1763,16 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: EdgeInsets.symmetric(vertical: 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: const Color(0xFFD4AF37), size: 22),
-              const SizedBox(height: 4),
+              Icon(icon, color: AppColors.matteGold, size: 22),
+              SizedBox(height: 4),
               Text(
                 label.length > 10 ? '${label.substring(0, 10)}...' : label,
-                style: const TextStyle(
-                  color: Colors.white54,
+                style: TextStyle(
+                  color: AppColors.coolGray,
                   fontSize: 9,
                   letterSpacing: 0.5,
                 ),
@@ -1753,7 +1789,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     return Container(
       width: 1,
       height: 30,
-      color: Colors.white.withValues(alpha: 0.1),
+      color: AppColors.softPlatinum.withValues(alpha: 0.1),
     );
   }
 
@@ -1771,26 +1807,28 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               }
             },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           gradient: session.isGenerating
               ? null
-              : const LinearGradient(
-                  colors: [Color(0xFFD4AF37), Color(0xFFB8860B)],
+              : LinearGradient(
+                  colors: [AppColors.matteGold, Color(0xFFB8860B)],
                 ),
-          color: session.isGenerating ? Colors.white12 : null,
+          color: session.isGenerating
+              ? AppColors.softPlatinum.withValues(alpha: 0.12)
+              : null,
           borderRadius: BorderRadius.circular(12),
         ),
         child: session.isGenerating
-            ? const SizedBox(
+            ? SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: Color(0xFFD4AF37),
+                  color: AppColors.matteGold,
                 ),
               )
-            : const Icon(Icons.auto_awesome, color: Colors.black, size: 20),
+            : Icon(Icons.auto_awesome, color: Colors.black, size: 20),
       ),
     );
   }
@@ -1800,21 +1838,21 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const CircularProgressIndicator(color: Color(0xFFD4AF37)),
-          const SizedBox(height: 30),
-          const Text(
+          const CircularProgressIndicator(color: AppColors.matteGold),
+          SizedBox(height: 30),
+          Text(
             'INITIATING OPTIC PROTOCOL...',
             style: TextStyle(
-              color: Colors.white,
+              color: AppColors.softPlatinum,
               letterSpacing: 2,
               fontSize: 10,
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           Text(
             'Developing high-fidelity asset...',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.3),
+              color: AppColors.softPlatinum.withValues(alpha: 0.3),
               fontSize: 11,
             ),
           ),
@@ -1833,10 +1871,12 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         children: [
           Center(
             child: Container(
-              margin: const EdgeInsets.all(20),
+              margin: EdgeInsets.all(20),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white12),
+                border: Border.all(
+                  color: AppColors.softPlatinum.withValues(alpha: 0.12),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.5),
@@ -1965,14 +2005,22 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           Icon(
             Icons.photo_library_outlined,
             size: 64,
-            color: Colors.white.withValues(alpha: 0.1),
+            color: AppColors.softPlatinum.withValues(alpha: 0.1),
           ),
-          const SizedBox(height: 20),
-          const Text('No assets yet', style: TextStyle(color: Colors.white24)),
-          const SizedBox(height: 8),
-          const Text(
+          SizedBox(height: 20),
+          Text(
+            'No assets yet',
+            style: TextStyle(
+              color: AppColors.softPlatinum.withValues(alpha: 0.24),
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
             'Configure your scene and tap generate',
-            style: TextStyle(color: Colors.white12, fontSize: 12),
+            style: TextStyle(
+              color: AppColors.softPlatinum.withValues(alpha: 0.12),
+              fontSize: 12,
+            ),
           ),
         ],
       ),
@@ -2021,18 +2069,18 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         children: tags
             .map(
               (tag) => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.7),
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
+                    color: AppColors.matteGold.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Text(
                   tag,
-                  style: const TextStyle(
-                    color: Colors.white70,
+                  style: TextStyle(
+                    color: AppColors.coolGray,
                     fontSize: 9,
                     fontWeight: FontWeight.w500,
                   ),
@@ -2067,74 +2115,78 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     final wardrobeItems = wardrobeMap[_selectedWardrobeCategory] ?? [];
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 0. IDENTITY PROTOCOL
-          const Text(
+          Text(
             'IDENTITY PROTOCOL',
             style: TextStyle(
-              color: Colors.white24,
+              color: AppColors.softPlatinum.withValues(alpha: 0.24),
               fontSize: 10,
               letterSpacing: 2,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
+              color: AppColors.softPlatinum.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.white12),
+              border: Border.all(
+                color: AppColors.softPlatinum.withValues(alpha: 0.12),
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'PRESERVE AGE & BODY',
                       style: TextStyle(
-                        color: Color(0xFFD4AF37),
+                        color: AppColors.matteGold,
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
                       'Locks age and body type',
-                      style: TextStyle(color: Colors.white38, fontSize: 9),
+                      style: TextStyle(color: AppColors.mutedGray, fontSize: 9),
                     ),
                   ],
                 ),
                 Switch(
                   value: session.preserveAgeAndBody,
                   onChanged: (val) => session.setPreserveAgeAndBody(val),
-                  activeColor: const Color(0xFFD4AF37),
-                  activeTrackColor: const Color(
-                    0xFFD4AF37,
-                  ).withValues(alpha: 0.3),
-                  inactiveThumbColor: Colors.white24,
-                  inactiveTrackColor: Colors.white10,
+                  activeColor: AppColors.matteGold,
+                  activeTrackColor: AppColors.matteGold.withValues(alpha: 0.3),
+                  inactiveThumbColor: AppColors.softPlatinum.withValues(
+                    alpha: 0.24,
+                  ),
+                  inactiveTrackColor: AppColors.softPlatinum.withValues(
+                    alpha: 0.1,
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
 
           // 1. GENDER
-          const Text(
+          Text(
             'TARGET GENDER',
             style: TextStyle(
-              color: Colors.white24,
+              color: AppColors.softPlatinum.withValues(alpha: 0.24),
               fontSize: 10,
               letterSpacing: 2,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -2146,27 +2198,24 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   session.setSoloGender(g);
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
-                        : Colors.white.withValues(alpha: 0.05),
+                        ? AppColors.matteGold.withValues(alpha: 0.15)
+                        : AppColors.softPlatinum.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isActive
-                          ? const Color(0xFFD4AF37)
-                          : Colors.white12,
+                          ? AppColors.matteGold
+                          : AppColors.softPlatinum.withValues(alpha: 0.12),
                     ),
                   ),
                   child: Text(
                     g.toUpperCase(),
                     style: TextStyle(
                       color: isActive
-                          ? const Color(0xFFD4AF37)
-                          : Colors.white54,
+                          ? AppColors.matteGold
+                          : AppColors.coolGray,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                     ),
@@ -2175,19 +2224,19 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               );
             }).toList(),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
 
           // WARDROBE COLLECTIONS
-          const Text(
+          Text(
             'WARDROBE COLLECTIONS',
             style: TextStyle(
-              color: Colors.white24,
+              color: AppColors.softPlatinum.withValues(alpha: 0.24),
               fontSize: 10,
               letterSpacing: 2,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           // Category Chips
           SingleChildScrollView(
@@ -2196,18 +2245,20 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               children: wardrobeCategories.map((cat) {
                 final isActive = _selectedWardrobeCategory == cat;
                 return Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                  padding: EdgeInsets.only(right: 8),
                   child: ChoiceChip(
                     label: Text(
                       cat,
                       style: TextStyle(
-                        color: isActive ? Colors.black : Colors.white70,
+                        color: isActive ? Colors.black : AppColors.coolGray,
                         fontSize: 11,
                       ),
                     ),
                     selected: isActive,
-                    selectedColor: const Color(0xFFD4AF37),
-                    backgroundColor: Colors.white10,
+                    selectedColor: AppColors.matteGold,
+                    backgroundColor: AppColors.softPlatinum.withValues(
+                      alpha: 0.1,
+                    ),
                     onSelected: (val) {
                       if (val) setState(() => _selectedWardrobeCategory = cat);
                     },
@@ -2216,7 +2267,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               }).toList(),
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           // Wardrobe Items
           Wrap(
@@ -2230,16 +2281,16 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 }),
                 child: Container(
                   width: (MediaQuery.of(context).size.width - 48) / 2,
-                  padding: const EdgeInsets.all(10),
+                  padding: EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
-                        : Colors.white.withValues(alpha: 0.05),
+                        ? AppColors.matteGold.withValues(alpha: 0.15)
+                        : AppColors.softPlatinum.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isActive
-                          ? const Color(0xFFD4AF37)
-                          : Colors.white12,
+                          ? AppColors.matteGold
+                          : AppColors.softPlatinum.withValues(alpha: 0.12),
                     ),
                   ),
                   child: Text(
@@ -2248,8 +2299,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: isActive
-                          ? const Color(0xFFD4AF37)
-                          : Colors.white70,
+                          ? AppColors.matteGold
+                          : AppColors.coolGray,
                       fontSize: 10,
                     ),
                   ),
@@ -2258,19 +2309,19 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             }).toList(),
           ),
 
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
 
           // 2. CLOTHING STYLE (Generals)
-          const Text(
+          Text(
             'GENERAL VIBES',
             style: TextStyle(
-              color: Colors.white24,
+              color: AppColors.softPlatinum.withValues(alpha: 0.24),
               fontSize: 10,
               letterSpacing: 2,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -2281,27 +2332,24 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   _selectedClothingStyle = isActive ? '' : style;
                 }),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
-                        : Colors.white.withValues(alpha: 0.05),
+                        ? AppColors.matteGold.withValues(alpha: 0.15)
+                        : AppColors.softPlatinum.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isActive
-                          ? const Color(0xFFD4AF37)
-                          : Colors.white12,
+                          ? AppColors.matteGold
+                          : AppColors.softPlatinum.withValues(alpha: 0.12),
                     ),
                   ),
                   child: Text(
                     style,
                     style: TextStyle(
                       color: isActive
-                          ? const Color(0xFFD4AF37)
-                          : Colors.white54,
+                          ? AppColors.matteGold
+                          : AppColors.coolGray,
                       fontSize: 10,
                       fontWeight: isActive
                           ? FontWeight.bold
@@ -2312,19 +2360,19 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               );
             }).toList(),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
 
           // 3. COLOR GRADING
-          const Text(
+          Text(
             'COLOR GRADING',
             style: TextStyle(
-              color: Colors.white24,
+              color: AppColors.softPlatinum.withValues(alpha: 0.24),
               fontSize: 10,
               letterSpacing: 2,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -2333,27 +2381,24 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               return GestureDetector(
                 onTap: () => setState(() => _styleTemperature = s),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
-                        : Colors.white.withValues(alpha: 0.05),
+                        ? AppColors.matteGold.withValues(alpha: 0.15)
+                        : AppColors.softPlatinum.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isActive
-                          ? const Color(0xFFD4AF37)
-                          : Colors.white12,
+                          ? AppColors.matteGold
+                          : AppColors.softPlatinum.withValues(alpha: 0.12),
                     ),
                   ),
                   child: Text(
                     s.toUpperCase(),
                     style: TextStyle(
                       color: isActive
-                          ? const Color(0xFFD4AF37)
-                          : Colors.white54,
+                          ? AppColors.matteGold
+                          : AppColors.coolGray,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                     ),
@@ -2362,25 +2407,27 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               );
             }).toList(),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
 
           // 4. VIRTUAL TRY-ON
-          const Text(
+          Text(
             'VIRTUAL TRY-ON',
             style: TextStyle(
-              color: Colors.white24,
+              color: AppColors.softPlatinum.withValues(alpha: 0.24),
               fontSize: 10,
               letterSpacing: 2,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
+              color: AppColors.softPlatinum.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white10),
+              border: Border.all(
+                color: AppColors.softPlatinum.withValues(alpha: 0.1),
+              ),
             ),
             child: Column(
               children: [
@@ -2398,7 +2445,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.cancel, color: Colors.white),
+                        icon: Icon(Icons.cancel, color: AppColors.softPlatinum),
                         onPressed: () => session.clearClothingReference(),
                       ),
                     ],
@@ -2411,25 +2458,25 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                       width: double.infinity,
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: const Color(0xFFD4AF37),
+                          color: AppColors.matteGold,
                           width: 1,
                           style: BorderStyle.solid,
                         ),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
                             Icons.add_photo_alternate_outlined,
-                            color: Color(0xFFD4AF37),
+                            color: AppColors.matteGold,
                             size: 20,
                           ),
                           SizedBox(width: 8),
                           Text(
                             "ADD CLOTHING PHOTO",
                             style: TextStyle(
-                              color: Color(0xFFD4AF37),
+                              color: AppColors.matteGold,
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1,
@@ -2439,17 +2486,17 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                       ),
                     ),
                   ),
-                const SizedBox(height: 8),
-                const Text(
+                SizedBox(height: 8),
+                Text(
                   "Upload a photo of a garment to apply it to your generation.",
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white38, fontSize: 9),
+                  style: TextStyle(color: AppColors.mutedGray, fontSize: 9),
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
 
           // APPLY STYLE — triggers regeneration
           Consumer<SessionProvider>(
@@ -2471,15 +2518,15 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                           }
                         },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD4AF37),
+                    backgroundColor: AppColors.matteGold,
                     foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   child: session.isGenerating
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
@@ -2487,7 +2534,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                             color: Colors.black,
                           ),
                         )
-                      : const Text(
+                      : Text(
                           'APPLY STYLE',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
@@ -2499,7 +2546,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               );
             },
           ),
-          const SizedBox(height: 120), // Bottom safety padding
+          SizedBox(height: 120), // Bottom safety padding
         ],
       ),
     );
@@ -2507,21 +2554,21 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
   Widget _buildRetouchDrawer() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 1. SKIN TEXTURE (Synced with constants)
-          const Text(
+          Text(
             'SKIN ARCHITECTURE',
             style: TextStyle(
-              color: Colors.white24,
+              color: AppColors.softPlatinum.withValues(alpha: 0.24),
               fontSize: 10,
               letterSpacing: 2,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -2530,27 +2577,24 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               return GestureDetector(
                 onTap: () => setState(() => _selectedSkinTexture = tex),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
-                        : Colors.white.withValues(alpha: 0.05),
+                        ? AppColors.matteGold.withValues(alpha: 0.15)
+                        : AppColors.softPlatinum.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isActive
-                          ? const Color(0xFFD4AF37)
-                          : Colors.white12,
+                          ? AppColors.matteGold
+                          : AppColors.softPlatinum.withValues(alpha: 0.12),
                     ),
                   ),
                   child: Text(
                     tex.label,
                     style: TextStyle(
                       color: isActive
-                          ? const Color(0xFFD4AF37)
-                          : Colors.white54,
+                          ? AppColors.matteGold
+                          : AppColors.coolGray,
                       fontSize: 10,
                       fontWeight: isActive
                           ? FontWeight.bold
@@ -2561,19 +2605,19 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               );
             }).toList(),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
 
           // FILTERS
-          const Text(
+          Text(
             'FILTERS',
             style: TextStyle(
-              color: Colors.white24,
+              color: AppColors.softPlatinum.withValues(alpha: 0.24),
               fontSize: 10,
               letterSpacing: 2,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -2597,23 +2641,22 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   setState(() {});
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: isMatch
-                        ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
-                        : Colors.white.withValues(alpha: 0.05),
+                        ? AppColors.matteGold.withValues(alpha: 0.15)
+                        : AppColors.softPlatinum.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: isMatch ? const Color(0xFFD4AF37) : Colors.white12,
+                      color: isMatch
+                          ? AppColors.matteGold
+                          : AppColors.softPlatinum.withValues(alpha: 0.12),
                     ),
                   ),
                   child: Text(
                     preset.label,
                     style: TextStyle(
-                      color: isMatch ? const Color(0xFFD4AF37) : Colors.white54,
+                      color: isMatch ? AppColors.matteGold : AppColors.coolGray,
                       fontSize: 10,
                       fontWeight: isMatch ? FontWeight.bold : FontWeight.normal,
                     ),
@@ -2622,22 +2665,22 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               );
             }).toList(),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
 
           // SLIDERS SECTIONS
           _buildDivider(),
 
           // COLOR BALANCE
-          const Text(
+          Text(
             'COLOR BALANCE',
             style: TextStyle(
-              color: Colors.white24,
+              color: AppColors.softPlatinum.withValues(alpha: 0.24),
               fontSize: 10,
               letterSpacing: 2,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _buildSlider(
             'TEMPERATURE',
             _temperature,
@@ -2647,19 +2690,19 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           ),
           _buildSlider('TINT', _tint, min: -1.0, max: 1.0, isPercentage: false),
 
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           // EFFECTS
-          const Text(
+          Text(
             'EFFECTS',
             style: TextStyle(
-              color: Colors.white24,
+              color: AppColors.softPlatinum.withValues(alpha: 0.24),
               fontSize: 10,
               letterSpacing: 2,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _buildSlider(
             'VIGNETTE',
             _vignette,
@@ -2668,24 +2711,24 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             isPercentage: true,
           ),
 
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           // FINE TUNE
-          const Text(
+          Text(
             'FINE TUNE',
             style: TextStyle(
-              color: Colors.white24,
+              color: AppColors.softPlatinum.withValues(alpha: 0.24),
               fontSize: 10,
               letterSpacing: 2,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _buildSlider('BRIGHTNESS', _brightness, min: 0, max: 200),
           _buildSlider('CONTRAST', _contrast, min: 0, max: 200),
           _buildSlider('SATURATION', _saturation, min: 0, max: 200),
 
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
 
           // APPLY RETOUCH
           Consumer<SessionProvider>(
@@ -2709,15 +2752,15 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                           }
                         },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD4AF37),
+                    backgroundColor: AppColors.matteGold,
                     foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   child: session.isGenerating
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
@@ -2725,7 +2768,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                             color: Colors.black,
                           ),
                         )
-                      : const Text(
+                      : Text(
                           'APPLY RETOUCH',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
@@ -2737,7 +2780,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               );
             },
           ),
-          const SizedBox(height: 120), // Bottom safety padding
+          SizedBox(height: 120), // Bottom safety padding
         ],
       ),
     );
@@ -2768,22 +2811,21 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               children: [
                 Text(
                   label,
-                  style: const TextStyle(color: Colors.white54, fontSize: 10),
+                  style: TextStyle(color: AppColors.coolGray, fontSize: 10),
                 ),
                 Text(
                   valueText,
-                  style: const TextStyle(
-                    color: Color(0xFFD4AF37),
-                    fontSize: 10,
-                  ),
+                  style: TextStyle(color: AppColors.matteGold, fontSize: 10),
                 ),
               ],
             ),
             SliderTheme(
               data: SliderThemeData(
-                activeTrackColor: const Color(0xFFD4AF37),
-                inactiveTrackColor: Colors.white10,
-                thumbColor: const Color(0xFFD4AF37),
+                activeTrackColor: AppColors.matteGold,
+                inactiveTrackColor: AppColors.softPlatinum.withValues(
+                  alpha: 0.1,
+                ),
+                thumbColor: AppColors.matteGold,
                 trackHeight: 2,
                 thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
                 overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
@@ -2795,7 +2837,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 onChanged: (v) => notifier.value = v,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
           ],
         );
       },
@@ -2810,7 +2852,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         : <String>[];
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         16,
         8,
         16,
@@ -2820,19 +2862,19 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── 1. GROUP TYPE ──
-          const Text(
+          Text(
             'GROUP TYPE',
             style: TextStyle(
-              color: Colors.white24,
+              color: AppColors.softPlatinum.withValues(alpha: 0.24),
               fontSize: 10,
               letterSpacing: 2,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           ShaderMask(
             shaderCallback: (Rect bounds) {
-              return const LinearGradient(
+              return LinearGradient(
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
                 colors: [
@@ -2850,8 +2892,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: groupTypes.length,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                separatorBuilder: (_, __) => const SizedBox(width: 6),
+                padding: EdgeInsets.symmetric(horizontal: 4),
+                separatorBuilder: (_, __) => SizedBox(width: 6),
                 itemBuilder: (context, index) {
                   final type = groupTypes[index];
                   final isActive = _selectedGroupType == type;
@@ -2861,25 +2903,25 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                       _selectedGroupStyle = '';
                     }),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
+                      padding: EdgeInsets.symmetric(
                         horizontal: 14,
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
                         color: isActive
-                            ? const Color(0xFFD4AF37)
-                            : Colors.white.withValues(alpha: 0.05),
+                            ? AppColors.matteGold
+                            : AppColors.softPlatinum.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(19),
                         border: Border.all(
                           color: isActive
-                              ? const Color(0xFFD4AF37)
-                              : Colors.white12,
+                              ? AppColors.matteGold
+                              : AppColors.softPlatinum.withValues(alpha: 0.12),
                         ),
                       ),
                       child: Text(
                         type.toUpperCase(),
                         style: TextStyle(
-                          color: isActive ? Colors.black : Colors.white54,
+                          color: isActive ? Colors.black : AppColors.coolGray,
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.5,
@@ -2894,17 +2936,17 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
           // ── 2. STYLE VARIATIONS (shown when a group type is selected) ──
           if (styleVariations.isNotEmpty) ...[
-            const SizedBox(height: 14),
+            SizedBox(height: 14),
             Text(
               '${_selectedGroupType.toUpperCase()} STYLES',
-              style: const TextStyle(
-                color: Colors.white24,
+              style: TextStyle(
+                color: AppColors.softPlatinum.withValues(alpha: 0.24),
                 fontSize: 10,
                 letterSpacing: 2,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Wrap(
               spacing: 6,
               runSpacing: 6,
@@ -2915,27 +2957,24 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     _selectedGroupStyle = isActive ? '' : style;
                   }),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: isActive
-                          ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
-                          : Colors.white.withValues(alpha: 0.04),
+                          ? AppColors.matteGold.withValues(alpha: 0.15)
+                          : AppColors.softPlatinum.withValues(alpha: 0.04),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: isActive
-                            ? const Color(0xFFD4AF37)
-                            : Colors.white10,
+                            ? AppColors.matteGold
+                            : AppColors.softPlatinum.withValues(alpha: 0.1),
                       ),
                     ),
                     child: Text(
                       style.split(',').first.toUpperCase(),
                       style: TextStyle(
                         color: isActive
-                            ? const Color(0xFFD4AF37)
-                            : Colors.white38,
+                            ? AppColors.matteGold
+                            : AppColors.mutedGray,
                         fontSize: 9,
                         fontWeight: isActive
                             ? FontWeight.bold
@@ -2948,38 +2987,49 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             ),
           ],
 
-          const SizedBox(height: 16),
-          const Divider(color: Colors.white10, height: 1),
-          const SizedBox(height: 12),
+          SizedBox(height: 16),
+          Divider(
+            color: AppColors.softPlatinum.withValues(alpha: 0.1),
+            height: 1,
+          ),
+          SizedBox(height: 12),
 
           // ── 3. STITCH PROMPT ──
-          const Text(
+          Text(
             'GROUP PROMPT',
             style: TextStyle(
-              color: Colors.white24,
+              color: AppColors.softPlatinum.withValues(alpha: 0.24),
               fontSize: 10,
               letterSpacing: 2,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.04),
+              color: AppColors.softPlatinum.withValues(alpha: 0.04),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.white10),
+              border: Border.all(
+                color: AppColors.softPlatinum.withValues(alpha: 0.1),
+              ),
             ),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _stitchPromptController,
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    style: TextStyle(
+                      color: AppColors.softPlatinum,
+                      fontSize: 12,
+                    ),
                     maxLines: 2,
                     minLines: 1,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'Add scene details, mood, location...',
-                      hintStyle: TextStyle(color: Colors.white24, fontSize: 11),
+                      hintStyle: TextStyle(
+                        color: AppColors.softPlatinum.withValues(alpha: 0.24),
+                        fontSize: 11,
+                      ),
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(
                         horizontal: 12,
@@ -2990,16 +3040,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 ),
                 // Enhance
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.auto_fix_high,
-                    color: Color(0xFFD4AF37),
+                    color: AppColors.matteGold,
                     size: 18,
                   ),
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 32,
-                    minHeight: 32,
-                  ),
+                  constraints: BoxConstraints(minWidth: 32, minHeight: 32),
                   onPressed: () async {
                     final draft = _stitchPromptController.text.trim();
                     if (draft.isEmpty) return;
@@ -3022,16 +3069,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 // Clear
                 if (_stitchPromptController.text.isNotEmpty)
                   IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.clear,
-                      color: Colors.white24,
+                      color: AppColors.softPlatinum.withValues(alpha: 0.24),
                       size: 16,
                     ),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 32,
-                      minHeight: 32,
-                    ),
+                    constraints: BoxConstraints(minWidth: 32, minHeight: 32),
                     onPressed: () =>
                         setState(() => _stitchPromptController.clear()),
                   ),
@@ -3039,9 +3083,12 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             ),
           ),
 
-          const SizedBox(height: 16),
-          const Divider(color: Colors.white10, height: 1),
-          const SizedBox(height: 12),
+          SizedBox(height: 16),
+          Divider(
+            color: AppColors.softPlatinum.withValues(alpha: 0.1),
+            height: 1,
+          ),
+          SizedBox(height: 12),
 
           // ── 4. SQUAD SELECTOR ──
           Row(
@@ -3049,24 +3096,27 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             children: [
               Text(
                 'STITCH SQUAD (${session.stitchImages.length}/5)',
-                style: const TextStyle(
-                  color: Colors.white24,
+                style: TextStyle(
+                  color: AppColors.softPlatinum.withValues(alpha: 0.24),
                   fontSize: 10,
                   letterSpacing: 2,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               if (session.stitchImages.isNotEmpty)
-                const Text(
+                Text(
                   'TAP TO REMOVE',
-                  style: TextStyle(fontSize: 8, color: Colors.white12),
+                  style: TextStyle(
+                    fontSize: 8,
+                    color: AppColors.softPlatinum.withValues(alpha: 0.12),
+                  ),
                 ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           ShaderMask(
             shaderCallback: (Rect bounds) {
-              return const LinearGradient(
+              return LinearGradient(
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
                 colors: [
@@ -3083,20 +3133,20 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               height: 70,
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
+                padding: EdgeInsets.symmetric(horizontal: 4),
                 children: [
                   if (session.stitchImages.length < 5)
                     GestureDetector(
                       onTap: () => _pickStitchImage(session),
                       child: Container(
                         width: 60,
-                        margin: const EdgeInsets.only(right: 8),
+                        margin: EdgeInsets.only(right: 8),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.white24),
+                          color: AppColors.matteGold.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.matteGold),
                         ),
-                        child: const Column(
+                        child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.add, color: Color(0xFFD4AF37), size: 20),
@@ -3118,14 +3168,18 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                       children: [
                         Container(
                           width: 60,
-                          margin: const EdgeInsets.only(right: 8),
+                          margin: EdgeInsets.only(right: 8),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10),
                             image: DecorationImage(
                               image: MemoryImage(entry.value.bytes),
                               fit: BoxFit.cover,
                             ),
-                            border: Border.all(color: Colors.white12),
+                            border: Border.all(
+                              color: AppColors.softPlatinum.withValues(
+                                alpha: 0.12,
+                              ),
+                            ),
                           ),
                         ),
                         Positioned(
@@ -3134,15 +3188,15 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                           child: GestureDetector(
                             onTap: () => session.removeStitchImage(entry.key),
                             child: Container(
-                              padding: const EdgeInsets.all(3),
-                              decoration: const BoxDecoration(
+                              padding: EdgeInsets.all(3),
+                              decoration: BoxDecoration(
                                 color: Colors.black54,
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.close,
                                 size: 10,
-                                color: Colors.white,
+                                color: AppColors.softPlatinum,
                               ),
                             ),
                           ),
@@ -3157,29 +3211,31 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
           // ── 5. PER-PERSON STYLING ──
           if (session.stitchImages.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            const Text(
+            SizedBox(height: 12),
+            Text(
               'PER-PERSON STYLE',
               style: TextStyle(
-                color: Colors.white24,
+                color: AppColors.softPlatinum.withValues(alpha: 0.24),
                 fontSize: 10,
                 letterSpacing: 2,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 6),
+            SizedBox(height: 6),
             ...session.stitchImages.asMap().entries.map((entry) {
               final idx = entry.key;
               final subject = entry.value;
               final currentStyle = _stitchPersonStyles[idx] ?? '';
               final clothingOptions = promptCategories['Styling & Vibe'] ?? [];
               return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(8),
+                margin: EdgeInsets.only(bottom: 8),
+                padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.03),
+                  color: AppColors.softPlatinum.withValues(alpha: 0.03),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.white10),
+                  border: Border.all(
+                    color: AppColors.softPlatinum.withValues(alpha: 0.1),
+                  ),
                 ),
                 child: Column(
                   children: [
@@ -3194,11 +3250,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                             fit: BoxFit.cover,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Text(
                           'P${idx + 1}',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: AppColors.softPlatinum,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
@@ -3211,20 +3267,24 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                             return GestureDetector(
                               onTap: () => session.updateStitchGender(idx, g),
                               child: Container(
-                                margin: const EdgeInsets.only(left: 6),
-                                padding: const EdgeInsets.symmetric(
+                                margin: EdgeInsets.only(left: 6),
+                                padding: EdgeInsets.symmetric(
                                   horizontal: 10,
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
                                   color: isGActive
-                                      ? const Color(0xFFD4AF37)
-                                      : Colors.white.withValues(alpha: 0.08),
+                                      ? AppColors.matteGold
+                                      : AppColors.softPlatinum.withValues(
+                                          alpha: 0.08,
+                                        ),
                                   borderRadius: BorderRadius.circular(6),
                                   border: Border.all(
                                     color: isGActive
-                                        ? const Color(0xFFD4AF37)
-                                        : Colors.white10,
+                                        ? AppColors.matteGold
+                                        : AppColors.softPlatinum.withValues(
+                                            alpha: 0.1,
+                                          ),
                                   ),
                                 ),
                                 child: Row(
@@ -3234,15 +3294,15 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                                       size: 10,
                                       color: isGActive
                                           ? Colors.black
-                                          : Colors.white54,
+                                          : AppColors.coolGray,
                                     ),
-                                    const SizedBox(width: 2),
+                                    SizedBox(width: 2),
                                     Text(
                                       g.toUpperCase(),
                                       style: TextStyle(
                                         color: isGActive
                                             ? Colors.black
-                                            : Colors.white54,
+                                            : AppColors.coolGray,
                                         fontSize: 8,
                                         fontWeight: FontWeight.bold,
                                         letterSpacing: 0.5,
@@ -3256,13 +3316,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Row(
                       children: [
                         Expanded(
                           child: ShaderMask(
                             shaderCallback: (Rect bounds) {
-                              return const LinearGradient(
+                              return LinearGradient(
                                 begin: Alignment.centerLeft,
                                 end: Alignment.centerRight,
                                 colors: [
@@ -3279,9 +3339,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                               height: 26,
                               child: ListView(
                                 scrollDirection: Axis.horizontal,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                ),
+                                padding: EdgeInsets.symmetric(horizontal: 4),
                                 children: clothingOptions.map((style) {
                                   final isActive = currentStyle == style;
                                   return GestureDetector(
@@ -3291,32 +3349,33 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                                           : style;
                                     }),
                                     child: Container(
-                                      margin: const EdgeInsets.only(right: 4),
-                                      padding: const EdgeInsets.symmetric(
+                                      margin: EdgeInsets.only(right: 4),
+                                      padding: EdgeInsets.symmetric(
                                         horizontal: 8,
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
                                         color: isActive
-                                            ? const Color(
+                                            ? Color(
                                                 0xFFD4AF37,
                                               ).withValues(alpha: 0.1)
-                                            : Colors.white.withValues(
+                                            : AppColors.softPlatinum.withValues(
                                                 alpha: 0.05,
                                               ),
                                         borderRadius: BorderRadius.circular(6),
                                         border: Border.all(
                                           color: isActive
-                                              ? const Color(0xFFD4AF37)
-                                              : Colors.white10,
+                                              ? AppColors.matteGold
+                                              : AppColors.softPlatinum
+                                                    .withValues(alpha: 0.1),
                                         ),
                                       ),
                                       child: Text(
                                         style.toUpperCase(),
                                         style: TextStyle(
                                           color: isActive
-                                              ? const Color(0xFFD4AF37)
-                                              : Colors.white38,
+                                              ? AppColors.matteGold
+                                              : AppColors.mutedGray,
                                           fontSize: 8,
                                           fontWeight: isActive
                                               ? FontWeight.bold
@@ -3338,7 +3397,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             }),
           ],
 
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           // ── 6. VIBE CHECK ──
           Row(
@@ -3352,7 +3411,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Expanded(
                 child: GestureDetector(
                   onTap: () => session.setStitchVibe('individual'),
@@ -3365,7 +3424,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             ],
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
 
           // ── 7. GENERATE ──
           SizedBox(
@@ -3375,15 +3434,15 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   ? null
                   : () => _generateStitch(session),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFD4AF37),
+                backgroundColor: AppColors.matteGold,
                 foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                padding: EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
               child: session.isGenerating
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
@@ -3391,7 +3450,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                         color: Colors.black,
                       ),
                     )
-                  : const Text(
+                  : Text(
                       'GENERATE GROUP PHOTO',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
@@ -3408,21 +3467,23 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
   Widget _buildVibeChip(String label, bool isActive) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: EdgeInsets.symmetric(vertical: 12),
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: isActive
-            ? const Color(0xFFD4AF37).withValues(alpha: 0.15)
-            : Colors.white.withValues(alpha: 0.05),
+            ? AppColors.matteGold.withValues(alpha: 0.15)
+            : AppColors.softPlatinum.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isActive ? const Color(0xFFD4AF37) : Colors.white12,
+          color: isActive
+              ? AppColors.matteGold
+              : AppColors.softPlatinum.withValues(alpha: 0.12),
         ),
       ),
       child: Text(
         label,
         style: TextStyle(
-          color: isActive ? const Color(0xFFD4AF37) : Colors.white54,
+          color: isActive ? AppColors.matteGold : AppColors.coolGray,
           fontSize: 10,
           fontWeight: FontWeight.bold,
         ),
@@ -3432,26 +3493,26 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
   Widget _buildPrintDrawer() {
     return ListView.builder(
-      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 120),
+      padding: EdgeInsets.only(left: 16, right: 16, bottom: 120),
       itemCount: printProducts.length,
       itemBuilder: (context, index) {
         final product = printProducts[index];
         return ListTile(
-          contentPadding: const EdgeInsets.symmetric(vertical: 4),
+          contentPadding: EdgeInsets.symmetric(vertical: 4),
           dense: true,
           title: Text(
             product.name,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AppColors.softPlatinum,
               fontSize: 13,
               fontWeight: FontWeight.bold,
             ),
           ),
           subtitle: Text(
             '${product.material} • FROM \$${product.price.toInt()}',
-            style: const TextStyle(color: Colors.white54, fontSize: 10),
+            style: TextStyle(color: AppColors.coolGray, fontSize: 10),
           ),
-          trailing: const Icon(
+          trailing: Icon(
             Icons.arrow_forward_ios,
             color: Color(0xFFD4AF37),
             size: 14,
@@ -3471,23 +3532,23 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
   Widget _buildDownloadDrawer() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 120),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.download, color: Color(0xFFD4AF37), size: 36),
-            const SizedBox(height: 12),
-            const Text(
+            Icon(Icons.download, color: Color(0xFFD4AF37), size: 36),
+            SizedBox(height: 12),
+            Text(
               'Save to your device',
-              style: TextStyle(color: Colors.white54, fontSize: 11),
+              style: TextStyle(color: AppColors.coolGray, fontSize: 11),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _buildDownloadOption('HIGH RES', 'PNG • 4K', _saveToGallery),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 _buildDownloadOption('STANDARD', 'JPG • 1080p', _saveToGallery),
               ],
             ),
@@ -3505,29 +3566,27 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
+          color: Color(0xFF1A1A1A),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: AppColors.matteGold.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 color: Color(0xFFD4AF37),
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1,
               ),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Text(
               subtitle,
-              style: const TextStyle(color: Colors.white38, fontSize: 9),
+              style: TextStyle(color: AppColors.mutedGray, fontSize: 9),
             ),
           ],
         ),
@@ -3537,25 +3596,25 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
   Widget _buildShareDrawer() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 120),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.share, color: Color(0xFFD4AF37), size: 36),
-            const SizedBox(height: 12),
-            const Text(
+            Icon(Icons.share, color: Color(0xFFD4AF37), size: 36),
+            SizedBox(height: 12),
+            Text(
               'Share your creation',
-              style: TextStyle(color: Colors.white54, fontSize: 11),
+              style: TextStyle(color: AppColors.coolGray, fontSize: 11),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _buildShareOption(Icons.link, 'COPY LINK', _shareImage),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 _buildShareOption(Icons.camera_alt, 'INSTAGRAM', _shareImage),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 _buildShareOption(Icons.send, 'MESSAGE', _shareImage),
               ],
             ),
@@ -3571,19 +3630,21 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1A1A),
+              color: Color(0xFF1A1A1A),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white10),
+              border: Border.all(
+                color: AppColors.softPlatinum.withValues(alpha: 0.1),
+              ),
             ),
-            child: Icon(icon, color: const Color(0xFFD4AF37), size: 22),
+            child: Icon(icon, color: AppColors.matteGold, size: 22),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white38,
+            style: TextStyle(
+              color: AppColors.mutedGray,
               fontSize: 8,
               letterSpacing: 0.5,
             ),
@@ -3596,11 +3657,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   Widget _buildBottomNav() {
     return Container(
       height: 80,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A0A0A),
+        color: AppColors.midnightNavy,
         border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
+          top: BorderSide(
+            color: AppColors.softPlatinum.withValues(alpha: 0.05),
+          ),
         ),
       ),
       child: Row(
@@ -3636,14 +3699,18 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         children: [
           Icon(
             icon,
-            color: isActive ? const Color(0xFFD4AF37) : Colors.white30,
+            color: isActive
+                ? AppColors.matteGold
+                : AppColors.mutedGray.withValues(alpha: 0.5),
             size: 24,
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
-              color: isActive ? const Color(0xFFD4AF37) : Colors.white24,
+              color: isActive
+                  ? AppColors.matteGold
+                  : AppColors.softPlatinum.withValues(alpha: 0.24),
               fontSize: 9,
               letterSpacing: 1,
             ),
@@ -3710,12 +3777,12 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             showDialog(
               context: context,
               builder: (c) => AlertDialog(
-                title: const Text("Video Generated"),
+                title: Text("Video Generated"),
                 content: SelectableText(videoUri),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(c),
-                    child: const Text("OK"),
+                    child: Text("OK"),
                   ),
                 ],
               ),

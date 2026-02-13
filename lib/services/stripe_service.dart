@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:convert';
+import '../shared/constants.dart';
 
 class StripeService {
   static Future<void> init() async {
@@ -65,9 +66,9 @@ class StripeService {
           customerEphemeralKeySecret: data['ephemeralKey'],
           appearance: const PaymentSheetAppearance(
             colors: PaymentSheetAppearanceColors(
-              primary: Color(0xFFD4AF37),
-              background: Color(0xFF0A0A0A),
-              componentBackground: Color(0xFF141414),
+              primary: AppColors.matteGold,
+              background: AppColors.midnightNavy,
+              componentBackground: AppColors.softCharcoal,
               componentDivider: Color(0xFF202020),
               primaryText: Colors.white,
               secondaryText: Colors.white54,

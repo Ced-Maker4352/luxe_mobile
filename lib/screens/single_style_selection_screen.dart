@@ -4,6 +4,7 @@ import '../services/stripe_service.dart';
 import 'access_granted_screen.dart';
 import 'package:provider/provider.dart';
 import '../providers/session_provider.dart';
+import '../shared/constants.dart';
 
 class SingleStyleSelectionScreen extends StatefulWidget {
   final PackageDetails package;
@@ -37,7 +38,7 @@ class _SingleStyleSelectionScreenState
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF141414),
+        backgroundColor: AppColors.softCharcoal,
         title: Text(
           'One-Time Payment: ${widget.package.payAsYouGoPrice}',
           style: const TextStyle(color: Colors.white),
@@ -64,9 +65,9 @@ class _SingleStyleSelectionScreenState
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, emailController.text),
-            child: const Text(
+            child: Text(
               'PAY NOW',
-              style: TextStyle(color: Color(0xFFD4AF37)),
+              style: TextStyle(color: AppColors.matteGold),
             ),
           ),
         ],
@@ -122,14 +123,14 @@ class _SingleStyleSelectionScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: AppColors.midnightNavy,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
           "SELECT STYLE",
-          style: const TextStyle(
-            color: Color(0xFFD4AF37),
+          style: TextStyle(
+            color: AppColors.matteGold,
             fontSize: 16,
             letterSpacing: 2.0,
           ),
@@ -166,10 +167,10 @@ class _SingleStyleSelectionScreenState
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF141414),
+                      color: AppColors.softCharcoal,
                       borderRadius: BorderRadius.circular(12),
                       border: isSelected
-                          ? Border.all(color: const Color(0xFFD4AF37), width: 2)
+                          ? Border.all(color: AppColors.matteGold, width: 2)
                           : Border.all(color: Colors.white10),
                     ),
                     child: Row(
@@ -230,7 +231,7 @@ class _SingleStyleSelectionScreenState
                                 ? Icons.radio_button_checked
                                 : Icons.radio_button_unchecked,
                             color: isSelected
-                                ? const Color(0xFFD4AF37)
+                                ? AppColors.matteGold
                                 : Colors.white24,
                           ),
                         ),
@@ -245,8 +246,8 @@ class _SingleStyleSelectionScreenState
           // Bottom Action Bar
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(
-              color: Color(0xFF141824),
+            decoration: BoxDecoration(
+              color: AppColors.softCharcoal,
               borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
             ),
             child: SafeArea(
@@ -255,7 +256,7 @@ class _SingleStyleSelectionScreenState
                 child: ElevatedButton(
                   onPressed: _isProcessing ? null : _handlePayment,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD4AF37),
+                    backgroundColor: AppColors.matteGold,
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(

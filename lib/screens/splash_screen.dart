@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'auth_gate.dart';
+import '../shared/constants.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -62,17 +63,17 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: AppColors.midnightNavy,
       body: Stack(
         children: [
           // Background Gradient
           Positioned.fill(
             child: Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: RadialGradient(
                   center: Alignment.center,
                   radius: 1.2,
-                  colors: [Color(0xFF1A1A1A), Color(0xFF0A0A0A)],
+                  colors: [AppColors.softCharcoal, AppColors.midnightNavy],
                 ),
               ),
             ),
@@ -104,7 +105,7 @@ class _SplashScreenState extends State<SplashScreen>
                         Container(
                           height: 2,
                           width: 60,
-                          color: const Color(0xFFD4AF37),
+                          color: AppColors.matteGold,
                         ),
                         const SizedBox(height: 20),
                         const Text(

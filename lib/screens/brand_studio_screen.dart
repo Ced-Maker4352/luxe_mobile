@@ -9,6 +9,7 @@ import '../shared/web_helper.dart'
     if (dart.library.html) '../shared/web_helper_web.dart';
 import '../providers/session_provider.dart';
 import '../services/gemini_service.dart';
+import '../shared/constants.dart';
 
 class BrandStudioScreen extends StatefulWidget {
   const BrandStudioScreen({super.key});
@@ -187,7 +188,7 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: AppColors.midnightNavy,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -206,8 +207,8 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
         ),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: const Color(0xFFD4AF37),
-          labelColor: const Color(0xFFD4AF37),
+          indicatorColor: AppColors.matteGold,
+          labelColor: AppColors.matteGold,
           unselectedLabelColor: Colors.white38,
           labelStyle: const TextStyle(
             fontSize: 12,
@@ -251,7 +252,7 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
 
           if (_isLoadingStrategy)
             const Center(
-              child: CircularProgressIndicator(color: Color(0xFFD4AF37)),
+              child: CircularProgressIndicator(color: AppColors.matteGold),
             )
           else if (_brandStrategy != null) ...[
             _buildInfoCard('AESTHETIC', _brandStrategy!['aesthetic']),
@@ -287,7 +288,7 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
           ElevatedButton(
             onPressed: _generateStrategy,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD4AF37),
+              backgroundColor: AppColors.matteGold,
               foregroundColor: Colors.black,
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
@@ -327,7 +328,7 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
                 borderSide: BorderSide(color: Colors.white24),
               ),
               focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFD4AF37)),
+                borderSide: BorderSide(color: AppColors.matteGold),
               ),
             ),
           ),
@@ -346,7 +347,7 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
                 borderSide: BorderSide(color: Colors.white24),
               ),
               focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFD4AF37)),
+                borderSide: BorderSide(color: AppColors.matteGold),
               ),
             ),
           ),
@@ -354,13 +355,13 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
           const SizedBox(height: 32),
           if (_isGeneratingLogo)
             const Center(
-              child: CircularProgressIndicator(color: Color(0xFFD4AF37)),
+              child: CircularProgressIndicator(color: AppColors.matteGold),
             )
           else
             ElevatedButton(
               onPressed: _generateLogo,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFD4AF37),
+                backgroundColor: AppColors.matteGold,
                 foregroundColor: Colors.black,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
@@ -442,8 +443,8 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
                     icon: const Icon(Icons.code, size: 16),
                     label: const Text('VECTOR (SVG)'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFD4AF37),
-                      side: const BorderSide(color: Color(0xFFD4AF37)),
+                      foregroundColor: AppColors.matteGold,
+                      side: const BorderSide(color: AppColors.matteGold),
                     ),
                     onPressed: () {
                       // Simulate vector download (user explicit request)
@@ -481,7 +482,7 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
           Text(
             label,
             style: const TextStyle(
-              color: Color(0xFFD4AF37),
+              color: AppColors.matteGold,
               fontSize: 10,
               letterSpacing: 1,
             ),

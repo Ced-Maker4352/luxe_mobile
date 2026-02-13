@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../shared/constants.dart';
 
 class LocalImageItem {
   final String assetPath;
@@ -138,7 +139,7 @@ class _HeroCarouselState extends State<HeroCarousel> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFFD4AF37),
+              color: AppColors.matteGold,
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(

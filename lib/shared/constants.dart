@@ -1,4 +1,31 @@
-﻿import '../models/types.dart';
+﻿import 'package:flutter/material.dart';
+import '../models/types.dart';
+
+class AppColors {
+  // 1. Core Backgrounds
+  static const Color midnightNavy = Color(0xFF0E1A2B); // Primary Canvas
+  static const Color softCharcoal = Color(0xFF1C1C1E); // Secondary Panels/Cards
+  static const Color deepSpace = Color(0xFF111827); // Input Fields / Gradients
+
+  // 2. Luxury Accent (Matte Gold)
+  static const Color matteGold = Color(0xFFC6A85C); // Primary CTA
+  static const Color goldHover = Color(0xFFD4B76A);
+  static const Color goldPressed = Color(0xFFB89542);
+
+  // 3. Text System
+  static const Color softPlatinum = Color(0xFFE5E5E5); // Primary Text
+  static const Color coolGray = Color(0xFFB8BDC6); // Secondary Text
+  static const Color mutedGray = Color(0xFF8C9199); // Muted / Helper
+
+  // 4. Borders & UI
+  static const Color inputBorder = Color(0xFF2A2F45);
+  static const Color platinumWhite = Color(
+    0xFFF5F5F7,
+  ); // For small UI elements only
+
+  // 5. Trust Signal (Soft Shadows)
+  static const Color shadow = Color(0x59000000); // rgba(0,0,0,0.35)
+}
 
 class BackgroundPreset {
   final String id;

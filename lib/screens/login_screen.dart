@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/auth_service.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../shared/constants.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -80,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: AppColors.midnightNavy,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -95,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   textAlign: TextAlign.center,
                   style: GoogleFonts.cinzel(
                     // Using serif font similar to design
-                    color: const Color(0xFFD4AF37),
+                    color: AppColors.matteGold,
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 2.0,
@@ -115,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Color(0xFFD4AF37)),
+                      borderSide: const BorderSide(color: AppColors.matteGold),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     filled: true,
@@ -137,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Color(0xFFD4AF37)),
+                      borderSide: const BorderSide(color: AppColors.matteGold),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     filled: true,
@@ -151,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ElevatedButton(
                   onPressed: _isLoading ? null : _handleEmailAuth,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD4AF37),
+                    backgroundColor: AppColors.matteGold,
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
