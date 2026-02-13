@@ -90,6 +90,14 @@ class SessionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  String _selectedBodyType = 'Fit'; // Default
+  String get selectedBodyType => _selectedBodyType;
+
+  void setSelectedBodyType(String bodyType) {
+    _selectedBodyType = bodyType;
+    notifyListeners();
+  }
+
   void setPreserveAgeAndBody(bool value) {
     _preserveAgeAndBody = value;
     notifyListeners();

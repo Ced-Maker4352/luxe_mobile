@@ -189,11 +189,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
       if (session.isSingleStyleMode && session.selectedStyle != null) {
         fullPrompt =
-            '${session.selectedPackage!.basePrompt} ${session.selectedStyle!.promptAddition} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""} ${_selectedClothingStyle.isNotEmpty ? "\nClothing Style: $_selectedClothingStyle" : ""} \nTarget Gender: $_gender \nColor Temperature: $_styleTemperature \nFRAMING: $framingText';
+            '${session.selectedPackage!.basePrompt} ${session.selectedStyle!.promptAddition} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""} ${_selectedClothingStyle.isNotEmpty ? "\nClothing Style: $_selectedClothingStyle" : ""} \nTarget Gender: $_gender \nBody Type: ${session.selectedBodyType} \nColor Temperature: $_styleTemperature \nFRAMING: $framingText';
         debugPrint('Studio: Using Single Style Prompt: $fullPrompt');
       } else {
         fullPrompt =
-            '${session.selectedPackage!.basePrompt} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""} \nTarget Gender: $_gender \nColor Temperature: $_styleTemperature ${_selectedClothingStyle.isNotEmpty ? "\nClothing Style: $_selectedClothingStyle" : ""} \nFRAMING: $framingText';
+            '${session.selectedPackage!.basePrompt} $_customPrompt ${_customBgPrompt.isNotEmpty ? " Background: $_customBgPrompt" : ""} \nTarget Gender: $_gender \nBody Type: ${session.selectedBodyType} \nColor Temperature: $_styleTemperature ${_selectedClothingStyle.isNotEmpty ? "\nClothing Style: $_selectedClothingStyle" : ""} \nFRAMING: $framingText';
       }
 
       // Append Adjustment Logic to Prompt
@@ -1105,6 +1105,87 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     );
   }
 
+  Widget _buildBodyTypeSelector(SessionProvider session, bool isEnterprise) {
+    // Body Types Map - Simple & Tasteful Icons
+    final List<Map<String, dynamic>> bodyTypes = [
+      {'label': 'Skinny', 'icon': Icons.spa_outlined},
+      {'label': 'Toned', 'icon': Icons.directions_walk},
+      {'label': 'Fit', 'icon': Icons.fitness_center},
+      {'label': 'Athletic', 'icon': Icons.directions_run},
+      {'label': 'Built', 'icon': Icons.shield_outlined}, // Strength
+      {'label': 'Strong Fat', 'icon': Icons.circle_outlined}, // Solid
+      {'label': 'Chubby', 'icon': Icons.cloud_outlined}, // Soft
+    ];
+
+    return Container(
+      height: 70,
+      margin: EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              "BODY TYPE",
+              style: AppTypography.microBold(color: AppColors.coolGray),
+            ),
+          ),
+          SizedBox(height: 8),
+          Expanded(
+            child: ListView.separated(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              scrollDirection: Axis.horizontal,
+              itemCount: bodyTypes.length,
+              separatorBuilder: (_, __) => SizedBox(width: 16),
+              itemBuilder: (context, index) {
+                final type = bodyTypes[index];
+                final isSelected = session.selectedBodyType == type['label'];
+                return GestureDetector(
+                  onTap: () => session.setSelectedBodyType(type['label']),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.matteGold
+                              : AppColors.softPlatinum.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSelected
+                                ? AppColors.matteGold
+                                : Colors.transparent,
+                          ),
+                        ),
+                        child: Icon(
+                          type['icon'],
+                          size: 16,
+                          color: isSelected
+                              ? Colors.black
+                              : AppColors.softPlatinum,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        type['label'],
+                        style: AppTypography.micro(
+                          color: isSelected
+                              ? AppColors.matteGold
+                              : AppColors.mutedGray,
+                        ).copyWith(fontSize: 10),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMainToolbar() {
     final session = context.watch<SessionProvider>();
     final isEnterprise = session.isEnterpriseMode;
@@ -1160,6 +1241,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             ],
           ),
         ),
+
+        // Body Type Selector (New Feature)
+        _buildBodyTypeSelector(session, isEnterprise),
+
         // Post-Generation Tools Row
         if (session.results.isNotEmpty)
           Container(
