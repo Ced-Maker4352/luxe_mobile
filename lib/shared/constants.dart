@@ -432,15 +432,17 @@ const Map<String, dynamic> promptCategories = {
     'Hasselblad medium format',
     'Cinematic 2.39:1 crop',
   ],
-  'Environment': [
-    'Luxury penthouse interior with city view',
-    'Minimalist white studio',
-    'Urban street with neon signs',
-    'Natural forest with dappled light',
-    'Modern art gallery space',
-    'Rooftop at sunset',
-    'Beach golden hour',
-    'Industrial warehouse loft',
+  'Music & Group Vibes': [
+    'Album cover shoot, dark and moody',
+    'Trap house aesthetic, chains and attitude',
+    'Old school 90s hip-hop, baggy fits',
+    'Luxury lifestyle, designer drip',
+    'Music video still, cinematic lighting',
+    'Satin and velvet, sultry studio',
+    'Y2K nostalgia, glossy and playful',
+    'Ethereal goddess, flowing fabrics',
+    'Smooth operator, suits and silk',
+    'Vintage soul revival, 70s warmth',
   ],
   'Styling & Vibe': {
     'High Fashion': [

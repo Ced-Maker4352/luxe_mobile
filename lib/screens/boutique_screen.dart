@@ -116,7 +116,14 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
           'is_subscribed': true,
           'subscription_tier': paymentTargetId,
           'photo_generations': pkg.assetCount,
-          'video_generations': 0,
+          'video_generations':
+              (paymentTargetId.contains('pro') ||
+                  paymentTargetId.contains('unlimited') ||
+                  paymentTargetId.contains('agency') ||
+                  paymentTargetId.contains('49') ||
+                  paymentTargetId.contains('99'))
+              ? 10
+              : 0,
           'updated_at': DateTime.now().toIso8601String(),
         });
       } catch (dbError) {
@@ -199,7 +206,14 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                   'is_subscribed': true,
                   'subscription_tier': paymentTargetId,
                   'photo_generations': pkg.assetCount,
-                  'video_generations': 0,
+                  'video_generations':
+                      (paymentTargetId.contains('pro') ||
+                          paymentTargetId.contains('unlimited') ||
+                          paymentTargetId.contains('agency') ||
+                          paymentTargetId.contains('49') ||
+                          paymentTargetId.contains('99'))
+                      ? 10
+                      : 0,
                   'updated_at': DateTime.now().toIso8601String(),
                 });
               } catch (dbError) {
@@ -207,20 +221,20 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
               }
 
               // 2. Grant Access
-              if (mounted) {
-                final session = Provider.of<SessionProvider>(
-                  context,
-                  listen: false,
-                );
-                session.setSelectedPackage(pkg);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        AccessGrantedScreen(package: pkg, isPromoCode: false),
-                  ),
-                );
-              }
+              final session = Provider.of<SessionProvider>(
+                context,
+                listen: false,
+              );
+              session.setSelectedPackage(pkg);
+              await session.fetchUserProfile(); // Sync profile
+              if (!mounted) return;
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      AccessGrantedScreen(package: pkg, isPromoCode: false),
+                ),
+              );
             }
           }
         } else {
@@ -256,7 +270,14 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
             'is_subscribed': true,
             'subscription_tier': paymentTargetId,
             'photo_generations': pkg.assetCount,
-            'video_generations': 0,
+            'video_generations':
+                (paymentTargetId.contains('pro') ||
+                    paymentTargetId.contains('unlimited') ||
+                    paymentTargetId.contains('agency') ||
+                    paymentTargetId.contains('49') ||
+                    paymentTargetId.contains('99'))
+                ? 10
+                : 0,
             'updated_at': DateTime.now().toIso8601String(),
           });
         } catch (dbError) {
@@ -267,6 +288,8 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
         // 2. Grant Access
         final session = Provider.of<SessionProvider>(context, listen: false);
         session.setSelectedPackage(pkg);
+        await session.fetchUserProfile(); // Sync profile
+        if (!mounted) return;
         Navigator.push(
           context,
           MaterialPageRoute(

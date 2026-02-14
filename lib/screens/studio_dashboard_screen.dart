@@ -1268,7 +1268,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               ),
               _buildControlButton(
                 icon: Icons.edit_note_outlined,
-                label: _customPrompt.isEmpty ? 'PROMPT' : 'STYLED',
+                label: _customPrompt.isEmpty ? 'STYLE CLOSET' : 'STYLED',
                 onTap: () => setState(() => _activeControl = 'prompt'),
               ),
               _buildDivider(),
@@ -1544,193 +1544,296 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   }
 
   Widget _buildBackdropPicker() {
-    // Flatten BackgroundCategory list into a single list of BackgroundPreset
-    final List<BackgroundPreset> flatPresets = backgroundPresets
-        .expand((cat) => cat.items)
-        .toList();
-
+    final session = context.watch<SessionProvider>();
     return Column(
       children: [
         _buildPickerHeader(
           'BACKDROP',
           () => setState(() => _activeControl = 'main'),
         ),
-        // CUSTOM BACKGROUND UPLOAD soul
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Consumer<SessionProvider>(
-            builder: (context, session, _) {
-              return GestureDetector(
-                onTap: _pickBackgroundReference,
-                child: Container(
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: session.hasBackgroundReference
-                        ? AppColors.matteGold.withValues(alpha: 0.15)
-                        : AppColors.softPlatinum.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: session.hasBackgroundReference
-                          ? AppColors.matteGold
-                          : AppColors.softPlatinum.withValues(alpha: 0.1),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      if (session.hasBackgroundReference)
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: Image.memory(
-                            session.backgroundReferenceBytes!,
-                            width: 40,
-                            height: 40,
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                      else
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: AppColors.softPlatinum.withValues(
-                              alpha: 0.1,
-                            ),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Icon(
-                            Icons.add_photo_alternate_outlined,
-                            color: AppColors.matteGold,
-                          ),
-                        ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'CUSTOM BACKDROP',
-                              style: AppTypography.microBold(
-                                color: AppColors.matteGold,
-                              ),
-                            ),
-                            Text(
-                              session.hasBackgroundReference
-                                  ? session.backgroundReferenceName!
-                                  : 'Upload your own reference',
-                              style: AppTypography.micro(
-                                color: AppColors.mutedGray,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (session.hasBackgroundReference)
-                        IconButton(
-                          icon: Icon(Icons.close, size: 18, color: Colors.red),
-                          onPressed: () {
-                            session.clearBackgroundReference();
-                            setState(() {
-                              _customBgPrompt = '';
-                              _bgPromptController.text = '';
-                            });
-                          },
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
         Expanded(
-          child: Stack(
-            children: [
-              // Gold magnifier highlight band
-              Center(
-                child: Container(
-                  height: 56,
-                  decoration: BoxDecoration(
-                    border: Border.symmetric(
-                      horizontal: BorderSide(
-                        color: AppColors.matteGold.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.matteGold.withValues(alpha: 0.05),
-                        AppColors.matteGold.withValues(alpha: 0.12),
-                        AppColors.matteGold.withValues(alpha: 0.05),
-                      ],
-                    ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // CUSTOM BACKDROP UPLOAD
+                Text(
+                  'CUSTOM BACKDROP',
+                  style: TextStyle(
+                    color: AppColors.softPlatinum.withValues(alpha: 0.24),
+                    fontSize: 9,
+                    letterSpacing: 2,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-              // Wheel picker
-              ListWheelScrollView.useDelegate(
-                itemExtent: 56,
-                perspective: 0.003,
-                diameterRatio: 1.6,
-                physics: const FixedExtentScrollPhysics(),
-                onSelectedItemChanged: (index) {
-                  setState(() {
-                    _selectedBackdrop = flatPresets[index];
-                    _customBgPrompt = flatPresets[index].name;
-                    _bgPromptController.text = flatPresets[index].name;
-                  });
-                },
-                childDelegate: ListWheelChildBuilderDelegate(
-                  childCount: flatPresets.length,
-                  builder: (context, index) {
-                    final preset = flatPresets[index];
-                    final isSelected = _selectedBackdrop?.id == preset.id;
-                    return Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 24),
-                      child: Row(
-                        children: [
-                          // Color dot indicator
-                          Container(
-                            width: 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isSelected
-                                  ? AppColors.matteGold
-                                  : AppColors.softPlatinum.withValues(
-                                      alpha: 0.24,
+                SizedBox(height: 8),
+                GestureDetector(
+                  onTap: _pickBackgroundReference,
+                  child: Container(
+                    height: 100,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: AppColors.softPlatinum.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.softPlatinum.withValues(alpha: 0.1),
+                      ),
+                    ),
+                    child: session.hasBackgroundReference
+                        ? Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.memory(
+                                  session.backgroundReferenceBytes!,
+                                  width: double.infinity,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    session.clearBackgroundReference();
+                                    setState(() {
+                                      _customBgPrompt = '';
+                                      _bgPromptController.text = '';
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black54,
+                                      shape: BoxShape.circle,
                                     ),
+                                    child: Icon(
+                                      Icons.close,
+                                      size: 16,
+                                      color: AppColors.softPlatinum,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                bottom: 8,
+                                left: 8,
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black54,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    session.backgroundReferenceName!,
+                                    style: AppTypography.micro(
+                                      color: AppColors.softPlatinum,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.add_photo_alternate_outlined,
+                                color: AppColors.matteGold,
+                                size: 32,
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'UPLOAD CUSTOM BACKDROP',
+                                style: AppTypography.microBold(
+                                  color: AppColors.matteGold,
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
+                ),
+                SizedBox(height: 20),
+
+                // ENVIRONMENT TIPS (Moved from Prompt tab)
+                Text(
+                  'ENVIRONMENT & LOCATIONS',
+                  style: TextStyle(
+                    color: AppColors.softPlatinum.withValues(alpha: 0.24),
+                    fontSize: 9,
+                    letterSpacing: 2,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 12),
+                ...environmentPromptTips.entries.map((entry) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          entry.key.toUpperCase(),
+                          style: AppTypography.microBold(
+                            color: AppColors.softPlatinum.withValues(
+                              alpha: 0.3,
                             ),
                           ),
-                          SizedBox(width: 14),
-                          Expanded(
-                            child: Text(
-                              preset.name,
-                              style: TextStyle(
-                                color: isSelected
-                                    ? AppColors.matteGold
-                                    : AppColors.coolGray,
-                                fontSize: isSelected ? 15 : 13,
-                                fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                                letterSpacing: 0.3,
+                        ),
+                      ),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: entry.value.map((tip) {
+                          final isActive = _customBgPrompt == tip;
+                          return GestureDetector(
+                            onTap: () {
+                              _bgPromptController.text = tip;
+                              setState(() {
+                                _customBgPrompt = tip;
+                                _selectedBackdrop =
+                                    null; // Clear preset selection
+                              });
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isActive
+                                    ? Color(0xFFD4AF37).withValues(alpha: 0.15)
+                                    : AppColors.softPlatinum.withValues(
+                                        alpha: 0.05,
+                                      ),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isActive
+                                      ? AppColors.matteGold
+                                      : AppColors.softPlatinum.withValues(
+                                          alpha: 0.12,
+                                        ),
+                                ),
+                              ),
+                              child: Text(
+                                tip,
+                                style: TextStyle(
+                                  color: isActive
+                                      ? AppColors.matteGold
+                                      : AppColors.coolGray,
+                                  fontSize: 11,
+                                ),
                               ),
                             ),
-                          ),
-                          if (isSelected)
-                            Icon(
-                              Icons.check_circle,
-                              color: AppColors.matteGold,
-                              size: 16,
-                            ),
-                        ],
+                          );
+                        }).toList(),
                       ),
-                    );
-                  },
+                      SizedBox(height: 16),
+                    ],
+                  );
+                }),
+
+                // EDITORIAL BACKDROPS (Converted from Wheel)
+                Text(
+                  'EDITORIAL BACKDROPS',
+                  style: TextStyle(
+                    color: AppColors.softPlatinum.withValues(alpha: 0.24),
+                    fontSize: 9,
+                    letterSpacing: 2,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-            ],
+                SizedBox(height: 12),
+                ...backgroundPresets.map((cat) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          cat.category.toUpperCase(),
+                          style: AppTypography.microBold(
+                            color: AppColors.softPlatinum.withValues(
+                              alpha: 0.3,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: cat.items.map((preset) {
+                          final isActive = _selectedBackdrop?.id == preset.id;
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedBackdrop = preset;
+                                _customBgPrompt = preset.name;
+                                _bgPromptController.text = preset.name;
+                              });
+                            },
+                            child: Container(
+                              width:
+                                  (MediaQuery.of(context).size.width - 48) /
+                                  2, // 2 column grid
+                              padding: EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: isActive
+                                    ? AppColors.matteGold.withValues(alpha: 0.1)
+                                    : AppColors.softPlatinum.withValues(
+                                        alpha: 0.03,
+                                      ),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: isActive
+                                      ? AppColors.matteGold
+                                      : AppColors.softPlatinum.withValues(
+                                          alpha: 0.1,
+                                        ),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: Image.network(
+                                      preset.url,
+                                      width: 32,
+                                      height: 32,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      preset.name,
+                                      style: AppTypography.micro(
+                                        color: isActive
+                                            ? AppColors.matteGold
+                                            : AppColors.softPlatinum,
+                                      ).copyWith(fontSize: 10),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      SizedBox(height: 16),
+                    ],
+                  );
+                }),
+                SizedBox(height: 100), // Bottom safety
+              ],
+            ),
           ),
         ),
       ],
@@ -1738,18 +1841,96 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   }
 
   Widget _buildPromptToInline() {
+    final session = context.watch<SessionProvider>();
     return Column(
       children: [
         _buildPickerHeader(
-          'PROMPT',
+          'STYLE CLOSET',
           () => setState(() => _activeControl = 'main'),
         ),
         Expanded(
           child: SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // CUSTOM OUTFIT UPLOAD
+                Text(
+                  'CUSTOM OUTFIT',
+                  style: TextStyle(
+                    color: AppColors.softPlatinum.withValues(alpha: 0.24),
+                    fontSize: 9,
+                    letterSpacing: 2,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 8),
+                GestureDetector(
+                  onTap: _pickClothingReference,
+                  child: Container(
+                    height: 100,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: AppColors.softPlatinum.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.softPlatinum.withValues(alpha: 0.1),
+                      ),
+                    ),
+                    child: session.hasClothingReference
+                        ? Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.memory(
+                                  session.clothingReferenceBytes!,
+                                  width: double.infinity,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: GestureDetector(
+                                  onTap: () => session.clearClothingReference(),
+                                  child: Container(
+                                    padding: EdgeInsets.all(4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black54,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.close,
+                                      size: 16,
+                                      color: AppColors.softPlatinum,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.add_photo_alternate_outlined,
+                                color: AppColors.matteGold,
+                                size: 32,
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'UPLOAD CLOTHING REFERENCE',
+                                style: AppTypography.microBold(
+                                  color: AppColors.matteGold,
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
+                ),
+                SizedBox(height: 16),
+                // Text input
                 // Text input
                 TextField(
                   controller: _promptController,
@@ -2131,84 +2312,6 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   return const SizedBox.shrink();
                 }),
                 SizedBox(height: 6),
-                // Location / Environment Presets
-                // Location / Environment Presets
-                Text(
-                  'LOCATIONS',
-                  style: TextStyle(
-                    color: AppColors.softPlatinum.withValues(alpha: 0.24),
-                    fontSize: 9,
-                    letterSpacing: 2,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 8),
-                ...environmentPromptTips.entries.map((entry) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.only(bottom: 6),
-                        child: Text(
-                          entry.key.toUpperCase(),
-                          style: AppTypography.microBold(
-                            color: AppColors.softPlatinum.withValues(
-                              alpha: 0.3,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: entry.value.map((tip) {
-                          final isActive = _customBgPrompt == tip;
-                          return GestureDetector(
-                            onTap: () {
-                              _bgPromptController.text = tip;
-                              setState(() {
-                                _customBgPrompt = tip;
-                                _selectedBackdrop =
-                                    null; // Clear wheel selection
-                              });
-                            },
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isActive
-                                    ? Color(0xFFD4AF37).withValues(alpha: 0.15)
-                                    : AppColors.softPlatinum.withValues(
-                                        alpha: 0.05,
-                                      ),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: isActive
-                                      ? AppColors.matteGold
-                                      : AppColors.softPlatinum.withValues(
-                                          alpha: 0.12,
-                                        ),
-                                ),
-                              ),
-                              child: Text(
-                                tip,
-                                style: TextStyle(
-                                  color: isActive
-                                      ? AppColors.matteGold
-                                      : AppColors.coolGray,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                      SizedBox(height: 10),
-                    ],
-                  );
-                }),
                 SizedBox(height: 14),
                 // Skin texture selector
                 Text(

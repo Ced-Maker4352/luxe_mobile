@@ -27,13 +27,25 @@ class UserProfile {
         defaultPhotos = 5;
     }
 
+    // Default video credits (e.g., 10 for Pro, 50 for Agency)
+    int defaultVideos = 0;
+    if (tier != null) {
+      if (tier.contains('agency') || tier.contains('sub_monthly_99')) {
+        defaultVideos = 50;
+      } else if (tier.contains('pro') ||
+          tier.contains('professional') ||
+          tier.contains('sub_monthly_49')) {
+        defaultVideos = 10;
+      }
+    }
+
     return UserProfile(
       id: json['id'] as String,
       photoGenerations:
           json['photo_generations'] ??
           json['generations_remaining'] ??
           defaultPhotos,
-      videoGenerations: json['video_generations'] ?? 0,
+      videoGenerations: json['video_generations'] ?? defaultVideos,
       subscriptionTier: tier,
     );
   }

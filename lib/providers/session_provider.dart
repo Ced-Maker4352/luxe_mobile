@@ -248,18 +248,31 @@ class SessionProvider extends ChangeNotifier {
     if (_userProfile == null) return false;
     final tier = _userProfile!.subscriptionTier?.toLowerCase() ?? 'starter';
 
+    // Robust checking for tier levels
+    final isProOrAbove =
+        tier.contains('pro') ||
+        tier.contains('unlimited') ||
+        tier.contains('agency') ||
+        tier.contains('sub_monthly_49') ||
+        tier.contains('sub_monthly_99') ||
+        tier.contains('professionalshoot') ||
+        tier.contains('agencymaster');
+
+    final isUnlimitedOrAbove =
+        tier.contains('unlimited') ||
+        tier.contains('agency') ||
+        tier.contains('sub_monthly_99') ||
+        tier.contains('agencymaster');
+
     switch (feature) {
       case 'video':
-        return tier == 'pro' || tier == 'unlimited' || tier == 'agency';
+        return isProOrAbove;
       case 'stitch':
-        return tier == 'pro' || tier == 'unlimited' || tier == 'agency';
+        return isProOrAbove;
       case 'retouch':
-        // Basic retouch is free, but maybe advanced is locked?
-        // For now, let's say Retouch is available to all, but maybe specific filters are locked.
-        // Keeping it open for now as per "per package" comment.
         return true;
       case 'unlimited_styles':
-        return tier == 'unlimited' || tier == 'agency';
+        return isUnlimitedOrAbove;
       default:
         return true;
     }

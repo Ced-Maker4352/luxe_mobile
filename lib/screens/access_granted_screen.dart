@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:luxe_mobile/models/types.dart';
+import 'package:provider/provider.dart';
+import '../providers/session_provider.dart';
 import '../shared/constants.dart';
 
 class AccessGrantedScreen extends StatefulWidget {
@@ -53,7 +55,13 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
   }
 
   void _proceedToUpload() {
-    Navigator.pushReplacementNamed(context, '/identity');
+    final session = context.read<SessionProvider>();
+    if (session.hasUploadedImage) {
+      // Return to studio if image already exists
+      Navigator.pushReplacementNamed(context, '/studio');
+    } else {
+      Navigator.pushReplacementNamed(context, '/identity');
+    }
   }
 
   @override
@@ -232,9 +240,16 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text(
-                          'Next step: Upload your reference photo to begin your AI portrait session.',
-                          style: AppTypography.micro(color: Colors.white70),
+                        child: Consumer<SessionProvider>(
+                          builder: (context, session, _) {
+                            final text = session.hasUploadedImage
+                                ? 'Next step: Return to the studio to continue your AI portrait session.'
+                                : 'Next step: Upload your reference photo to begin your AI portrait session.';
+                            return Text(
+                              text,
+                              style: AppTypography.micro(color: Colors.white70),
+                            );
+                          },
                         ),
                       ),
                     ],
@@ -246,9 +261,15 @@ class _AccessGrantedScreenState extends State<AccessGrantedScreen>
 
               SizedBox(
                 width: double.infinity,
-                child: PremiumButton(
-                  onPressed: _proceedToUpload,
-                  child: Text('CONTINUE TO UPLOAD'),
+                child: Consumer<SessionProvider>(
+                  builder: (context, session, _) => PremiumButton(
+                    onPressed: _proceedToUpload,
+                    child: Text(
+                      session.hasUploadedImage
+                          ? 'RESUME PRODUCTION'
+                          : 'CONTINUE TO UPLOAD',
+                    ),
+                  ),
                 ),
               ),
 
