@@ -4066,7 +4066,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               final idx = entry.key;
               final subject = entry.value;
               final currentStyle = _stitchPersonStyles[idx] ?? '';
-              final clothingOptions = promptCategories['Styling & Vibe'] ?? [];
+              final styleMap =
+                  promptCategories['Styling & Vibe'] as Map<String, dynamic>;
+              final List<String> allStyles = [];
+              styleMap.values.forEach((val) {
+                if (val is List) allStyles.addAll(val.cast<String>());
+              });
+
               return Container(
                 margin: EdgeInsets.only(bottom: 8),
                 padding: EdgeInsets.all(8),
@@ -4175,7 +4181,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                               child: ListView(
                                 scrollDirection: Axis.horizontal,
                                 padding: EdgeInsets.symmetric(horizontal: 4),
-                                children: clothingOptions.map((style) {
+                                children: allStyles.map((style) {
                                   final isActive = currentStyle == style;
                                   return GestureDetector(
                                     onTap: () => setState(() {
