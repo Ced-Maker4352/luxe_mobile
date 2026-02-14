@@ -3843,6 +3843,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 padding: EdgeInsets.symmetric(horizontal: 4),
                 children: [
                   if (session.stitchImages.length < 5) ...[
+                    // 1. ADD FROM LOCAL GALLERY
                     GestureDetector(
                       onTap: () => _pickStitchImage(session),
                       child: Container(
@@ -3856,14 +3857,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              Icons.photo_library_outlined,
-                              color: Color(0xFFD4AF37),
-                              size: 18,
-                            ),
+                            Icon(Icons.add, color: Color(0xFFD4AF37), size: 20),
                             SizedBox(height: 2),
                             Text(
-                              'GALLERY',
+                              'ADD',
                               style: AppTypography.microBold(
                                 color: Color(0xFFD4AF37),
                               ).copyWith(fontSize: 7),
@@ -3872,6 +3869,41 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                         ),
                       ),
                     ),
+                    // 2. ADD FROM IN-APP GENERATIONS
+                    GestureDetector(
+                      onTap: () => _showResultsPicker(session),
+                      child: Container(
+                        width: 60,
+                        margin: EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.softPlatinum.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: AppColors.softPlatinum.withValues(
+                              alpha: 0.2,
+                            ),
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.photo_library_outlined,
+                              color: AppColors.softPlatinum,
+                              size: 18,
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'GALLERY',
+                              style: AppTypography.microBold(
+                                color: AppColors.softPlatinum,
+                              ).copyWith(fontSize: 7),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // 3. ADD FROM SELFIES (IDENTITY LOCK)
                     if (session.identityImages.isNotEmpty)
                       GestureDetector(
                         onTap: () {
@@ -4253,6 +4285,94 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showResultsPicker(SessionProvider session) {
+    if (session.results.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No generated images yet! Try creating some first.'),
+        ),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.softCharcoal,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'PICK SUBJECT FROM RESULTS',
+                style: AppTypography.microBold(color: AppColors.matteGold),
+              ),
+            ),
+            SizedBox(
+              height: 140,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: session.results.length,
+                itemBuilder: (context, idx) {
+                  final result = session.results[idx];
+                  if (result.mediaType != 'image')
+                    return const SizedBox.shrink();
+
+                  return GestureDetector(
+                    onTap: () {
+                      if (result.imageUrl.startsWith('data:')) {
+                        try {
+                          final base64String = result.imageUrl.split(',')[1];
+                          final bytes = base64Decode(base64String);
+                          session.addStitchImage(bytes);
+                          Navigator.pop(context);
+                        } catch (e) {
+                          debugPrint("Error adding result to stitch: $e");
+                        }
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Only local/cached results can be added currently.',
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    child: Container(
+                      width: 100,
+                      margin: const EdgeInsets.only(right: 12),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.softPlatinum.withValues(alpha: 0.1),
+                        ),
+                        image: DecorationImage(
+                          image: result.imageUrl.startsWith('data:')
+                              ? MemoryImage(
+                                  base64Decode(result.imageUrl.split(',')[1]),
+                                )
+                              : NetworkImage(result.imageUrl) as ImageProvider,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }
