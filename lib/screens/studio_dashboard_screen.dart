@@ -7,6 +7,7 @@ import '../services/gemini_service.dart';
 import '../widgets/comparison_slider.dart';
 
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:io';
@@ -70,6 +71,12 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   String _selectedGroupType = ''; // key from stitchGroupPresets
   String _selectedGroupStyle = ''; // selected style variation
   final TextEditingController _stitchPromptController = TextEditingController();
+
+  // Campus Studio State
+  final TextEditingController _zipController = TextEditingController();
+  List<dynamic> _campusResults = [];
+  bool _isSearchingCampus = false;
+  bool _isIdentifyingCampus = false;
 
   // V2 Split View State
   bool _isComparing = false;
@@ -155,6 +162,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     _promptController.dispose();
     _bgPromptController.dispose();
     _stitchPromptController.dispose();
+    _zipController.dispose();
     _brightness.dispose();
     _contrast.dispose();
     _saturation.dispose();
@@ -252,12 +260,23 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         backgroundRef = base64Encode(session.backgroundReferenceBytes!);
       }
 
+      String? campusLogoRef;
+      if (session.hasCampusReference) {
+        campusLogoRef = base64Encode(session.campusReferenceBytes!);
+      }
+
+      if (session.selectedCampus != null) {
+        fullPrompt +=
+            "\nSchool Branding: ${session.selectedCampus!.name}. Official Colors: ${session.selectedCampus!.colors.join(', ')}.";
+      }
+
       final resultText = await service.generatePortrait(
         referenceImagesBase64: identityImagesB64,
         basePrompt: fullPrompt,
         opticProtocol: session.selectedRig!.opticProtocol,
         backgroundImageBase64: backgroundRef,
         clothingReferenceBase64: clothingRef,
+        campusLogoBase64: campusLogoRef,
         skinTexturePrompt: _selectedSkinTexture.prompt,
         preserveAgeAndBody: session.preserveAgeAndBody,
       );
@@ -334,8 +353,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       return;
     }
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
+    final List<XFile> images = await picker.pickMultiImage();
+
+    for (var image in images) {
+      if (session.stitchImages.length >= 5) break;
       final bytes = await image.readAsBytes();
       session.addStitchImage(bytes);
     }
@@ -1930,6 +1951,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   ),
                 ),
                 SizedBox(height: 16),
+                _buildCampusStudio(session),
                 // Text input
                 // Text input
                 TextField(
@@ -3820,7 +3842,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 scrollDirection: Axis.horizontal,
                 padding: EdgeInsets.symmetric(horizontal: 4),
                 children: [
-                  if (session.stitchImages.length < 5)
+                  if (session.stitchImages.length < 5) ...[
                     GestureDetector(
                       onTap: () => _pickStitchImage(session),
                       child: Container(
@@ -3834,18 +3856,124 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.add, color: Color(0xFFD4AF37), size: 20),
+                            Icon(
+                              Icons.photo_library_outlined,
+                              color: Color(0xFFD4AF37),
+                              size: 18,
+                            ),
                             SizedBox(height: 2),
                             Text(
-                              'ADD',
+                              'GALLERY',
                               style: AppTypography.microBold(
                                 color: Color(0xFFD4AF37),
-                              ).copyWith(fontSize: 8),
+                              ).copyWith(fontSize: 7),
                             ),
                           ],
                         ),
                       ),
                     ),
+                    if (session.identityImages.isNotEmpty)
+                      GestureDetector(
+                        onTap: () {
+                          showModalBottomSheet(
+                            context: context,
+                            backgroundColor: AppColors.softCharcoal,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(20),
+                              ),
+                            ),
+                            builder: (context) => SafeArea(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Padding(
+                                    padding: EdgeInsets.all(16),
+                                    child: Text(
+                                      'SELECT SELFIE',
+                                      style: AppTypography.microBold(
+                                        color: AppColors.matteGold,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    height: 120,
+                                    child: ListView.builder(
+                                      scrollDirection: Axis.horizontal,
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                      ),
+                                      itemCount: session.identityImages.length,
+                                      itemBuilder: (context, idx) {
+                                        return GestureDetector(
+                                          onTap: () {
+                                            session.addStitchImage(
+                                              session.identityImages[idx],
+                                            );
+                                            Navigator.pop(context);
+                                          },
+                                          child: Container(
+                                            width: 100,
+                                            margin: EdgeInsets.only(right: 12),
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: AppColors.softPlatinum
+                                                    .withValues(alpha: 0.1),
+                                              ),
+                                              image: DecorationImage(
+                                                image: MemoryImage(
+                                                  session.identityImages[idx],
+                                                ),
+                                                fit: BoxFit.cover,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  SizedBox(height: 24),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          width: 60,
+                          margin: EdgeInsets.only(right: 8),
+                          decoration: BoxDecoration(
+                            color: AppColors.softPlatinum.withValues(
+                              alpha: 0.08,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: AppColors.softPlatinum.withValues(
+                                alpha: 0.2,
+                              ),
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.person_pin_outlined,
+                                color: AppColors.softPlatinum,
+                                size: 18,
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'SELFIES',
+                                style: AppTypography.microBold(
+                                  color: AppColors.softPlatinum,
+                                ).copyWith(fontSize: 7),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
                   ...session.stitchImages.asMap().entries.map((entry) {
                     return Stack(
                       children: [
@@ -4399,6 +4527,268 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         _bgPromptController.text = _customBgPrompt;
       });
     }
+  }
+
+  // === CAMPUS STUDIO METHODS ===
+
+  Future<void> _searchSchools(String zip) async {
+    if (zip.length < 5) return;
+    setState(() => _isSearchingCampus = true);
+    try {
+      final result = await Process.run('python', [
+        'execution/fetch_school_data.py',
+        'list',
+        zip,
+      ]);
+      if (result.exitCode == 0) {
+        setState(() {
+          _campusResults = jsonDecode(result.stdout);
+          _isSearchingCampus = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Search error: $e');
+      setState(() => _isSearchingCampus = false);
+    }
+  }
+
+  Future<void> _identifySchool(String schoolName) async {
+    final session = context.read<SessionProvider>();
+    setState(() => _isIdentifyingCampus = true);
+    try {
+      final result = await Process.run('python', [
+        'execution/fetch_school_data.py',
+        'identity',
+        schoolName,
+      ]);
+      if (result.exitCode == 0) {
+        final data = jsonDecode(result.stdout);
+        session.setCampus(
+          SchoolCampus(
+            name: data['name'],
+            colors: List<String>.from(data['colors']),
+            logoUrl: data['logo_url'],
+          ),
+        );
+
+        // Fetch logo bytes if URL exists
+        if (data['logo_url'] != null) {
+          try {
+            final logoResponse = await http.get(Uri.parse(data['logo_url']));
+            if (logoResponse.statusCode == 200) {
+              session.uploadCampusLogo(logoResponse.bodyBytes);
+            }
+          } catch (_) {}
+        }
+      }
+    } catch (e) {
+      debugPrint('Identity error: $e');
+    } finally {
+      setState(() => _isIdentifyingCampus = false);
+    }
+  }
+
+  Future<void> _pickManualCampusLogo() async {
+    final session = context.read<SessionProvider>();
+    final picker = ImagePicker();
+    final image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      final bytes = await image.readAsBytes();
+      session.uploadCampusLogo(bytes);
+    }
+  }
+
+  Widget _buildCampusStudio(SessionProvider session) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'CAMPUS STUDIO™',
+          style: AppTypography.microBold(color: AppColors.matteGold),
+        ),
+        SizedBox(height: 12),
+        // Zip Entry
+        Container(
+          height: 44,
+          decoration: BoxDecoration(
+            color: AppColors.softPlatinum.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: AppColors.softPlatinum.withValues(alpha: 0.1),
+            ),
+          ),
+          child: Row(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12),
+                child: Icon(
+                  Icons.location_on_outlined,
+                  color: AppColors.mutedGray,
+                  size: 18,
+                ),
+              ),
+              Expanded(
+                child: TextField(
+                  controller: _zipController,
+                  style: AppTypography.body(color: Colors.white),
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    hintText: 'Enter Zip Code',
+                    hintStyle: AppTypography.body(color: AppColors.mutedGray),
+                    border: InputBorder.none,
+                  ),
+                  onChanged: (val) {
+                    if (val.length == 5) _searchSchools(val);
+                  },
+                ),
+              ),
+              if (_isSearchingCampus)
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.matteGold,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        if (_campusResults.isNotEmpty) ...[
+          SizedBox(height: 12),
+          SizedBox(
+            height: 36,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _campusResults.length,
+              itemBuilder: (context, idx) {
+                final school = _campusResults[idx];
+                final isSelected =
+                    session.selectedCampus?.name == school['name'];
+                return GestureDetector(
+                  onTap: () => _identifySchool(school['name']),
+                  child: Container(
+                    margin: EdgeInsets.only(right: 8),
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.matteGold
+                          : AppColors.softPlatinum.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.matteGold
+                            : AppColors.softPlatinum.withValues(alpha: 0.1),
+                      ),
+                    ),
+                    child: Text(
+                      school['name'].toString().toUpperCase(),
+                      style: AppTypography.microBold(
+                        color: isSelected ? Colors.black : Colors.white,
+                      ).copyWith(fontSize: 9),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+        if (session.selectedCampus != null) ...[
+          SizedBox(height: 16),
+          _buildIdentityStatusCard(session),
+        ],
+        SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildIdentityStatusCard(SessionProvider session) {
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.softPlatinum.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.softPlatinum.withValues(alpha: 0.05),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(8),
+              image: session.campusReferenceBytes != null
+                  ? DecorationImage(
+                      image: MemoryImage(session.campusReferenceBytes!),
+                      fit: BoxFit.contain,
+                    )
+                  : null,
+            ),
+            child: session.campusReferenceBytes == null
+                ? Icon(Icons.school_outlined, color: AppColors.mutedGray)
+                : null,
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  session.selectedCampus!.name,
+                  style: AppTypography.microBold(color: Colors.white),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 4),
+                Row(
+                  children: session.selectedCampus!.colors
+                      .map(
+                        (c) => Container(
+                          width: 12,
+                          height: 12,
+                          margin: EdgeInsets.only(right: 4),
+                          decoration: BoxDecoration(
+                            color: Color(
+                              int.parse(c.replaceFirst('#', '0xFF')),
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ],
+            ),
+          ),
+          if (_isIdentifyingCampus)
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.matteGold,
+              ),
+            )
+          else
+            TextButton(
+              onPressed: _pickManualCampusLogo,
+              child: Text(
+                'REFINE',
+                style: AppTypography.microBold(
+                  color: AppColors.matteGold,
+                ).copyWith(fontSize: 9),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   Future<void> _generateCinematicVideo(

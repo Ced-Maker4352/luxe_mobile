@@ -36,6 +36,10 @@ class SessionProvider extends ChangeNotifier {
   Uint8List? _clothingReferenceBytes;
   String? _clothingReferenceName;
 
+  // === CAMPUS STUDIO STATE ===
+  SchoolCampus? _selectedCampus;
+  Uint8List? _campusReferenceBytes;
+
   // === CUSTOM BACKGROUND STATE ===
   Uint8List? _backgroundReferenceBytes;
   String? _backgroundReferenceName;
@@ -44,6 +48,9 @@ class SessionProvider extends ChangeNotifier {
   UserProfile? _userProfile;
 
   // === GETTERS ===
+  SchoolCampus? get selectedCampus => _selectedCampus;
+  Uint8List? get campusReferenceBytes => _campusReferenceBytes;
+  bool get hasCampusReference => _campusReferenceBytes != null;
   PackageDetails? get selectedPackage => _selectedPackage;
   CameraRig? get selectedRig => _selectedRig;
   StyleOption? get selectedStyle => _selectedStyle;
@@ -225,6 +232,23 @@ class SessionProvider extends ChangeNotifier {
   void clearBackgroundReference() {
     _backgroundReferenceBytes = null;
     _backgroundReferenceName = null;
+    notifyListeners();
+  }
+
+  // === CAMPUS STUDIO METHODS ===
+  void setCampus(SchoolCampus campus) {
+    _selectedCampus = campus;
+    notifyListeners();
+  }
+
+  void uploadCampusLogo(Uint8List bytes) {
+    _campusReferenceBytes = bytes;
+    notifyListeners();
+  }
+
+  void clearCampus() {
+    _selectedCampus = null;
+    _campusReferenceBytes = null;
     notifyListeners();
   }
 

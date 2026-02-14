@@ -476,12 +476,20 @@ const Map<String, dynamic> promptCategories = {
       'Ethereal nature vibe',
     ],
   },
-  'Your School': {
-    'Jackets': [
-      'Vintage Varsity Bomber',
-      'Classic Letterman',
-      'Modern Athletics Zip',
-      'Heavyweight Heritage Sweatshirt',
+  'Campus Studio™': {
+    'Varsity & Campus Casual': [
+      'Vintage Varsity Bomber with school colors',
+      'Premium Letterman Jacket, felt and leather',
+      'Modern Athletics Quarter-Zip with school logo',
+      'Heavyweight Heritage Hoodie, school colors',
+      'Classic Campus Crewneck, relaxed fit',
+    ],
+    'The Graduation Edit': [
+      'Traditional Cap & Gown in official school colors',
+      'Honors Graduate Portrait with stole and tassels',
+      'Elegant Alumni Portrait, school logo backdrop',
+      'Candid Campus Celebration, tossing the cap',
+      'Valedictorian Formal Portrait, classic library',
     ],
   },
 };

@@ -192,3 +192,11 @@ class StitchSubject {
 
   StitchSubject({required this.bytes, this.gender = 'female'});
 }
+
+class SchoolCampus {
+  final String name;
+  final List<String> colors;
+  final String? logoUrl;
+
+  SchoolCampus({required this.name, required this.colors, this.logoUrl});
+}

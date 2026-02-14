@@ -274,6 +274,7 @@ User Idea: "$draftPrompt"''',
     required String opticProtocol,
     String? backgroundImageBase64,
     String? clothingReferenceBase64,
+    String? campusLogoBase64,
     String? skinTexturePrompt,
     bool preserveAgeAndBody = true,
   }) async {
@@ -287,6 +288,12 @@ User Idea: "$draftPrompt"''',
     if (clothingReferenceBase64 != null) {
       promptBuffer.writeln(
         "VIRTUAL TRY-ON: Match the garment shown in the clothing reference image exactly.",
+      );
+    }
+
+    if (campusLogoBase64 != null) {
+      promptBuffer.writeln(
+        "CAMPUS IDENTITY: Strictly use the official colors and logo/crest from the provided school reference image. Apply the branding accurately to the wardrobe (varsity jacket, hood, cap, or gown).",
       );
     }
 
@@ -363,6 +370,13 @@ User Idea: "$draftPrompt"''',
 
     if (backgroundImageBase64 != null) {
       parts.add(_getDataPart(backgroundImageBase64));
+    }
+
+    if (campusLogoBase64 != null) {
+      parts.add(_getDataPart(campusLogoBase64));
+      parts.add({
+        'text': 'SCHOOL LOGO & BRANDING REFERENCE — Copy this logo accurately.',
+      });
     }
 
     parts.add({'text': promptBuffer.toString()});
