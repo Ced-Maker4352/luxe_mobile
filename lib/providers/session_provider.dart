@@ -274,6 +274,7 @@ class SessionProvider extends ChangeNotifier {
 
     // Robust checking for tier levels
     final isProOrAbove =
+        tier.contains('creator') || // Added Creator Pack ($29)
         tier.contains('pro') ||
         tier.contains('unlimited') ||
         tier.contains('agency') ||
@@ -290,7 +291,6 @@ class SessionProvider extends ChangeNotifier {
 
     switch (feature) {
       case 'video':
-        return isProOrAbove;
       case 'stitch':
         return isProOrAbove;
       case 'retouch':
