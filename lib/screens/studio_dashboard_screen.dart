@@ -5,6 +5,8 @@ import '../models/types.dart';
 import '../shared/constants.dart';
 import '../services/gemini_service.dart';
 import '../widgets/comparison_slider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/stripe_service.dart';
 
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
@@ -5046,11 +5048,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     final tier = session.userProfile?.subscriptionTier?.toLowerCase() ?? '';
 
     // Calculate differential price
-    String upgradePrice = "$29";
+    String upgradePrice = "\$29";
     bool isSocialQuick = tier.contains('socialquick');
 
     if (isSocialQuick) {
-      upgradePrice = "$24"; // $29 - $5
+      upgradePrice = "\$24"; // $29 - $5
     }
 
     showDialog(
@@ -5062,21 +5064,21 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           children: [
             Icon(Icons.lock_open, color: AppColors.matteGold, size: 40),
             SizedBox(height: 12),
-          Text(
-            'Unlock $feature',
-            style: AppTypography.h3Display(color: AppColors.matteGold),
+            Text(
+              'Unlock $feature',
+              style: AppTypography.h3Display(color: AppColors.matteGold),
               textAlign: TextAlign.center,
-          ),
+            ),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-          Text(
+            Text(
               'Upgrade to the Creator Pack to unlock Stitch, Cinematic Video, and 30 high-res photos.',
-            style: AppTypography.bodyRegular(),
+              style: AppTypography.bodyRegular(),
               textAlign: TextAlign.center,
-          ),
+            ),
             if (isSocialQuick) ...[
               SizedBox(height: 16),
               Container(
@@ -5084,16 +5086,24 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 decoration: BoxDecoration(
                   color: AppColors.matteGold.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.matteGold.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: AppColors.matteGold.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.celebration, color: AppColors.matteGold, size: 20),
+                    Icon(
+                      Icons.celebration,
+                      color: AppColors.matteGold,
+                      size: 20,
+                    ),
                     SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         'Loyalty Credit Applied: Pay only the difference!',
-                        style: AppTypography.microBold(color: AppColors.matteGold),
+                        style: AppTypography.microBold(
+                          color: AppColors.matteGold,
+                        ),
                       ),
                     ),
                   ],
@@ -5106,14 +5116,21 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         actions: [
           Row(
             children: [
-          Expanded(
+              Expanded(
                 child: TextButton(
-            onPressed: () => Navigator.pop(context),
-                  child: Text('NOT NOW', style: TextStyle(color: AppColors.coolGray, letterSpacing: 1.5, fontSize: 12)),
-          ),
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'NOT NOW',
+                    style: TextStyle(
+                      color: AppColors.coolGray,
+                      letterSpacing: 1.5,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
               ),
               SizedBox(width: 8),
-          Expanded(
+              Expanded(
                 child: PremiumButton(
                   onPressed: _handleQuickUpgrade,
                   backgroundColor: AppColors.matteGold,
