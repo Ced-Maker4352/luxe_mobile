@@ -4630,11 +4630,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               Expanded(
                 child: TextField(
                   controller: _zipController,
-                  style: AppTypography.body(color: Colors.white),
+                  style: AppTypography.bodyRegular(color: Colors.white),
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     hintText: 'Enter Zip Code',
-                    hintStyle: AppTypography.body(color: AppColors.mutedGray),
+                    hintStyle: AppTypography.bodyRegular(
+                      color: AppColors.mutedGray,
+                    ),
                     border: InputBorder.none,
                   ),
                   onChanged: (val) {
