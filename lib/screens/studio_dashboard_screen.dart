@@ -1526,23 +1526,6 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     );
   }
 
-  Widget _buildShareOption(IconData icon, String label, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: AppColors.matteGold, size: 28),
-          SizedBox(height: 8),
-          Text(
-            label,
-            style: AppTypography.microBold(color: AppColors.softPlatinum),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildProfileDrawer() {
     final session = context.watch<SessionProvider>();
     final profile = session.userProfile;
