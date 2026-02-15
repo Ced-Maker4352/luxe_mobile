@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/session_provider.dart';
 import '../models/types.dart';
@@ -88,6 +89,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       'main'; // 'main', 'camera', 'backdrop', 'prompt', 'style', 'retouch', 'stitch', 'print', 'download', 'share'
   GenerationResult? _focusedResult;
   Uint8List? _decodedImageBytes;
+  final ValueNotifier<bool> _isSaving = ValueNotifier<bool>(false);
 
   Future<void> _decodeFocusedImage() async {
     if (_focusedResult == null) return;
@@ -477,18 +479,22 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   }
 
   Future<void> _saveToGallery() async {
-    final session = context.read<SessionProvider>();
-    if (session.results.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('No image to download.')));
-      return;
-    }
-
-    final imageUrl = session.results.first.imageUrl;
-    Uint8List? bytes;
-
+    if (_isSaving.value) return;
+    _isSaving.value = true;
     try {
+      final session = context.read<SessionProvider>();
+      if (session.results.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No image to download.')),
+          );
+        }
+        return;
+      }
+
+      final imageUrl = session.results.first.imageUrl;
+      Uint8List? bytes;
+
       if (imageUrl.startsWith('data:')) {
         final base64String = imageUrl.split(',').last;
         bytes = base64Decode(base64String);
@@ -497,19 +503,18 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       if (bytes == null) return;
 
       if (kIsWeb) {
-        // Web Download implementation
         WebHelper.downloadImage(
           bytes,
           "luxe_portrait_${DateTime.now().millisecondsSinceEpoch}.png",
         );
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Download started')));
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Download started')));
+        }
       } else {
-        // Mobile Implementation with Permission Check
         bool hasPermission = false;
         if (Platform.isAndroid) {
-          // For Android 13+ (API 33+), we might need photos permission
           hasPermission =
               await Permission.photos.request().isGranted ||
               await Permission.storage.request().isGranted;
@@ -544,22 +549,28 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           context,
         ).showSnackBar(SnackBar(content: Text('Failed to save: $errorMsg')));
       }
+    } finally {
+      _isSaving.value = false;
     }
   }
 
   Future<void> _shareImage() async {
-    final session = context.read<SessionProvider>();
-    if (session.results.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('No image to share.')));
-      return;
-    }
-
-    final imageUrl = session.results.first.imageUrl;
-    Uint8List? bytes;
-
+    if (_isSaving.value) return;
+    _isSaving.value = true;
     try {
+      final session = context.read<SessionProvider>();
+      if (session.results.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('No image to share.')));
+        }
+        return;
+      }
+
+      final imageUrl = session.results.first.imageUrl;
+      Uint8List? bytes;
+
       if (imageUrl.startsWith('data:')) {
         final base64String = imageUrl.split(',').last;
         bytes = base64Decode(base64String);
@@ -581,6 +592,37 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           context,
         ).showSnackBar(SnackBar(content: Text('Failed to share: $e')));
       }
+    } finally {
+      _isSaving.value = false;
+    }
+  }
+
+  Future<void> _copyLink() async {
+    if (_isSaving.value) return;
+    _isSaving.value = true;
+    try {
+      final session = context.read<SessionProvider>();
+      if (session.results.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('No link to copy.')));
+        }
+        return;
+      }
+
+      final imageUrl = session.results.first.imageUrl;
+      await Clipboard.setData(ClipboardData(text: imageUrl));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Link copied to clipboard!')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Copy error: $e');
+    } finally {
+      _isSaving.value = false;
     }
   }
 
@@ -3012,7 +3054,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     }
                     return true;
                   })
-                  .take(_selectedWardrobeCategory == 'Your School' ? 12 : 100)
+                  .take(_selectedWardrobeCategory == 'Your School' ? 100 : 100)
                   .map((item) {
                     final isActive = _selectedClothingStyle == item;
                     return GestureDetector(
@@ -4525,31 +4567,51 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     String subtitle,
     VoidCallback onTap,
   ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        decoration: BoxDecoration(
-          color: Color(0xFF1A1A1A),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.matteGold.withValues(alpha: 0.3)),
-        ),
-        child: Column(
-          children: [
-            Text(
-              label,
-              style: AppTypography.microBold(color: Color(0xFFD4AF37)),
+    return ValueListenableBuilder<bool>(
+      valueListenable: _isSaving,
+      builder: (context, isSaving, _) {
+        return GestureDetector(
+          onTap: isSaving ? null : onTap,
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            decoration: BoxDecoration(
+              color: Color(0xFF1A1A1A),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.matteGold.withValues(alpha: 0.3),
+              ),
             ),
-            SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: AppTypography.micro(
-                color: AppColors.mutedGray,
-              ).copyWith(fontSize: 9),
-            ),
-          ],
-        ),
-      ),
+            child: isSaving
+                ? Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.matteGold,
+                      ),
+                    ),
+                  )
+                : Column(
+                    children: [
+                      Text(
+                        label,
+                        style: AppTypography.microBold(
+                          color: Color(0xFFD4AF37),
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: AppTypography.micro(
+                          color: AppColors.mutedGray,
+                        ).copyWith(fontSize: 9),
+                      ),
+                    ],
+                  ),
+          ),
+        );
+      },
     );
   }
 
@@ -4572,7 +4634,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildShareOption(Icons.link, 'COPY LINK', _shareImage),
+                _buildShareOption(Icons.link, 'COPY LINK', _copyLink),
                 SizedBox(width: 16),
                 _buildShareOption(Icons.camera_alt, 'INSTAGRAM', _shareImage),
                 SizedBox(width: 16),
@@ -4816,18 +4878,17 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   },
                 ),
               ),
-              if (_isSearchingCampus)
-                Padding(
+              GestureDetector(
+                onTap: () => _searchSchools(_zipController.text),
+                child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.matteGold,
-                    ),
+                  child: Icon(
+                    Icons.search,
+                    color: AppColors.matteGold,
+                    size: 20,
                   ),
                 ),
+              ),
             ],
           ),
         ),

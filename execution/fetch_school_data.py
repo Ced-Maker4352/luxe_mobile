@@ -65,7 +65,7 @@ def search_schools_by_zip(zip_code):
                     "zip": zip_code
                 })
 
-        return schools[:12] # Return up to 12 results
+        return schools[:100] # Return up to 100 results
     except Exception as e:
         return []
 
