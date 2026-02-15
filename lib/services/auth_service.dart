@@ -178,20 +178,25 @@ class AuthService {
       if (current > 0) {
         // 2. Decrement
         // Check which column to update based on what exists in the profile
-        String updateKey = key;
-        if (!data.containsKey(key)) {
-          if (data.containsKey('generations_remaining')) {
-            updateKey = 'generations_remaining';
-          } else {
-            debugPrint('Warning: No valid credit column found to update.');
-            return;
-          }
+        String? updateKey;
+        if (data.containsKey(key)) {
+          updateKey = key;
+        } else if (data.containsKey('generations_remaining')) {
+          updateKey = 'generations_remaining';
+        } else if (data.containsKey('photo_generations')) {
+          updateKey = 'photo_generations';
+        } else if (data.containsKey('video_generations')) {
+          updateKey = 'video_generations';
         }
 
-        await _supabase
-            .from('profiles')
-            .update({updateKey: current - 1})
-            .eq('id', user.id);
+        if (updateKey != null) {
+          await _supabase
+              .from('profiles')
+              .update({updateKey: current - 1})
+              .eq('id', user.id);
+        } else {
+          debugPrint('Warning: No valid credit column found to update.');
+        }
       }
     } catch (e) {
       debugPrint('Error decrementing credit: $e');

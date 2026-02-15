@@ -5,6 +5,7 @@ import '../providers/session_provider.dart';
 import '../models/types.dart';
 import '../shared/constants.dart';
 import '../services/gemini_service.dart';
+import '../services/campus_service.dart';
 import '../widgets/comparison_slider.dart';
 import '../widgets/app_drawer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -5011,27 +5012,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     if (zip.length < 5) return;
     setState(() => _isSearchingCampus = true);
     try {
-      final result = await Process.run('python', [
-        'execution/fetch_school_data.py',
-        'list',
-        zip,
-      ]);
-      if (result.exitCode == 0) {
-        setState(() {
-          // Clean up stdout in case of leading/trailing warnings/noise
-          final raw = result.stdout.toString().trim();
-          final bodyStart = raw.indexOf('[');
-          final bodyEnd = raw.lastIndexOf(']');
-
-          if (bodyStart != -1 && bodyEnd != -1 && bodyEnd > bodyStart) {
-            final jsonBody = raw.substring(bodyStart, bodyEnd + 1);
-            _campusResults = jsonDecode(jsonBody);
-          } else {
-            _campusResults = jsonDecode(raw);
-          }
-          _isSearchingCampus = false;
-        });
-      }
+      final results = await CampusService().searchSchoolsByZip(zip);
+      setState(() {
+        _campusResults = results;
+        _isSearchingCampus = false;
+      });
     } catch (e) {
       debugPrint('Search error: $e');
       setState(() => _isSearchingCampus = false);
@@ -5042,34 +5027,27 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     final session = context.read<SessionProvider>();
     setState(() => _isIdentifyingCampus = true);
     try {
-      final result = await Process.run('python', [
-        'execution/fetch_school_data.py',
-        'identity',
-        schoolName,
-      ]);
-      if (result.exitCode == 0) {
-        final data = jsonDecode(result.stdout);
-        session.setCampus(
-          SchoolCampus(
-            name: data['name'],
-            colors: List<String>.from(data['colors']),
-            logoUrl: data['logo_url'],
-          ),
-        );
+      final identity = await CampusService().discoverSchoolIdentity(schoolName);
+      session.setCampus(
+        SchoolCampus(
+          name: identity['name'],
+          colors: List<String>.from(identity['colors']),
+          logoUrl: identity['logo_url'],
+        ),
+      );
 
-        // Fetch logo bytes if URL exists
-        if (data['logo_url'] != null) {
-          try {
-            final logoResponse = await http.get(Uri.parse(data['logo_url']));
-            if (logoResponse.statusCode == 200) {
-              session.uploadCampusLogo(logoResponse.bodyBytes);
-            }
-          } catch (_) {}
-        }
+      // Fetch logo bytes if URL exists
+      if (identity['logo_url'] != null) {
+        try {
+          final logoResponse = await http.get(Uri.parse(identity['logo_url']));
+          if (logoResponse.statusCode == 200) {
+            session.uploadCampusLogo(logoResponse.bodyBytes);
+          }
+        } catch (_) {}
       }
+      setState(() => _isIdentifyingCampus = false);
     } catch (e) {
       debugPrint('Identity error: $e');
-    } finally {
       setState(() => _isIdentifyingCampus = false);
     }
   }

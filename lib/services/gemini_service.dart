@@ -393,11 +393,7 @@ User Idea: "$draftPrompt"''',
 
     parts.add({'text': promptBuffer.toString()});
 
-    final models = [
-      'gemini-2.0-flash-exp',
-      'gemini-1.5-pro-latest',
-      'gemini-1.5-flash-latest',
-    ];
+    final models = ['gemini-1.5-pro', 'gemini-1.5-flash'];
 
     final result = await _callGeminiWithFallback(models, parts);
 
@@ -493,7 +489,7 @@ Output: Photorealistic image.""";
     parts.add(_getDataPart(identityImageBase64));
     parts.add({'text': prompt});
 
-    final models = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
+    final models = ['gemini-1.5-pro', 'gemini-1.5-flash'];
 
     final result = await _callGeminiWithFallback(models, parts);
     if (result.isNotEmpty) return result;
@@ -523,7 +519,7 @@ DETAILS:
     parts.add(_getDataPart(identityImageBase64));
     parts.add({'text': prompt});
 
-    final models = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
+    final models = ['gemini-1.5-pro', 'gemini-1.5-flash'];
 
     return _callGeminiWithFallback(models, parts);
   }
@@ -550,7 +546,7 @@ DETAILS:
     parts.add(_getDataPart(identityImageBase64));
     parts.add({'text': prompt});
 
-    final models = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
+    final models = ['gemini-1.5-pro', 'gemini-1.5-flash'];
 
     return _callGeminiWithFallback(models, parts);
   }
@@ -690,7 +686,7 @@ DETAILS:
 
     parts.add({'text': promptBuffer.toString()});
 
-    final models = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
+    final models = ['gemini-2.0-flash-exp', 'gemini-1.5-flash'];
 
     return _callGeminiWithFallback(models, parts);
   }
@@ -705,11 +701,7 @@ DETAILS:
   ) async {
     if (_apiKey.isEmpty) return 'Error: API Key missing';
 
-    final models = [
-      'gemini-1.5-flash-latest',
-      'gemini-1.5-pro-latest',
-      'gemini-2.0-flash-exp',
-    ];
+    final models = ['gemini-1.5-flash', 'gemini-1.5-pro'];
 
     for (final model in models) {
       final url = Uri.parse('$_baseUrl/$model:generateContent?key=$_apiKey');
@@ -829,7 +821,7 @@ DETAILS:
     final parts = [
       {'text': logoPrompt},
     ];
-    final models = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
+    final models = ['gemini-1.5-pro', 'gemini-1.5-flash'];
 
     return _callGeminiWithFallback(models, parts);
   }
@@ -844,7 +836,7 @@ DETAILS:
     parts.add(_getDataPart(imageBase64));
     parts.add({'text': prompt});
 
-    final models = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
+    final models = ['gemini-1.5-pro', 'gemini-1.5-flash'];
     return _callGeminiWithFallback(models, parts);
   }
 }
