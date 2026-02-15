@@ -393,13 +393,8 @@ User Idea: "$draftPrompt"''',
 
     parts.add({'text': promptBuffer.toString()});
 
-    final models = [
-      'gemini-2.0-flash-exp',
-      'gemini-1.5-pro-002',
-      'gemini-1.5-flash-002',
-      'gemini-1.5-pro',
-      'gemini-1.5-flash',
-    ];
+    // On v1alpha, we must use experimental models for image generation features
+    final models = ['gemini-2.0-flash-exp', 'gemini-2.0-pro-exp'];
 
     final result = await _callGeminiWithFallback(models, parts);
 
@@ -709,10 +704,7 @@ DETAILS:
 
     final models = [
       'gemini-2.0-flash-exp',
-      'gemini-1.5-flash-002',
-      'gemini-1.5-pro-002',
-      'gemini-1.5-flash',
-      'gemini-1.5-pro',
+      'gemini-1.5-pro-exp-0827', // Known working video model on exp
     ];
 
     for (final model in models) {
