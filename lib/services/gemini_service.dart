@@ -265,7 +265,7 @@ User Idea: "$draftPrompt"''',
         ],
       },
     ];
-    return _generateTextContent('gemini-2.0-flash-exp', contents);
+    return _generateTextContent('gemini-3-pro-preview', contents);
   }
 
   Future<String> generatePortrait({
@@ -393,8 +393,8 @@ User Idea: "$draftPrompt"''',
 
     parts.add({'text': promptBuffer.toString()});
 
-    // Reverting to stable models for v1beta
-    final models = ['gemini-1.5-pro', 'gemini-1.5-flash'];
+    // Updated to match user's available models
+    final models = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
 
     final result = await _callGeminiWithFallback(models, parts);
 
@@ -403,7 +403,7 @@ User Idea: "$draftPrompt"''',
     // Last resort fallback to Imagen (using known stable model name)
     // Imagen typically supports single reference image
     return _generateImageWithImagen(
-      'imagen-3.0-generate-001',
+      'imagen-4.0-generate-001',
       promptBuffer.toString(),
       referenceImageBase64: referenceImagesBase64.isNotEmpty
           ? referenceImagesBase64.first
@@ -490,7 +490,7 @@ Output: Photorealistic image.""";
     parts.add(_getDataPart(identityImageBase64));
     parts.add({'text': prompt});
 
-    final models = ['gemini-1.5-pro', 'gemini-1.5-flash'];
+    final models = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
 
     final result = await _callGeminiWithFallback(models, parts);
     if (result.isNotEmpty) return result;
@@ -520,7 +520,7 @@ DETAILS:
     parts.add(_getDataPart(identityImageBase64));
     parts.add({'text': prompt});
 
-    final models = ['gemini-1.5-pro', 'gemini-1.5-flash'];
+    final models = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
 
     return _callGeminiWithFallback(models, parts);
   }
@@ -547,7 +547,7 @@ DETAILS:
     parts.add(_getDataPart(identityImageBase64));
     parts.add({'text': prompt});
 
-    final models = ['gemini-1.5-pro', 'gemini-1.5-flash'];
+    final models = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
 
     return _callGeminiWithFallback(models, parts);
   }
@@ -687,7 +687,7 @@ DETAILS:
 
     parts.add({'text': promptBuffer.toString()});
 
-    final models = ['gemini-2.0-flash-exp', 'gemini-1.5-flash'];
+    final models = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
 
     return _callGeminiWithFallback(models, parts);
   }
@@ -702,7 +702,7 @@ DETAILS:
   ) async {
     if (_apiKey.isEmpty) return 'Error: API Key missing';
 
-    final models = ['gemini-1.5-flash', 'gemini-1.5-pro'];
+    final models = ['veo-2.0-generate-001', 'gemini-2.5-flash'];
 
     for (final model in models) {
       final url = Uri.parse('$_baseUrl/$model:generateContent?key=$_apiKey');
@@ -782,7 +782,7 @@ DETAILS:
     parts.add(_getDataPart(imageBase64));
     parts.add({'text': prompt});
 
-    final models = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+    final models = ['gemini-2.5-flash', 'gemini-3-pro-preview'];
 
     for (final model in models) {
       final txt = await _generateTextContent(model, [
