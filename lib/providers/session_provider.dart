@@ -310,6 +310,6 @@ class SessionProvider extends ChangeNotifier {
     await AuthService().decrementUserCredit(type);
 
     // Refresh local state to match server
-    fetchUserProfile();
+    await fetchUserProfile();
   }
 }

@@ -140,18 +140,38 @@ class AuthService {
       final key = type == 'video' ? 'video_generations' : 'photo_generations';
 
       // Inference logic for credits if columns are missing
-      int current = data[key] ?? data['generations_remaining'] ?? 0;
+      int current = data[key] ?? 0;
+
+      // Handle legacy 'generations_remaining' only for images
+      if (type == 'image' &&
+          data[key] == null &&
+          data.containsKey('generations_remaining')) {
+        current = data['generations_remaining'] ?? 0;
+      }
+
+      // Tier-based defaults if DB is completely empty/missing columns
       if (current == 0 && data[key] == null) {
         final tier = data['subscription_tier'] as String?;
         if (tier != null) {
-          if (tier.contains('creatorPack'))
-            current = 30;
-          else if (tier.contains('professionalShoot'))
-            current = 80;
-          else if (tier.contains('agencyMaster'))
-            current = 200;
-          else if (tier.contains('socialQuick'))
-            current = 5;
+          if (type == 'image') {
+            if (tier.contains('creatorPack'))
+              current = 30;
+            else if (tier.contains('professionalShoot'))
+              current = 80;
+            else if (tier.contains('agencyMaster'))
+              current = 200;
+            else if (tier.contains('socialQuick'))
+              current = 5;
+          } else if (type == 'video') {
+            if (tier.contains('agency') || tier.contains('sub_monthly_99'))
+              current = 50;
+            else if (tier.contains('pro') ||
+                tier.contains('professional') ||
+                tier.contains('sub_monthly_49'))
+              current = 10;
+            else if (tier.contains('creator'))
+              current = 5;
+          }
         }
       }
 

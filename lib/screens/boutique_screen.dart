@@ -350,18 +350,20 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                           Positioned(
                             top: 40, // Approximate StatusBar height + padding
                             left: 20,
-                            child: GestureDetector(
-                              onTap: () => Scaffold.of(context).openDrawer(),
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.3),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.menu,
-                                  color: Colors.white,
-                                  size: 24,
+                            child: Builder(
+                              builder: (context) => GestureDetector(
+                                onTap: () => Scaffold.of(context).openDrawer(),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.3),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.menu,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
                                 ),
                               ),
                             ),

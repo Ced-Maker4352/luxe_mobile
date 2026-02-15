@@ -320,7 +320,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       debugPrint('Studio: API Response length: ${resultText.length}');
 
       // Decrement credits
-      session.decrementCredit('image');
+      await session.decrementCredit('image');
     } catch (e) {
       debugPrint("Generation failed: $e");
       if (mounted) {
@@ -482,6 +482,14 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   Future<void> _saveToGallery() async {
     if (_isSaving.value) return;
     _isSaving.value = true;
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Initiating high-quality download...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
     try {
       final session = context.read<SessionProvider>();
       if (session.results.isEmpty) {
@@ -825,6 +833,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       sg * c,
       (sb + s) * c,
       0,
+      0,
       bOffset + cOffset,
       0,
       0,
@@ -984,11 +993,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          GestureDetector(
-            onTap: () {
-              Scaffold.of(context).openDrawer();
-            },
-            child: Icon(Icons.menu, color: AppColors.coolGray, size: 24),
+          Builder(
+            builder: (context) => GestureDetector(
+              onTap: () {
+                Scaffold.of(context).openDrawer();
+              },
+              child: Icon(Icons.menu, color: AppColors.coolGray, size: 24),
+            ),
           ),
           Text(
             'STUDIO',

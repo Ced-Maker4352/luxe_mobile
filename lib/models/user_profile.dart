@@ -36,6 +36,8 @@ class UserProfile {
           tier.contains('professional') ||
           tier.contains('sub_monthly_49')) {
         defaultVideos = 10;
+      } else if (tier.contains('creator')) {
+        defaultVideos = 5;
       }
     }
 
