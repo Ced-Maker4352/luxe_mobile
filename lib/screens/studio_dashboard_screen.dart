@@ -9,6 +9,7 @@ import '../widgets/comparison_slider.dart';
 import '../widgets/app_drawer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/stripe_service.dart';
+import '../services/auth_service.dart';
 
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
@@ -734,23 +735,37 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           right: 16,
           child: Row(
             children: [
-              // Compare Toggle
+              // BEFORE/AFTER Toggle
               if (session.hasUploadedImage)
                 Padding(
                   padding: EdgeInsets.only(right: 12),
-                  child: FloatingActionButton.small(
-                    heroTag: 'compare_btn',
-                    backgroundColor: _isComparing
-                        ? AppColors.matteGold
-                        : Colors.black54,
-                    child: Icon(
-                      Icons.compare,
-                      color: _isComparing
-                          ? Colors.black
-                          : AppColors.softPlatinum,
+                  child: GestureDetector(
+                    onTap: () => setState(() => _isComparing = !_isComparing),
+                    child: Container(
+                      height: 40,
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: _isComparing
+                            ? AppColors.matteGold
+                            : Colors.black54,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: _isComparing
+                              ? AppColors.matteGold
+                              : AppColors.softPlatinum.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'BEFORE/AFTER',
+                          style: AppTypography.microBold(
+                            color: _isComparing
+                                ? Colors.black
+                                : AppColors.softPlatinum,
+                          ),
+                        ),
+                      ),
                     ),
-                    onPressed: () =>
-                        setState(() => _isComparing = !_isComparing),
                   ),
                 ),
 
@@ -1033,6 +1048,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         return _buildDrawerWithHeader('DOWNLOAD', _buildDownloadDrawer());
       case 'share':
         return _buildDrawerWithHeader('SHARE', _buildShareDrawer());
+      case 'profile':
+        return _buildDrawerWithHeader('YOUR PROFILE', _buildProfileDrawer());
       default:
         return _buildMainToolbar();
     }
@@ -1164,8 +1181,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     if (items.isEmpty) return SizedBox.shrink();
 
     return Container(
-      height: 44,
-      margin: EdgeInsets.only(bottom: 8),
+      height: 34, // Reduced from 44
+      margin: EdgeInsets.only(bottom: 12, top: 4),
       child: ListView.separated(
         padding: EdgeInsets.symmetric(horizontal: 16),
         scrollDirection: Axis.horizontal,
@@ -1186,27 +1203,32 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: AppColors.softPlatinum.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(20),
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color:
-                highlightColor ??
+                highlightColor?.withValues(alpha: 0.5) ??
                 (isActive
-                    ? AppColors.matteGold.withValues(alpha: 0.5)
-                    : Colors.transparent),
+                    ? AppColors.matteGold.withValues(alpha: 0.3)
+                    : AppColors.softPlatinum.withValues(alpha: 0.1)),
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 14, color: highlightColor ?? AppColors.matteGold),
-            SizedBox(width: 6),
+            Icon(
+              icon,
+              size: 12,
+              color:
+                  highlightColor ?? AppColors.matteGold.withValues(alpha: 0.8),
+            ),
+            SizedBox(width: 4),
             Text(
               label,
               style: AppTypography.microBold(
-                color: highlightColor ?? AppColors.softPlatinum,
+                color: highlightColor ?? AppColors.coolGray,
               ),
             ),
           ],
@@ -1500,6 +1522,214 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           SizedBox(height: 4),
           Text(label, style: AppTypography.micro(color: AppColors.mutedGray)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildShareOption(IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: AppColors.matteGold, size: 28),
+          SizedBox(height: 8),
+          Text(
+            label,
+            style: AppTypography.microBold(color: AppColors.softPlatinum),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileDrawer() {
+    final session = context.watch<SessionProvider>();
+    final profile = session.userProfile;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Account Header
+          Row(
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: AppColors.matteGold.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.matteGold.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Icon(Icons.person, color: AppColors.matteGold, size: 30),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'CREDITS & ACCOUNT',
+                      style: AppTypography.microBold(
+                        color: AppColors.matteGold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      profile?.id ?? 'User ID',
+                      style: AppTypography.smallSemiBold(
+                        color: AppColors.softPlatinum,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+
+          // Subscription Status
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.deepSpace.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.softPlatinum.withValues(alpha: 0.1),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'CURRENT TIER',
+                      style: AppTypography.microBold(
+                        color: AppColors.mutedGray,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      profile?.subscriptionTier?.toUpperCase() ?? 'STARTER',
+                      style: AppTypography.bodyMedium(
+                        color: AppColors.matteGold,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(
+                  width: 100,
+                  height: 36,
+                  child: PremiumButton(
+                    onPressed: () => _showUpgradeDialog('PRO'),
+                    backgroundColor: AppColors.matteGold.withValues(alpha: 0.1),
+                    foregroundColor: AppColors.matteGold,
+                    borderRadius: 8,
+                    verticalPadding: 0,
+                    child: Text(
+                      'UPGRADE',
+                      style: AppTypography.microBold(
+                        color: AppColors.matteGold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Stats
+          Row(
+            children: [
+              _buildStatCard(
+                icon: Icons.photo_library_outlined,
+                label: 'PHOTOS',
+                value: '${profile?.photoGenerations ?? 0}',
+                subtitle: 'REMAINING',
+              ),
+              const SizedBox(width: 16),
+              _buildStatCard(
+                icon: Icons.video_library_outlined,
+                label: 'VIDEOS',
+                value: '${profile?.videoGenerations ?? 0}',
+                subtitle: 'REMAINING',
+              ),
+            ],
+          ),
+          const SizedBox(height: 40),
+
+          // Sign Out
+          PremiumButton(
+            onPressed: () async {
+              await AuthService().signOut();
+              if (mounted) {
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil('/login', (route) => false);
+              }
+            },
+            backgroundColor: Colors.transparent,
+            foregroundColor: Colors.redAccent,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.logout, size: 18, color: Colors.redAccent),
+                const SizedBox(width: 8),
+                Text(
+                  'SIGN OUT',
+                  style: AppTypography.button(color: Colors.redAccent),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required String subtitle,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.softPlatinum.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppColors.softPlatinum.withValues(alpha: 0.1),
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: AppColors.matteGold, size: 24),
+            const SizedBox(height: 12),
+            Text(
+              label,
+              style: AppTypography.microBold(color: AppColors.mutedGray),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: AppTypography.h3Display(color: AppColors.softPlatinum),
+            ),
+            Text(
+              subtitle,
+              style: AppTypography.micro(color: AppColors.mutedGray),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -4697,11 +4927,16 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           _buildNavIcon(Icons.shopping_bag_outlined, 'BOUTIQUE', false, () {
             Navigator.pushNamed(context, '/boutique');
           }),
-          _buildNavIcon(Icons.person_outline, 'PROFILE', false, () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Profile coming soon!')),
-            );
-          }),
+          _buildNavIcon(
+            Icons.person_outline,
+            'PROFILE',
+            _activeControl == 'profile',
+            () {
+              setState(() {
+                _activeControl = 'profile';
+              });
+            },
+          ),
         ],
       ),
     );
