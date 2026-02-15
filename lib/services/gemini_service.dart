@@ -381,7 +381,11 @@ User Idea: "$draftPrompt"''',
 
     parts.add({'text': promptBuffer.toString()});
 
-    final models = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'];
+    final models = [
+      'gemini-3-pro-image-preview',
+      'gemini-2.0-flash-exp',
+      'gemini-1.5-flash',
+    ];
 
     final result = await _callGeminiWithFallback(models, parts);
 
@@ -689,66 +693,70 @@ DETAILS:
   ) async {
     if (_apiKey.isEmpty) return 'Error: API Key missing';
 
-    // Using gemini-2.0-flash-exp for video generation capabilities
-    final url = Uri.parse(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=$_apiKey',
-    );
+    final models = [
+      'gemini-1.5-flash',
+      'gemini-1.5-pro',
+      'gemini-2.0-flash-exp',
+    ];
 
-    final finalVideoPrompt =
-        "$prompt. Maintain the look of: $opticProtocol. Motion: subtle, elegant cinematic dolly-in. Ultra-realistic skin rendering, 1080p.";
+    for (final model in models) {
+      final url = Uri.parse('$_baseUrl/$model:generateContent?key=$_apiKey');
 
-    final parts = <Map<String, dynamic>>[];
-    parts.add(_getDataPart(imageBase64));
-    parts.add({'text': finalVideoPrompt});
+      final finalVideoPrompt =
+          "$prompt. Maintain the look of: $opticProtocol. Motion: subtle, elegant cinematic dolly-in. Ultra-realistic skin rendering, 1080p.";
 
-    final body = {
-      'contents': [
-        {'parts': parts},
-      ],
-      'generationConfig': {'temperature': 0.4},
-    };
+      final parts = <Map<String, dynamic>>[];
+      parts.add(_getDataPart(imageBase64));
+      parts.add({'text': finalVideoPrompt});
 
-    try {
-      debugPrint('GeminiService: Requesting Cinematic Video...');
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
+      final body = {
+        'contents': [
+          {'parts': parts},
+        ],
+        'generationConfig': {'temperature': 0.4},
+      };
 
-      debugPrint('GeminiService Video Response: ${response.statusCode}');
+      try {
+        debugPrint('GeminiService: Requesting Cinematic Video...');
+        final response = await http.post(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(body),
+        );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        // Check for immediate content (Video URI in inlineData or File URI)
-        if (data is Map && data.containsKey('candidates')) {
-          final candidates = data['candidates'] as List;
-          if (candidates.isNotEmpty) {
-            final parts = candidates[0]['content']['parts'] as List;
-            for (final part in parts) {
-              // Check for fileUri or inlineData with video mime
-              if (part.containsKey('fileData')) {
-                return part['fileData']['fileUri'];
-              }
-              if (part.containsKey('inlineData')) {
-                return 'data:${part['inlineData']['mimeType']};base64,${part['inlineData']['data']}';
-              }
-              if (part.containsKey('videoMetadata')) {
-                // Sometimes returned metadata has the URI
-                return part['videoMetadata']['videoUri'] ?? '';
+        debugPrint('GeminiService Video Response: ${response.statusCode}');
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          // Check for immediate content (Video URI in inlineData or File URI)
+          if (data is Map && data.containsKey('candidates')) {
+            final candidates = data['candidates'] as List;
+            if (candidates.isNotEmpty) {
+              final parts = candidates[0]['content']['parts'] as List;
+              for (final part in parts) {
+                // Check for fileUri or inlineData with video mime
+                if (part.containsKey('fileData')) {
+                  return part['fileData']['fileUri'];
+                }
+                if (part.containsKey('inlineData')) {
+                  return 'data:${part['inlineData']['mimeType']};base64,${part['inlineData']['data']}';
+                }
+                if (part.containsKey('videoMetadata')) {
+                  // Sometimes returned metadata has the URI
+                  return part['videoMetadata']['videoUri'] ?? '';
+                }
               }
             }
           }
+          return 'Error: No video data found in response.';
+        } else {
+          debugPrint('Gemini API Error (Video) for $model: ${response.body}');
         }
-        return 'Error: No video data found in response.';
-      } else {
-        debugPrint('Gemini API Error (Video): ${response.body}');
-        return 'Error: API returned ${response.statusCode}';
+      } catch (e) {
+        debugPrint('Gemini Video Error with $model: $e');
       }
-    } catch (e) {
-      debugPrint('Gemini Video Error: $e');
-      return 'Error: Network request failed - $e';
     }
+    return 'Error: Video generation failed across all models.';
   }
 
   // ═══════════════════════════════════════════════════════════

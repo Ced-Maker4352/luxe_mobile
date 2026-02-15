@@ -157,10 +157,20 @@ class AuthService {
 
       if (current > 0) {
         // 2. Decrement
-        // Note: This will fail if columns don't exist in Supabase.
+        // Check which column to update based on what exists in the profile
+        String updateKey = key;
+        if (!data.containsKey(key)) {
+          if (data.containsKey('generations_remaining')) {
+            updateKey = 'generations_remaining';
+          } else {
+            debugPrint('Warning: No valid credit column found to update.');
+            return;
+          }
+        }
+
         await _supabase
             .from('profiles')
-            .update({key: current - 1})
+            .update({updateKey: current - 1})
             .eq('id', user.id);
       }
     } catch (e) {
