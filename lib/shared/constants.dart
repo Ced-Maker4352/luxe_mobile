@@ -475,6 +475,12 @@ const Map<String, dynamic> promptCategories = {
       'Indie festival soul',
       'Ethereal nature vibe',
     ],
+    'R&B / Soul': ['90s Velvet & Satin', 'Modern Neo-Soul', 'Spotlight Diva'],
+    'Band / Rock': [
+      'Indie Band Cool',
+      'Garage Rock Gritty',
+      'Stadium Rock Star',
+    ],
   },
   'Campus Studio™': {
     'Varsity & Campus Casual': [
@@ -1038,6 +1044,7 @@ final List<PackageDetails> packages = [
       "4K Export Quality",
       "Studio Lighting (Cinematic)",
       "Priority Processing",
+      "Cinematic Video Generation",
       "Commercial License Included",
       "Value: \$800+",
     ],
@@ -1072,6 +1079,7 @@ final List<PackageDetails> packages = [
       "200 Master Assets",
       "Identity Lock™ (Consistency)",
       "Group Mode (Multi-Person)",
+      "Cinematic Video Series",
       "Corporate Team Generator",
       "White-Label Resale Rights",
     ],

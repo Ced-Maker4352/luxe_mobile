@@ -10,7 +10,7 @@ class SessionProvider extends ChangeNotifier {
   CameraRig? _selectedRig;
   StyleOption? _selectedStyle;
   bool _isSingleStyleMode = false;
-  String _soloGender = 'female';
+  String? _soloGender; // Nullable for toggle
   bool _preserveAgeAndBody = true;
   bool _isEnterpriseMode = false;
 
@@ -55,7 +55,7 @@ class SessionProvider extends ChangeNotifier {
   CameraRig? get selectedRig => _selectedRig;
   StyleOption? get selectedStyle => _selectedStyle;
   bool get isSingleStyleMode => _isSingleStyleMode;
-  String get soloGender => _soloGender;
+  String get soloGender => _soloGender ?? 'female';
   bool get preserveAgeAndBody => _preserveAgeAndBody;
   bool get isEnterpriseMode => _isEnterpriseMode;
 
@@ -85,7 +85,7 @@ class SessionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setSelectedRig(CameraRig rig) {
+  void setSelectedRig(CameraRig? rig) {
     _selectedRig = rig;
     notifyListeners();
   }
@@ -100,15 +100,15 @@ class SessionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setSoloGender(String gender) {
+  void setSoloGender(String? gender) {
     _soloGender = gender;
     notifyListeners();
   }
 
-  String _selectedBodyType = 'Fit'; // Default
-  String get selectedBodyType => _selectedBodyType;
+  String? _selectedBodyType; // Nullable
+  String get selectedBodyType => _selectedBodyType ?? 'Fit';
 
-  void setSelectedBodyType(String bodyType) {
+  void setSelectedBodyType(String? bodyType) {
     _selectedBodyType = bodyType;
     notifyListeners();
   }
@@ -236,7 +236,7 @@ class SessionProvider extends ChangeNotifier {
   }
 
   // === CAMPUS STUDIO METHODS ===
-  void setCampus(SchoolCampus campus) {
+  void setCampus(SchoolCampus? campus) {
     _selectedCampus = campus;
     notifyListeners();
   }

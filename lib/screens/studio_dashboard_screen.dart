@@ -5,6 +5,7 @@ import '../models/types.dart';
 import '../shared/constants.dart';
 import '../services/gemini_service.dart';
 import '../widgets/comparison_slider.dart';
+import '../widgets/app_drawer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/stripe_service.dart';
 
@@ -619,6 +620,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         backgroundColor: isEnterprise
             ? AppColors.enterpriseNavy
             : AppColors.midnightNavy,
+        drawer: const AppDrawer(), // Add Drawer
         body: SafeArea(
           child: Column(
             children: [
@@ -927,17 +929,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         children: [
           GestureDetector(
             onTap: () {
-              if (Navigator.canPop(context)) {
-                Navigator.pop(context);
-              } else {
-                Navigator.pushReplacementNamed(context, '/boutique');
-              }
+              Scaffold.of(context).openDrawer();
             },
-            child: Icon(
-              Icons.arrow_back_ios,
-              color: AppColors.coolGray,
-              size: 20,
-            ),
+            child: Icon(Icons.menu, color: AppColors.coolGray, size: 24),
           ),
           Text(
             'STUDIO',
@@ -1431,6 +1425,16 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       onTap: () {
         final session = context.read<SessionProvider>();
 
+        if (controlKey == _activeControl) {
+          // If user taps the active tab again, maybe just keep it open?
+          // The user requested "unclick it... beause we may not want to use anything at that in that tab".
+          // But this is the tab selector itself. Usually tabs stay open.
+          // Maybe they mean selecting ITEMS inside tabs.
+          // I will leave tab selection as is, unless user meant closing the drawer.
+          // "there's some way to unclick it before we X out of that tab"
+          // implies unclicking ITEMS.
+        }
+
         if (!session.canAccessFeature(controlKey)) {
           _showUpgradeDialog(label);
           return;
@@ -1469,97 +1473,103 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           () => setState(() => _activeControl = 'main'),
         ),
         Expanded(
-          child: Stack(
-            children: [
-              // Gold magnifier highlight band
-              Center(
-                child: Container(
-                  height: 72,
-                  decoration: BoxDecoration(
-                    border: Border.symmetric(
-                      horizontal: BorderSide(
-                        color: AppColors.matteGold.withValues(alpha: 0.3),
+          child: GridView.builder(
+            padding: EdgeInsets.all(16),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.4,
+            ),
+            itemCount: cameraRigs.length + 1,
+            itemBuilder: (context, index) {
+              // Option 0: Default (Clear)
+              if (index == 0) {
+                final isDefault = session.selectedRig == null;
+                return GestureDetector(
+                  onTap: () => session.setSelectedRig(null),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isDefault
+                          ? AppColors.matteGold.withValues(alpha: 0.15)
+                          : AppColors.softPlatinum.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDefault
+                            ? AppColors.matteGold
+                            : AppColors.softPlatinum.withValues(alpha: 0.1),
                       ),
                     ),
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.matteGold.withValues(alpha: 0.05),
-                        AppColors.matteGold.withValues(alpha: 0.12),
-                        AppColors.matteGold.withValues(alpha: 0.05),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.highlight_off,
+                          color: isDefault
+                              ? AppColors.matteGold
+                              : AppColors.mutedGray,
+                          size: 28,
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Default',
+                          style: AppTypography.smallSemiBold(
+                            color: isDefault
+                                ? AppColors.matteGold
+                                : AppColors.coolGray,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                ),
-              ),
-              // Wheel picker
-              ListWheelScrollView.useDelegate(
-                itemExtent: 72,
-                perspective: 0.003,
-                diameterRatio: 1.6,
-                physics: const FixedExtentScrollPhysics(),
-                onSelectedItemChanged: (index) {
-                  session.setSelectedRig(cameraRigs[index]);
+                );
+              }
+
+              // Rigs
+              final rig = cameraRigs[index - 1];
+              final isSelected = session.selectedRig?.id == rig.id;
+              return GestureDetector(
+                onTap: () {
+                  if (isSelected) {
+                    session.setSelectedRig(null);
+                  } else {
+                    session.setSelectedRig(rig);
+                  }
                 },
-                childDelegate: ListWheelChildBuilderDelegate(
-                  childCount: cameraRigs.length,
-                  builder: (context, index) {
-                    final rig = cameraRigs[index];
-                    final isSelected = session.selectedRig?.id == rig.id;
-                    return Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 24),
-                      child: Row(
-                        children: [
-                          // Camera icon
-                          Text(
-                            rig.icon,
-                            style: TextStyle(fontSize: isSelected ? 22 : 16),
-                          ),
-                          SizedBox(width: 14),
-                          // Name + specs subtitle
-                          Expanded(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  rig.name,
-                                  style: AppTypography.bodyMedium(
-                                    color: isSelected
-                                        ? AppColors.matteGold
-                                        : AppColors.coolGray,
-                                  ),
-                                ),
-                                if (isSelected)
-                                  Padding(
-                                    padding: EdgeInsets.only(top: 2),
-                                    child: Text(
-                                      '${rig.specs.lens}  •  ${rig.specs.sensor}',
-                                      style: AppTypography.micro(
-                                        color: AppColors.softPlatinum
-                                            .withValues(alpha: 0.35),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          // Selection indicator
-                          if (isSelected)
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                color: AppColors.matteGold,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                        ],
+                child: Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.matteGold.withValues(alpha: 0.15)
+                        : AppColors.softPlatinum.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.matteGold
+                          : AppColors.softPlatinum.withValues(alpha: 0.1),
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(rig.icon, style: TextStyle(fontSize: 28)),
+                      SizedBox(height: 8),
+                      Text(
+                        rig.name.split('|').first.trim(),
+                        textAlign: TextAlign.center,
+                        style: AppTypography.smallSemiBold(
+                          color: isSelected
+                              ? AppColors.matteGold
+                              : AppColors.coolGray,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    );
-                  },
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              );
+            },
           ),
         ),
       ],
@@ -2217,10 +2227,21 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                                                 _customPrompt == preset;
                                             return GestureDetector(
                                               onTap: () {
-                                                _promptController.text = preset;
-                                                setState(
-                                                  () => _customPrompt = preset,
-                                                );
+                                                if (_customPrompt == preset) {
+                                                  // Toggle off
+                                                  _promptController.clear();
+                                                  setState(
+                                                    () => _customPrompt = '',
+                                                  );
+                                                } else {
+                                                  // Select
+                                                  _promptController.text =
+                                                      preset;
+                                                  setState(
+                                                    () =>
+                                                        _customPrompt = preset,
+                                                  );
+                                                }
                                               },
                                               child: Container(
                                                 padding: EdgeInsets.symmetric(
@@ -2291,8 +2312,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                             final isActive = _customPrompt == preset;
                             return GestureDetector(
                               onTap: () {
-                                _promptController.text = preset;
-                                setState(() => _customPrompt = preset);
+                                if (_customPrompt == preset) {
+                                  _promptController.clear();
+                                  setState(() => _customPrompt = '');
+                                } else {
+                                  _promptController.text = preset;
+                                  setState(() => _customPrompt = preset);
+                                }
                               },
                               child: Container(
                                 padding: EdgeInsets.symmetric(
@@ -2872,8 +2898,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               final isActive = _gender == g;
               return GestureDetector(
                 onTap: () {
-                  setState(() => _gender = g);
-                  session.setSoloGender(g);
+                  if (_gender == g) {
+                    setState(() => _gender = 'female'); // Revert to default
+                    session.setSoloGender(null);
+                  } else {
+                    setState(() => _gender = g);
+                    session.setSoloGender(g);
+                  }
                 },
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -3162,7 +3193,20 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             children: ['neutral', 'warm', 'cool'].map((s) {
               final isActive = _styleTemperature == s;
               return GestureDetector(
-                onTap: () => setState(() => _styleTemperature = s),
+                onTap: () {
+                  setState(() {
+                    _styleTemperature = s;
+                    // Real-time preview linkage
+                    if (s == 'warm') {
+                      _temperature.value = 0.3; // Matches Retouch 'Golden'
+                    } else if (s == 'cool') {
+                      _temperature.value =
+                          -0.2; // Matches Retouch 'Editorial' partial
+                    } else {
+                      _temperature.value = 0.0;
+                    }
+                  });
+                },
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   decoration: BoxDecoration(
@@ -4916,6 +4960,16 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 ).copyWith(fontSize: 9),
               ),
             ),
+          SizedBox(width: 4),
+          IconButton(
+            padding: EdgeInsets.zero,
+            constraints: BoxConstraints(),
+            icon: Icon(Icons.close, color: AppColors.mutedGray, size: 16),
+            onPressed: () {
+              session.clearCampus();
+              setState(() => _isIdentifyingCampus = false);
+            },
+          ),
         ],
       ),
     );

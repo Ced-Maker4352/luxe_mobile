@@ -689,12 +689,9 @@ DETAILS:
   ) async {
     if (_apiKey.isEmpty) return 'Error: API Key missing';
 
-    // Using the generateContent endpoint for Veo (mapped to LRO internally by some gateways, or sync)
-    // Note: If Veo requires specific endpoint, we use :generateContent with specific config.
-    // However, the Node SDK uses :generateVideos. We'll try a flexible approach with :generateContent first.
-    // If that fails, we might need a dedicated endpoint.
+    // Using gemini-2.0-flash-exp for video generation capabilities
     final url = Uri.parse(
-      'https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-fast-generate-preview:generateContent?key=$_apiKey',
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=$_apiKey',
     );
 
     final finalVideoPrompt =

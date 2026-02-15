@@ -9,6 +9,7 @@ import '../providers/session_provider.dart';
 import 'access_granted_screen.dart';
 import 'package:provider/provider.dart';
 import '../widgets/hero_carousel.dart';
+import '../widgets/app_drawer.dart';
 
 class BoutiqueScreen extends StatefulWidget {
   const BoutiqueScreen({super.key});
@@ -323,6 +324,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
       backgroundColor: isEnterprise
           ? AppColors.enterpriseNavy
           : AppColors.midnightNavy,
+      drawer: const AppDrawer(),
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
@@ -343,6 +345,27 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                         children: [
                           // 1. CAROUSEL LAYER
                           const HeroCarousel(),
+
+                          // 1.5 MENU BUTTON (SafeArea)
+                          Positioned(
+                            top: 40, // Approximate StatusBar height + padding
+                            left: 20,
+                            child: GestureDetector(
+                              onTap: () => Scaffold.of(context).openDrawer(),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.3),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.menu,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                          ),
 
                           // 2. TEXT OVERLAY LAYER
                           Consumer<SessionProvider>(

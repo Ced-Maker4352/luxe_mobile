@@ -27,13 +27,21 @@ subprojects {
             try {
                 val methods = android.javaClass.methods
                 
-                // 1. Set Namespace if missing
+                // 1. Set Namespace if missing or if it's the problematic package
                 val getNamespace = methods.find { it.name == "getNamespace" && it.parameterCount == 0 }
                 val setNamespace = methods.find { it.name == "setNamespace" && it.parameterCount == 1 && it.parameterTypes[0] == String::class.java }
-                val currentNamespace = getNamespace?.invoke(android)
-                if (currentNamespace == null || (currentNamespace is String && currentNamespace.isEmpty())) {
-                    val newNamespace = "com.luxe.studio." + project.name.replace("-", "_")
-                    setNamespace?.invoke(android, newNamespace)
+                
+                var currentNamespace = getNamespace?.invoke(android)
+                
+                // Explicit fix for image_gallery_saver
+                if (project.name == "image_gallery_saver") {
+                     val fixedNamespace = "com.example.image_gallery_saver"
+                     setNamespace?.invoke(android, fixedNamespace)
+                     println("Force-set namespace for ${project.name} to $fixedNamespace")
+                } else if (currentNamespace == null || (currentNamespace is String && currentNamespace.isEmpty())) {
+                    val defaultNamespace = "com.luxe.studio." + project.name.replace("-", "_")
+                    setNamespace?.invoke(android, defaultNamespace)
+                    println("Auto-set namespace for ${project.name} to $defaultNamespace")
                 }
 
                 // 2. Ensure sane SDK versions for AGP 8 compatibility
