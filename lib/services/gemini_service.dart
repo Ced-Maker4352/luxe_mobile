@@ -353,6 +353,12 @@ User Idea: "$draftPrompt"''',
       );
     }
 
+    if (clothingReferenceBase64 != null) {
+      promptBuffer.writeln(
+        "GARMENT REFERENCE: The subject MUST be wearing the exact clothing/outfit shown in the Garment Reference Image. Match the color, fabric, and style accurately.",
+      );
+    }
+
     promptBuffer.writeln("");
     promptBuffer.writeln(
       "FINAL CHECK: Before outputting, verify the face matches the Identity Anchors. If any facial feature has drifted, correct it before finalizing.",
@@ -370,6 +376,12 @@ User Idea: "$draftPrompt"''',
 
     if (backgroundImageBase64 != null) {
       parts.add(_getDataPart(backgroundImageBase64));
+      parts.add({'text': 'BACKGROUND REFERENCE'});
+    }
+
+    if (clothingReferenceBase64 != null) {
+      parts.add(_getDataPart(clothingReferenceBase64));
+      parts.add({'text': 'GARMENT REFERENCE'});
     }
 
     if (campusLogoBase64 != null) {
@@ -382,9 +394,9 @@ User Idea: "$draftPrompt"''',
     parts.add({'text': promptBuffer.toString()});
 
     final models = [
-      'gemini-3-pro-image-preview',
       'gemini-2.0-flash-exp',
-      'gemini-1.5-flash',
+      'gemini-1.5-pro-latest',
+      'gemini-1.5-flash-latest',
     ];
 
     final result = await _callGeminiWithFallback(models, parts);

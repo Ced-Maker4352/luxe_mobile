@@ -213,6 +213,19 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     }
 
     session.setGenerating(true);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            session.hasClothingReference || session.hasBackgroundReference
+                ? 'Generating with reference images...'
+                : 'Generating portrait...',
+          ),
+          duration: const Duration(seconds: 3),
+          backgroundColor: AppColors.matteGold.withValues(alpha: 0.9),
+        ),
+      );
+    }
     try {
       debugPrint(
         '!!!!! Studio: Starting generation with Gemini (DEBUG V2) !!!!!',
@@ -5005,7 +5018,17 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       ]);
       if (result.exitCode == 0) {
         setState(() {
-          _campusResults = jsonDecode(result.stdout);
+          // Clean up stdout in case of leading/trailing warnings/noise
+          final raw = result.stdout.toString().trim();
+          final bodyStart = raw.indexOf('[');
+          final bodyEnd = raw.lastIndexOf(']');
+
+          if (bodyStart != -1 && bodyEnd != -1 && bodyEnd > bodyStart) {
+            final jsonBody = raw.substring(bodyStart, bodyEnd + 1);
+            _campusResults = jsonDecode(jsonBody);
+          } else {
+            _campusResults = jsonDecode(raw);
+          }
           _isSearchingCampus = false;
         });
       }
