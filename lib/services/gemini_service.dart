@@ -733,26 +733,34 @@ DETAILS:
 
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
-          // Check for immediate content (Video URI in inlineData or File URI)
           if (data is Map && data.containsKey('candidates')) {
-            final candidates = data['candidates'] as List;
-            if (candidates.isNotEmpty) {
-              final parts = candidates[0]['content']['parts'] as List;
-              for (final part in parts) {
-                // Check for fileUri or inlineData with video mime
-                if (part.containsKey('fileData')) {
-                  return part['fileData']['fileUri'];
-                }
-                if (part.containsKey('inlineData')) {
-                  return 'data:${part['inlineData']['mimeType']};base64,${part['inlineData']['data']}';
-                }
-                if (part.containsKey('videoMetadata')) {
-                  // Sometimes returned metadata has the URI
-                  return part['videoMetadata']['videoUri'] ?? '';
+            final candidates = data['candidates'];
+            if (candidates is List && candidates.isNotEmpty) {
+              final candidate = candidates[0];
+              if (candidate is Map && candidate.containsKey('content')) {
+                final content = candidate['content'];
+                if (content is Map && content.containsKey('parts')) {
+                  final parts = content['parts'];
+                  if (parts is List) {
+                    for (final part in parts) {
+                      if (part.containsKey('fileData')) {
+                        return part['fileData']['fileUri'];
+                      }
+                      if (part.containsKey('inlineData')) {
+                        return 'data:${part['inlineData']['mimeType']};base64,${part['inlineData']['data']}';
+                      }
+                      if (part.containsKey('videoMetadata')) {
+                        return part['videoMetadata']['videoUri'] ?? '';
+                      }
+                    }
+                  }
                 }
               }
             }
           }
+          debugPrint(
+            'GeminiService: Unexpected Video Response format: ${response.body}',
+          );
           return 'Error: No video data found in response.';
         } else {
           debugPrint('Gemini API Error (Video) for $model: ${response.body}');
