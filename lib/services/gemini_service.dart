@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 class GeminiService {
   final String _apiKey = dotenv.env['VITE_GEMINI_API_KEY'] ?? '';
   static const String _baseUrl =
-      'https://generativelanguage.googleapis.com/v1beta/models';
+      'https://generativelanguage.googleapis.com/v1alpha/models';
 
   /// Generic helper for TEXT generation (for prompts, etc.)
   Future<String> _generateTextContent(
@@ -393,7 +393,13 @@ User Idea: "$draftPrompt"''',
 
     parts.add({'text': promptBuffer.toString()});
 
-    final models = ['gemini-1.5-pro', 'gemini-1.5-flash'];
+    final models = [
+      'gemini-2.0-flash-exp',
+      'gemini-1.5-pro-002',
+      'gemini-1.5-flash-002',
+      'gemini-1.5-pro',
+      'gemini-1.5-flash',
+    ];
 
     final result = await _callGeminiWithFallback(models, parts);
 
@@ -701,7 +707,13 @@ DETAILS:
   ) async {
     if (_apiKey.isEmpty) return 'Error: API Key missing';
 
-    final models = ['gemini-1.5-flash', 'gemini-1.5-pro'];
+    final models = [
+      'gemini-2.0-flash-exp',
+      'gemini-1.5-flash-002',
+      'gemini-1.5-pro-002',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro',
+    ];
 
     for (final model in models) {
       final url = Uri.parse('$_baseUrl/$model:generateContent?key=$_apiKey');
