@@ -14,6 +14,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/auth_gate.dart';
 import 'screens/login_screen.dart';
 import 'screens/brand_studio_screen.dart';
+import 'screens/profile_grand_screen.dart';
+import 'screens/share_screen.dart';
+import 'screens/gallery_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -56,6 +59,9 @@ class MainApp extends StatelessWidget {
         '/brand_studio': (context) => const BrandStudioScreen(),
         '/auth': (context) => const AuthGate(),
         '/login': (context) => const LoginScreen(),
+        '/profile': (context) => const ProfileGrandScreen(),
+        '/share': (context) => const ShareScreen(),
+        '/gallery': (context) => const GalleryScreen(),
       },
     );
   }

@@ -40,15 +40,45 @@ class AppDrawer extends StatelessWidget {
                 ),
                 _buildDrawerItem(
                   context,
-                  icon: Icons.camera_alt,
-                  title: 'STUDIO',
+                  icon: Icons.dashboard,
+                  title: 'STUDIO DASHBOARD',
                   route: '/studio',
                 ),
                 _buildDrawerItem(
                   context,
+                  icon: Icons.brush,
+                  title: 'BRAND STUDIO',
+                  route: '/brand_studio',
+                ),
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.camera_alt,
+                  title: 'CAMERA SELECTION',
+                  route: '/camera',
+                ),
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.fingerprint,
+                  title: 'IDENTITY REFERENCE',
+                  route: '/identity',
+                ),
+                _buildDrawerItem(
+                  context,
                   icon: Icons.person,
-                  title: 'PROFILE',
-                  route: '/profile', // Placeholder or upcoming
+                  title: 'PROFILE GRAND',
+                  route: '/profile',
+                ),
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.share,
+                  title: 'SHARE',
+                  route: '/share',
+                ),
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.photo_library,
+                  title: 'GALLERY',
+                  route: '/gallery',
                 ),
                 Divider(color: AppColors.softPlatinum.withValues(alpha: 0.1)),
                 _buildDrawerItem(
