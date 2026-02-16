@@ -11,21 +11,30 @@ class CampusService {
 
   Future<List<Map<String, dynamic>>> searchSchoolsByZip(String zipCode) async {
     List<Map<String, dynamic>> schools = [];
+    debugPrint("CampusService: Searching for $zipCode...");
 
     try {
       // 1. Public Schools
       final publicUrl =
           "https://nces.ed.gov/ccd/schoolsearch/school_list.asp?Search=1&Zip=$zipCode";
+      debugPrint("CampusService: Fetching $publicUrl");
       final publicRes = await http.get(
         Uri.parse(publicUrl),
         headers: {"User-Agent": _ua},
       );
 
       if (publicRes.statusCode == 200) {
+        // Robust Regex for NCES format
         final matches = RegExp(
-          r'href="school_detail.asp\?[^>]+>([^<]+)</a>',
+          r'href=["'
+          ']school_detail\.asp\?[^>"'
+          ']+["'
+          '][^>]*>([^<]+)<\/a>',
           caseSensitive: false,
         ).allMatches(publicRes.body);
+
+        debugPrint("CampusService: Found ${matches.length} public schools.");
+
         for (final match in matches) {
           final name = match.group(1)?.trim() ?? "";
           if (name.isNotEmpty && !schools.any((s) => s['name'] == name)) {
@@ -37,21 +46,30 @@ class CampusService {
             });
           }
         }
+      } else {
+        debugPrint("CampusService: Public IP error ${publicRes.statusCode}");
       }
 
       // 2. Private Schools
       if (schools.isEmpty) {
         final privUrl =
             "https://nces.ed.gov/surveys/pss/privateschoolsearch/school_list.asp?Search=1&Zip=$zipCode";
+        debugPrint("CampusService: Fetching $privUrl");
         final privRes = await http.get(
           Uri.parse(privUrl),
           headers: {"User-Agent": _ua},
         );
         if (privRes.statusCode == 200) {
           final matches = RegExp(
-            r'href="school_detail.asp\?[^>]+>([^<]+)</a>',
+            r'href=["'
+            ']school_detail\.asp\?[^>"'
+            ']+["'
+            '][^>]*>([^<]+)<\/a>',
             caseSensitive: false,
           ).allMatches(privRes.body);
+
+          debugPrint("CampusService: Found ${matches.length} private schools.");
+
           for (final match in matches) {
             final name = match.group(1)?.trim() ?? "";
             if (name.isNotEmpty && !schools.any((s) => s['name'] == name)) {
@@ -68,6 +86,7 @@ class CampusService {
 
       // 3. Colleges
       final collegeUrl = "https://nces.ed.gov/collegenavigator/?zp=$zipCode";
+      debugPrint("CampusService: Fetching $collegeUrl");
       final collegeRes = await http.get(
         Uri.parse(collegeUrl),
         headers: {"User-Agent": _ua},
@@ -77,6 +96,9 @@ class CampusService {
           r'<a href="[^"]+"><strong>([^<]+)</strong></a>',
           caseSensitive: false,
         ).allMatches(collegeRes.body);
+
+        debugPrint("CampusService: Found ${matches.length} colleges.");
+
         for (final match in matches) {
           final name = match.group(1)?.trim() ?? "";
           if (name.isNotEmpty && !schools.any((s) => s['name'] == name)) {

@@ -135,9 +135,13 @@ class AuthService {
 
       // 1. Get current count
       final data = await getUserProfile();
-      if (data == null) return;
+      if (data == null) {
+        debugPrint('AuthService: Failed to fetch profile for decrement.');
+        return;
+      }
 
       final key = type == 'video' ? 'video_generations' : 'photo_generations';
+      debugPrint('AuthService: Decrementing $type. Target key: $key');
 
       // Inference logic for credits if columns are missing
       int current = data[key] ?? 0;
@@ -147,11 +151,13 @@ class AuthService {
           data[key] == null &&
           data.containsKey('generations_remaining')) {
         current = data['generations_remaining'] ?? 0;
+        debugPrint('AuthService: Using legacy generations_remaining: $current');
       }
 
       // Tier-based defaults if DB is completely empty/missing columns
       if (current == 0 && data[key] == null) {
         final tier = data['subscription_tier'] as String?;
+        debugPrint('AuthService: Value is null. Inferring from tier: $tier');
         if (tier != null) {
           if (type == 'image') {
             if (tier.contains('creatorPack'))
@@ -173,33 +179,36 @@ class AuthService {
               current = 5;
           }
         }
+        debugPrint('AuthService: Inferred starting balance: $current');
+      } else {
+        debugPrint('AuthService: Current balance from DB: $current');
       }
 
       if (current > 0) {
         // 2. Decrement
-        // Check which column to update based on what exists in the profile
-        String? updateKey;
-        if (data.containsKey(key)) {
-          updateKey = key;
-        } else if (data.containsKey('generations_remaining')) {
+        // Force use of specific key unless we are strictly in legacy mode
+        String updateKey = key;
+
+        // If image, and we found data in generations_remaining but NOT in photo_generations, use legacy
+        if (type == 'image' &&
+            !data.containsKey('photo_generations') &&
+            data.containsKey('generations_remaining')) {
           updateKey = 'generations_remaining';
-        } else if (data.containsKey('photo_generations')) {
-          updateKey = 'photo_generations';
-        } else if (data.containsKey('video_generations')) {
-          updateKey = 'video_generations';
         }
 
-        if (updateKey != null) {
-          await _supabase
-              .from('profiles')
-              .update({updateKey: current - 1})
-              .eq('id', user.id);
-        } else {
-          debugPrint('Warning: No valid credit column found to update.');
-        }
+        debugPrint('AuthService: Updating $updateKey to ${current - 1}...');
+
+        await _supabase
+            .from('profiles')
+            .update({updateKey: current - 1})
+            .eq('id', user.id);
+
+        debugPrint('AuthService: Update confirmed.');
+      } else {
+        debugPrint('AuthService: Balance is 0. Cannot decrement.');
       }
     } catch (e) {
-      debugPrint('Error decrementing credit: $e');
+      debugPrint('AuthService: Error decrementing credit: $e');
     }
   }
 

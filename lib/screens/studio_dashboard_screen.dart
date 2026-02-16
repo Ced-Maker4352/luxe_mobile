@@ -325,10 +325,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       );
       session.addResult(newResult);
       if (mounted) {
-        setState(() {
-          _focusedResult = newResult;
-        });
-        _decodeFocusedImage();
+        // Do not focus result automatically to keep Results Viewer active
+        // setState(() {
+        //   _focusedResult = newResult;
+        // });
+        // _decodeFocusedImage();
       }
       debugPrint('Studio: Generated with rig: ${session.selectedRig!.name}');
       debugPrint('Studio: API Response length: ${resultText.length}');
@@ -473,10 +474,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       );
       session.addResult(newResult);
       if (mounted) {
-        setState(() {
-          _focusedResult = newResult;
-        });
-        _decodeFocusedImage();
+        // Do not focus result automatically to keep Results Viewer active
+        // setState(() {
+        //   _focusedResult = newResult;
+        // });
+        // _decodeFocusedImage();
       }
 
       // Decrement credits (stitch counts as image)
@@ -5104,19 +5106,39 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     border: InputBorder.none,
                   ),
                   onChanged: (val) {
-                    if (val.length == 5) _searchSchools(val);
+                    if (val.trim().length == 5) _searchSchools(val.trim());
                   },
                 ),
               ),
               GestureDetector(
-                onTap: () => _searchSchools(_zipController.text),
+                onTap: () {
+                  final zip = _zipController.text.trim();
+                  if (zip.length < 5) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please enter a 5-digit Zip Code'),
+                      ),
+                    );
+                    return;
+                  }
+                  _searchSchools(zip);
+                },
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: Icon(
-                    Icons.search,
-                    color: AppColors.matteGold,
-                    size: 20,
-                  ),
+                  child: _isSearchingCampus
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.matteGold,
+                          ),
+                        )
+                      : Icon(
+                          Icons.search,
+                          color: AppColors.matteGold,
+                          size: 20,
+                        ),
                 ),
               ),
             ],
