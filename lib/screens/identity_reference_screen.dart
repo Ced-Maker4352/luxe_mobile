@@ -119,9 +119,6 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
       if (fromCamera) {
         final XFile? pickedFile = await _picker.pickImage(
           source: ImageSource.camera,
-          maxWidth: 1920,
-          maxHeight: 1920,
-          imageQuality: 85,
           preferredCameraDevice: CameraDevice.front,
         );
         if (pickedFile != null) {
@@ -130,11 +127,7 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
         }
       } else {
         // Multi-image picker from gallery
-        final List<XFile> pickedFiles = await _picker.pickMultiImage(
-          maxWidth: 1920,
-          maxHeight: 1920,
-          imageQuality: 85,
-        );
+        final List<XFile> pickedFiles = await _picker.pickMultiImage();
 
         for (var file in pickedFiles) {
           if (session.identityImages.length >= 5) break;
