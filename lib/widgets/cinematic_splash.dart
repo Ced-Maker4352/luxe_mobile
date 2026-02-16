@@ -184,7 +184,7 @@ class _CinematicSplashState extends State<CinematicSplash>
                 return Opacity(
                   opacity: value,
                   child: Text(
-                    'LUX AI STUDIO',
+                    'LUXE AI STUDIO',
                     style: AppTypography.h1Display(
                       color: Colors.white,
                     ).copyWith(letterSpacing: 8 * value),
@@ -457,8 +457,8 @@ class _CinematicSplashState extends State<CinematicSplash>
                   decoration: const BoxDecoration(
                     image: DecorationImage(
                       image: AssetImage('assets/images/hero_5.jpg'),
-                      fit: BoxFit.cover,
-                      alignment: Alignment.topCenter,
+                      fit: BoxFit.contain,
+                      alignment: Alignment.center,
                     ),
                   ),
                 ),
@@ -484,7 +484,7 @@ class _CinematicSplashState extends State<CinematicSplash>
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'LUX AI STUDIO',
+              'LUXE AI STUDIO',
               style: AppTypography.h1Display(color: Colors.white),
             ),
             const SizedBox(height: 12),
