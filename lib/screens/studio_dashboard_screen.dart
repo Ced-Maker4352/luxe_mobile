@@ -4772,34 +4772,398 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     );
   }
 
+  // Download drawer state
+  String _selectedAspectRatio = 'original';
+  String _selectedSaveFormat = 'png';
+  String _selectedSaveDestination = 'gallery';
+
   Widget _buildDownloadDrawer() {
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(16, 16, 16, 120),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.download, color: Color(0xFFD4AF37), size: 36),
-            SizedBox(height: 12),
-            Text(
-              'Save to your device',
-              style: AppTypography.small(
-                color: AppColors.coolGray,
-              ).copyWith(fontSize: 11),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Quick Save to Gallery Button
+          Center(
+            child: ValueListenableBuilder<bool>(
+              valueListenable: _isSaving,
+              builder: (context, isSaving, _) => GestureDetector(
+                onTap: isSaving ? null : _saveToGallery,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFFD4AF37), Color(0xFFB8860B)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0xFFD4AF37).withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: isSaving
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.black,
+                          ),
+                        )
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.save_alt, color: Colors.black, size: 18),
+                            SizedBox(width: 8),
+                            Text(
+                              'QUICK SAVE TO GALLERY',
+                              style: AppTypography.microBold(color: Colors.black),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
             ),
-            SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+          ),
+
+          SizedBox(height: 24),
+          _buildDividerWithLabel('ADVANCED OPTIONS'),
+          SizedBox(height: 16),
+
+          // Save Destination Section
+          Text(
+            'SAVE DESTINATION',
+            style: AppTypography.micro(color: AppColors.mutedGray).copyWith(letterSpacing: 1.2),
+          ),
+          SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(child: _buildDestinationOption('gallery', Icons.photo_library, 'Gallery')),
+              SizedBox(width: 8),
+              Expanded(child: _buildDestinationOption('downloads', Icons.folder, 'Downloads')),
+            ],
+          ),
+
+          SizedBox(height: 20),
+
+          // Aspect Ratio Section
+          Text(
+            'ASPECT RATIO',
+            style: AppTypography.micro(color: AppColors.mutedGray).copyWith(letterSpacing: 1.2),
+          ),
+          SizedBox(height: 10),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
               children: [
-                _buildDownloadOption('HIGH RES', 'PNG • 4K', _saveToGallery),
-                SizedBox(width: 12),
-                _buildDownloadOption('STANDARD', 'JPG • 1080p', _saveToGallery),
+                _buildAspectOption('original', 'Original', '—'),
+                SizedBox(width: 8),
+                _buildAspectOption('print_4x6', 'Print 4×6', '2:3'),
+                SizedBox(width: 8),
+                _buildAspectOption('print_5x7', 'Print 5×7', '5:7'),
+                SizedBox(width: 8),
+                _buildAspectOption('print_8x10', 'Print 8×10', '4:5'),
+                SizedBox(width: 8),
+                _buildAspectOption('web_16x9', 'Web/HD', '16:9'),
+                SizedBox(width: 8),
+                _buildAspectOption('social_1x1', 'Social', '1:1'),
+                SizedBox(width: 8),
+                _buildAspectOption('social_9x16', 'Story', '9:16'),
               ],
+            ),
+          ),
+
+          SizedBox(height: 20),
+
+          // Format Section
+          Text(
+            'FORMAT & QUALITY',
+            style: AppTypography.micro(color: AppColors.mutedGray).copyWith(letterSpacing: 1.2),
+          ),
+          SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(child: _buildFormatOption('png', 'PNG', 'Lossless • Best Quality')),
+              SizedBox(width: 8),
+              Expanded(child: _buildFormatOption('jpg', 'JPG', 'Compressed • Smaller Size')),
+            ],
+          ),
+
+          SizedBox(height: 24),
+
+          // Download Button
+          Center(
+            child: ValueListenableBuilder<bool>(
+              valueListenable: _isSaving,
+              builder: (context, isSaving, _) => GestureDetector(
+                onTap: isSaving ? null : () => _saveWithOptions(),
+                child: Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    color: Color(0xFF1A1A1A),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.matteGold.withValues(alpha: 0.5)),
+                  ),
+                  child: isSaving
+                      ? Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.matteGold,
+                            ),
+                          ),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.download, color: AppColors.matteGold, size: 18),
+                            SizedBox(width: 8),
+                            Text(
+                              'DOWNLOAD WITH OPTIONS',
+                              style: AppTypography.microBold(color: AppColors.matteGold),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+            ),
+          ),
+
+          SizedBox(height: 12),
+          Center(
+            child: Text(
+              _getDownloadSummary(),
+              style: AppTypography.micro(color: AppColors.mutedGray).copyWith(fontSize: 9),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDividerWithLabel(String label) {
+    return Row(
+      children: [
+        Expanded(child: Divider(color: AppColors.mutedGray.withValues(alpha: 0.3))),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12),
+          child: Text(
+            label,
+            style: AppTypography.micro(color: AppColors.mutedGray).copyWith(fontSize: 9, letterSpacing: 1.5),
+          ),
+        ),
+        Expanded(child: Divider(color: AppColors.mutedGray.withValues(alpha: 0.3))),
+      ],
+    );
+  }
+
+  Widget _buildDestinationOption(String value, IconData icon, String label) {
+    final isSelected = _selectedSaveDestination == value;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedSaveDestination = value),
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.matteGold.withValues(alpha: 0.15) : Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? AppColors.matteGold : AppColors.mutedGray.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: isSelected ? AppColors.matteGold : AppColors.mutedGray, size: 20),
+            SizedBox(height: 6),
+            Text(
+              label,
+              style: AppTypography.micro(color: isSelected ? AppColors.matteGold : AppColors.coolGray),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildAspectOption(String value, String label, String ratio) {
+    final isSelected = _selectedAspectRatio == value;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedAspectRatio = value),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.matteGold.withValues(alpha: 0.15) : Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? AppColors.matteGold : AppColors.mutedGray.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(
+              label,
+              style: AppTypography.micro(color: isSelected ? AppColors.matteGold : AppColors.coolGray),
+            ),
+            SizedBox(height: 2),
+            Text(
+              ratio,
+              style: AppTypography.micro(color: AppColors.mutedGray).copyWith(fontSize: 9),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFormatOption(String value, String label, String subtitle) {
+    final isSelected = _selectedSaveFormat == value;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedSaveFormat = value),
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.matteGold.withValues(alpha: 0.15) : Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? AppColors.matteGold : AppColors.mutedGray.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(
+              label,
+              style: AppTypography.microBold(color: isSelected ? AppColors.matteGold : AppColors.coolGray),
+            ),
+            SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: AppTypography.micro(color: AppColors.mutedGray).copyWith(fontSize: 8),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getDownloadSummary() {
+    final aspectLabels = {
+      'original': 'Original',
+      'print_4x6': '4×6 Print',
+      'print_5x7': '5×7 Print',
+      'print_8x10': '8×10 Print',
+      'web_16x9': '16:9 Web/HD',
+      'social_1x1': '1:1 Square',
+      'social_9x16': '9:16 Story',
+    };
+    final destLabels = {'gallery': 'Gallery', 'downloads': 'Downloads'};
+    return '${aspectLabels[_selectedAspectRatio]} • ${_selectedSaveFormat.toUpperCase()} • ${destLabels[_selectedSaveDestination]}';
+  }
+
+  Future<void> _saveWithOptions() async {
+    if (_isSaving.value) return;
+    _isSaving.value = true;
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Preparing ${_getDownloadSummary()}...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+
+    try {
+      final session = context.read<SessionProvider>();
+      if (session.results.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No image to download.')),
+          );
+        }
+        return;
+      }
+
+      final imageUrl = session.results.first.imageUrl;
+      Uint8List? bytes;
+
+      if (imageUrl.startsWith('data:')) {
+        final base64String = imageUrl.split(',').last;
+        bytes = base64Decode(base64String);
+      }
+
+      if (bytes == null) return;
+
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final extension = _selectedSaveFormat == 'png' ? 'png' : 'jpg';
+      final aspectSuffix = _selectedAspectRatio == 'original' ? '' : '_${_selectedAspectRatio}';
+      final filename = 'luxe_portrait$aspectSuffix\_$timestamp.$extension';
+
+      if (kIsWeb) {
+        WebHelper.downloadImage(bytes, filename);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Download started: $filename')),
+          );
+        }
+      } else {
+        bool hasPermission = false;
+        if (Platform.isAndroid) {
+          hasPermission =
+              await Permission.photos.request().isGranted ||
+              await Permission.storage.request().isGranted;
+        } else {
+          hasPermission = await Permission.photos.request().isGranted;
+        }
+
+        if (!hasPermission) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Storage permission denied.')),
+            );
+          }
+          return;
+        }
+
+        if (_selectedSaveDestination == 'gallery') {
+          final result = await ImageGallerySaverPlus.saveImage(bytes, name: filename);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Saved to Gallery: ${result['isSuccess'] == true ? 'Success' : 'Failed'}')),
+            );
+          }
+        } else {
+          // Save to Downloads folder
+          final directory = await getDownloadsDirectory() ?? await getApplicationDocumentsDirectory();
+          final file = File('${directory.path}/$filename');
+          await file.writeAsBytes(bytes);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Saved to Downloads: $filename')),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Save with options error: $e');
+      if (mounted) {
+        String errorMsg = e.toString();
+        if (errorMsg.contains('MissingPluginException')) {
+          errorMsg = 'This feature is not supported on this platform.';
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to save: $errorMsg')),
+        );
+      }
+    } finally {
+      _isSaving.value = false;
+    }
   }
 
   Widget _buildDownloadOption(

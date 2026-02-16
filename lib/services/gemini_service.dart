@@ -702,19 +702,19 @@ DETAILS:
   ) async {
     if (_apiKey.isEmpty) return 'Error: API Key missing';
 
-    // Added gemini-2.0-flash-exp as it is a known consistent model for video
-    final models = [
-      'veo-2.0-generate-001',
-      'gemini-2.0-flash-exp',
-      'gemini-2.5-flash',
+    // Veo 2 models for video generation - trying different API versions
+    final candidates = [
+      {'model': 'veo-2', 'version': 'v1alpha'},
+      {'model': 'veo-001', 'version': 'v1alpha'},
+      {'model': 'imagen-video-001', 'version': 'v1'},
     ];
 
-    for (final model in models) {
-      // Use v1alpha for experimental/new models like Veo and Gemini 2.0
-      String version = 'v1beta';
-      if (model.contains('veo') || model.contains('2.0')) {
-        version = 'v1alpha';
-      }
+    final finalVideoPrompt =
+        "$prompt. Maintain the look of: $opticProtocol. Motion: subtle, elegant cinematic dolly-in. Ultra-realistic skin rendering, 1080p.";
+
+    for (final candidate in candidates) {
+      final model = candidate['model']!;
+      final version = candidate['version']!;
 
       final url = Uri.parse(
         'https://generativelanguage.googleapis.com/$version/models/$model:generateContent?key=$_apiKey',
@@ -724,9 +724,6 @@ DETAILS:
         'GeminiService: Requesting Cinematic Video from $model ($version)...',
       );
 
-      final finalVideoPrompt =
-          "$prompt. Maintain the look of: $opticProtocol. Motion: subtle, elegant cinematic dolly-in. Ultra-realistic skin rendering, 1080p.";
-
       final parts = <Map<String, dynamic>>[];
       parts.add(_getDataPart(imageBase64));
       parts.add({'text': finalVideoPrompt});
@@ -735,7 +732,10 @@ DETAILS:
         'contents': [
           {'parts': parts},
         ],
-        'generationConfig': {'temperature': 0.4},
+        'generationConfig': {
+          'temperature': 0.4,
+          'videoLength': 5, // 5 seconds
+        },
       };
 
       try {
@@ -751,6 +751,8 @@ DETAILS:
 
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
+          debugPrint('GeminiService Video Response Body: ${jsonEncode(data)}');
+          
           if (data is Map && data.containsKey('candidates')) {
             final candidates = data['candidates'];
             if (candidates is List && candidates.isNotEmpty) {
@@ -761,14 +763,27 @@ DETAILS:
                   final parts = content['parts'];
                   if (parts is List) {
                     for (final part in parts) {
+                      // Check for video data in various possible formats
                       if (part.containsKey('fileData')) {
-                        return part['fileData']['fileUri'];
+                        final fileUri = part['fileData']['fileUri'];
+                        debugPrint('GeminiService: Video generated - fileUri: $fileUri');
+                        return fileUri;
                       }
                       if (part.containsKey('inlineData')) {
-                        return 'data:${part['inlineData']['mimeType']};base64,${part['inlineData']['data']}';
+                        final mimeType = part['inlineData']['mimeType'];
+                        // Only accept video mime types
+                        if (mimeType != null && mimeType.toString().startsWith('video/')) {
+                          final videoData = 'data:$mimeType;base64,${part['inlineData']['data']}';
+                          debugPrint('GeminiService: Video generated - inline data');
+                          return videoData;
+                        }
                       }
                       if (part.containsKey('videoMetadata')) {
-                        return part['videoMetadata']['videoUri'] ?? '';
+                        final videoUri = part['videoMetadata']['videoUri'];
+                        if (videoUri != null && videoUri.toString().isNotEmpty) {
+                          debugPrint('GeminiService: Video generated - videoUri: $videoUri');
+                          return videoUri;
+                        }
                       }
                     }
                   }
@@ -777,9 +792,8 @@ DETAILS:
             }
           }
           debugPrint(
-            'GeminiService: Unexpected Video Response format: ${response.body}',
+            'GeminiService: $model returned 200 but no video data in expected format',
           );
-          // Don't return error immediately, separate model failures
         } else {
           debugPrint('Gemini API Error (Video) for $model: ${response.body}');
         }
@@ -787,7 +801,8 @@ DETAILS:
         debugPrint('Gemini Video Error with $model: $e');
       }
     }
-    return 'Error: Video generation failed across all candidates.';
+    
+    return 'Error: Video generation is not currently available. The Gemini API video models (Veo) may not be accessible with your API key. Please check your Gemini API access in Google AI Studio.';
   }
 
   // ═══════════════════════════════════════════════════════════
