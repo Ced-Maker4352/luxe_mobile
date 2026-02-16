@@ -451,16 +451,43 @@ class _CinematicSplashState extends State<CinematicSplash>
           AnimatedBuilder(
             animation: _cameraController,
             builder: (context, child) {
+              // Crossfade logic
+              // Fades from hero_8 to hero_9 between 30% and 70% of the scene duration
+              double opacity = 0.0;
+              if (_cameraController.value > 0.3) {
+                opacity = (_cameraController.value - 0.3) / 0.4;
+                if (opacity > 1.0) opacity = 1.0;
+              }
+
               return Transform.scale(
                 scale: 1.0 + (0.1 * _cameraController.value),
-                child: Container(
-                  decoration: const BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage('assets/images/hero_5.jpg'),
-                      fit: BoxFit.contain,
-                      alignment: Alignment.center,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Image 1: hero_8
+                    Container(
+                      decoration: const BoxDecoration(
+                        image: DecorationImage(
+                          image: AssetImage('assets/images/hero_8.jpg'),
+                          fit: BoxFit.contain,
+                          alignment: Alignment.center,
+                        ),
+                      ),
                     ),
-                  ),
+                    // Image 2: hero_9 (Fading in)
+                    Opacity(
+                      opacity: opacity,
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          image: DecorationImage(
+                            image: AssetImage('assets/images/hero_9.jpg'),
+                            fit: BoxFit.contain,
+                            alignment: Alignment.center,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               );
             },
