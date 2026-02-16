@@ -753,14 +753,66 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               : Image(image: imageProvider, fit: BoxFit.contain),
         ),
 
-        // Top Toolbar (Motion & Compare)
+        // Top Toolbar (Motion, Compare, Select)
         Positioned(
           top: 16,
           right: 16,
           child: Row(
             children: [
+              // Batch Select Toggle
+              Padding(
+                padding: EdgeInsets.only(right: 12),
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _isBatchSelectMode = !_isBatchSelectMode;
+                      if (!_isBatchSelectMode) {
+                        _selectedResultIds.clear();
+                      }
+                    });
+                  },
+                  child: Container(
+                    height: 40,
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: _isBatchSelectMode
+                          ? AppColors.matteGold
+                          : Colors.black54,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: _isBatchSelectMode
+                            ? AppColors.matteGold
+                            : AppColors.softPlatinum.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Center(
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.check_box_outlined,
+                            color: _isBatchSelectMode
+                                ? Colors.black
+                                : AppColors.softPlatinum,
+                            size: 18,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            _isBatchSelectMode ? 'SELECTING (${_selectedResultIds.length})' : 'SELECT',
+                            style: AppTypography.microBold(
+                              color: _isBatchSelectMode
+                                  ? Colors.black
+                                  : AppColors.softPlatinum,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              
               // BEFORE/AFTER Toggle
-              if (session.hasUploadedImage)
+              if (session.hasUploadedImage && !_isBatchSelectMode)
                 Padding(
                   padding: EdgeInsets.only(right: 12),
                   child: GestureDetector(
@@ -794,15 +846,54 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 ),
 
               // Motion / Video Generation
-              FloatingActionButton.small(
-                heroTag: 'motion_btn',
-                backgroundColor: Colors.black54,
-                child: Icon(Icons.videocam, color: AppColors.softPlatinum),
-                onPressed: () => _generateCinematicVideo(session, result),
-              ),
+              if (!_isBatchSelectMode)
+                FloatingActionButton.small(
+                  heroTag: 'motion_btn',
+                  backgroundColor: Colors.black54,
+                  child: Icon(Icons.videocam, color: AppColors.softPlatinum),
+                  onPressed: () => _generateCinematicVideo(session, result),
+                ),
             ],
           ),
         ),
+        
+        // Batch Download Action Button
+        if (_isBatchSelectMode && _selectedResultIds.isNotEmpty)
+          Positioned(
+            bottom: 16,
+            left: 16,
+            right: 16,
+            child: GestureDetector(
+              onTap: () => _showBatchDownloadConfig(),
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.matteGold, Color(0xFFB8860B)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.matteGold.withValues(alpha: 0.4),
+                      blurRadius: 12,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.download_rounded, color: Colors.black, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'BATCH DOWNLOAD (${_selectedResultIds.length})',
+                      style: AppTypography.microBold(color: Colors.black),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -982,23 +1073,47 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     );
   }
 
-  Widget _buildCreditBadge(IconData icon, int count) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppColors.softPlatinum.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.softPlatinum.withValues(alpha: 0.24),
+  Widget _buildCreditBadge(IconData icon, int count, {bool isLow = false}) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 1.0, end: 1.0),
+      duration: Duration(milliseconds: 300),
+      builder: (context, scale, child) {
+        return Transform.scale(
+          scale: scale,
+          child: child,
+        );
+      },
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 300),
+        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isLow 
+              ? Colors.orange.withValues(alpha: 0.15)
+              : AppColors.softPlatinum.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isLow 
+                ? Colors.orange.withValues(alpha: 0.5)
+                : AppColors.softPlatinum.withValues(alpha: 0.24),
+          ),
         ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: AppColors.matteGold),
-          SizedBox(width: 4),
-          Text('$count', style: AppTypography.microBold()),
-        ],
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon, 
+              size: 12, 
+              color: isLow ? Colors.orange : AppColors.matteGold,
+            ),
+            SizedBox(width: 4),
+            Text(
+              '$count', 
+              style: AppTypography.microBold(
+                color: isLow ? Colors.orange : AppColors.softPlatinum,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1027,12 +1142,25 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             builder: (context, session, _) {
               final p = session.userProfile?.photoGenerations ?? 0;
               final v = session.userProfile?.videoGenerations ?? 0;
-              return Row(
-                children: [
-                  _buildCreditBadge(Icons.camera_alt, p),
-                  SizedBox(width: 8),
-                  _buildCreditBadge(Icons.videocam, v),
-                ],
+              return GestureDetector(
+                onTap: () {
+                  // Refresh credits on tap
+                  session.fetchUserProfile();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Refreshing credits...'),
+                      duration: Duration(seconds: 1),
+                      backgroundColor: AppColors.matteGold.withValues(alpha: 0.8),
+                    ),
+                  );
+                },
+                child: Row(
+                  children: [
+                    _buildCreditBadge(Icons.camera_alt, p, isLow: p <= 3 && p > 0),
+                    SizedBox(width: 8),
+                    _buildCreditBadge(Icons.videocam, v, isLow: v <= 1 && v > 0),
+                  ],
+                ),
               );
             },
           ),
@@ -1473,34 +1601,80 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   },
                   child: GestureDetector(
                     onTap: () {
-                      setState(() {
-                        _focusedResult = result;
-                      });
-                      _decodeFocusedImage();
+                      if (_isBatchSelectMode) {
+                        setState(() {
+                          if (_selectedResultIds.contains(result.id)) {
+                            _selectedResultIds.remove(result.id);
+                            _batchDownloadConfigs.remove(result.id);
+                          } else {
+                            _selectedResultIds.add(result.id);
+                            // Set default config
+                            _batchDownloadConfigs[result.id] = {
+                              'aspectRatio': 'original',
+                              'format': 'png',
+                            };
+                          }
+                        });
+                      } else {
+                        setState(() {
+                          _focusedResult = result;
+                        });
+                        _decodeFocusedImage();
+                      }
                     },
-                    child: Container(
-                      width: 80,
-                      margin: EdgeInsets.only(right: 12),
-                      decoration: BoxDecoration(
-                        border: isSelected
-                            ? Border.all(color: AppColors.matteGold, width: 2)
-                            : null,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: result.imageUrl.startsWith('data:')
-                            ? Image.memory(
-                                base64Decode(result.imageUrl.split(',')[1]),
-                                fit: BoxFit
-                                    .contain, // Changed from cover to contain
-                                gaplessPlayback: true,
-                              )
-                            : Image.network(
-                                result.imageUrl,
-                                fit: BoxFit.contain,
-                              ), // Changed from cover to contain
-                      ),
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: 80,
+                          margin: EdgeInsets.only(right: 12),
+                          decoration: BoxDecoration(
+                            border: isSelected || _selectedResultIds.contains(result.id)
+                                ? Border.all(color: AppColors.matteGold, width: 2)
+                                : null,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: result.imageUrl.startsWith('data:')
+                                ? Image.memory(
+                                    base64Decode(result.imageUrl.split(',')[1]),
+                                    fit: BoxFit.contain,
+                                    gaplessPlayback: true,
+                                  )
+                                : Image.network(
+                                    result.imageUrl,
+                                    fit: BoxFit.contain,
+                                  ),
+                          ),
+                        ),
+                        // Selection Checkbox
+                        if (_isBatchSelectMode)
+                          Positioned(
+                            top: 4,
+                            right: 16,
+                            child: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: _selectedResultIds.contains(result.id)
+                                    ? AppColors.matteGold
+                                    : Colors.black54,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.matteGold,
+                                  width: 2,
+                                ),
+                              ),
+                              child: _selectedResultIds.contains(result.id)
+                                  ? Icon(
+                                      Icons.check,
+                                      color: Colors.black,
+                                      size: 16,
+                                    )
+                                  : null,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 );
@@ -1638,7 +1812,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   width: 100,
                   height: 36,
                   child: PremiumButton(
-                    onPressed: () => _showUpgradeDialog('PRO'),
+                    onPressed: () => _showUpgradeDialog('general'),
                     backgroundColor: AppColors.matteGold.withValues(alpha: 0.1),
                     foregroundColor: AppColors.matteGold,
                     borderRadius: 8,
@@ -1656,24 +1830,103 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           ),
           const SizedBox(height: 24),
 
-          // Stats
+          // Stats with tap to refresh
           Row(
             children: [
-              _buildStatCard(
-                icon: Icons.photo_library_outlined,
-                label: 'PHOTOS',
-                value: '${profile?.photoGenerations ?? 0}',
-                subtitle: 'REMAINING',
+              Expanded(
+                child: GestureDetector(
+                  onTap: () async {
+                    await session.fetchUserProfile();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Credits refreshed!'),
+                          duration: Duration(seconds: 1),
+                          backgroundColor: AppColors.matteGold,
+                        ),
+                      );
+                    }
+                  },
+                  child: _buildStatCard(
+                    icon: Icons.photo_library_outlined,
+                    label: 'PHOTOS',
+                    value: '${profile?.photoGenerations ?? 0}',
+                    subtitle: 'REMAINING',
+                    isLow: (profile?.photoGenerations ?? 0) <= 5,
+                  ),
+                ),
               ),
               const SizedBox(width: 16),
-              _buildStatCard(
-                icon: Icons.video_library_outlined,
-                label: 'VIDEOS',
-                value: '${profile?.videoGenerations ?? 0}',
-                subtitle: 'REMAINING',
+              Expanded(
+                child: GestureDetector(
+                  onTap: () async {
+                    await session.fetchUserProfile();
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Credits refreshed!'),
+                          duration: Duration(seconds: 1),
+                          backgroundColor: AppColors.matteGold,
+                        ),
+                      );
+                    }
+                  },
+                  child: _buildStatCard(
+                    icon: Icons.video_library_outlined,
+                    label: 'VIDEOS',
+                    value: '${profile?.videoGenerations ?? 0}',
+                    subtitle: 'REMAINING',
+                    isLow: (profile?.videoGenerations ?? 0) <= 2,
+                  ),
+                ),
               ),
             ],
           ),
+          
+          // Low credits warning
+          if ((profile?.photoGenerations ?? 0) <= 5 || (profile?.videoGenerations ?? 0) <= 2) ...[
+            const SizedBox(height: 16),
+            GestureDetector(
+              onTap: () => _showUpgradeDialog('general'),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.orange.withValues(alpha: 0.15),
+                      Colors.orange.withValues(alpha: 0.05),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.orange.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.bolt, color: Colors.orange, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Running low on credits!',
+                            style: AppTypography.microBold(color: Colors.orange),
+                          ),
+                          Text(
+                            'Tap to upgrade and keep creating.',
+                            style: AppTypography.micro(color: AppColors.coolGray),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.arrow_forward_ios, color: Colors.orange, size: 14),
+                  ],
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 40),
 
           // Sign Out
@@ -1710,36 +1963,55 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     required String label,
     required String value,
     required String subtitle,
+    bool isLow = false,
   }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.softPlatinum.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppColors.softPlatinum.withValues(alpha: 0.1),
-          ),
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 300),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isLow
+            ? Colors.orange.withValues(alpha: 0.08)
+            : AppColors.softPlatinum.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isLow
+              ? Colors.orange.withValues(alpha: 0.3)
+              : AppColors.softPlatinum.withValues(alpha: 0.1),
         ),
-        child: Column(
-          children: [
-            Icon(icon, color: AppColors.matteGold, size: 24),
-            const SizedBox(height: 12),
-            Text(
-              label,
-              style: AppTypography.microBold(color: AppColors.mutedGray),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon, 
+            color: isLow ? Colors.orange : AppColors.matteGold, 
+            size: 24,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            label,
+            style: AppTypography.microBold(
+              color: isLow ? Colors.orange : AppColors.mutedGray,
             ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: AppTypography.h3Display(color: AppColors.softPlatinum),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: AppTypography.h3Display(
+              color: isLow ? Colors.orange : AppColors.softPlatinum,
             ),
+          ),
+          Text(
+            subtitle,
+            style: AppTypography.micro(color: AppColors.mutedGray),
+          ),
+          if (isLow) ...[
+            const SizedBox(height: 8),
             Text(
-              subtitle,
-              style: AppTypography.micro(color: AppColors.mutedGray),
+              'TAP TO REFRESH',
+              style: AppTypography.micro(color: Colors.orange).copyWith(fontSize: 8),
             ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -4776,6 +5048,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   String _selectedAspectRatio = 'original';
   String _selectedSaveFormat = 'png';
   String _selectedSaveDestination = 'gallery';
+  
+  // Batch download state
+  bool _isBatchSelectMode = false;
+  final Set<String> _selectedResultIds = {};
+  final Map<String, Map<String, String>> _batchDownloadConfigs = {};
 
   Widget _buildDownloadDrawer() {
     return SingleChildScrollView(
@@ -5734,7 +6011,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     }
   }
 
-  Future<void> _handleQuickUpgrade() async {
+  Future<void> _handleQuickUpgrade(String packageId, int priceDifference) async {
     final session = context.read<SessionProvider>();
     final user = Supabase.instance.client.auth.currentUser;
 
@@ -5745,47 +6022,767 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       return;
     }
 
-    try {
-      // Show loading indicator in dialog or via state
-      final success = await StripeService.handlePayment(
-        'creatorPack',
-        user.email!,
-      );
+    // Close the upgrade dialog first
+    Navigator.pop(context);
 
-      if (success) {
-        await session.fetchUserProfile();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Upgrade successful! Feature unlocked.'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pop(context);
+    // Show processing indicator
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(width: 16),
+              Text('Preparing secure checkout...'),
+            ],
+          ),
+          duration: Duration(seconds: 3),
+          backgroundColor: AppColors.matteGold.withValues(alpha: 0.9),
+        ),
+      );
+    }
+
+    try {
+      if (kIsWeb) {
+        // Web: Use payment links
+        final paymentLink = StripeService.getPaymentLink(packageId);
+        if (paymentLink != null) {
+          // Build success URL that returns to current session
+          // Note: In production, add success_url and cancel_url query params
+          final uri = Uri.parse(paymentLink);
+          
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+            
+            // Show message about returning after payment
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Complete payment in the new tab. Your session will be ready when you return.'),
+                  duration: Duration(seconds: 5),
+                  backgroundColor: AppColors.matteGold,
+                  action: SnackBarAction(
+                    label: 'REFRESH',
+                    textColor: Colors.black,
+                    onPressed: () async {
+                      await session.fetchUserProfile();
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Credits refreshed! Photos: ${session.userProfile?.photoGenerations ?? 0}, Videos: ${session.userProfile?.videoGenerations ?? 0}'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ),
+              );
+            }
+            
+            // Set up a listener to refresh profile when user returns (after delay)
+            Future.delayed(Duration(seconds: 10), () async {
+              if (mounted) {
+                await session.fetchUserProfile();
+              }
+            });
+          }
+        } else {
+          throw Exception('Payment link not found for package: $packageId');
+        }
+      } else {
+        // Mobile: Use native Stripe PaymentSheet
+        final success = await StripeService.handlePayment(
+          packageId,
+          user.email!,
+        );
+
+        if (success) {
+          // Refresh user profile to get updated credits
+          await session.fetchUserProfile();
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.white),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Upgrade successful! You now have ${session.userProfile?.photoGenerations ?? 0} photos and ${session.userProfile?.videoGenerations ?? 0} videos.',
+                      ),
+                    ),
+                  ],
+                ),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 4),
+              ),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Payment was cancelled or failed. Please try again.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
         }
       }
     } catch (e) {
       debugPrint('Quick Upgrade Error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Upgrade failed. Please try again.')),
+          SnackBar(
+            content: Text('Upgrade failed: ${e.toString().replaceAll('Exception: ', '')}'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
   }
 
-  void _showUpgradeDialog(String feature) {
+  void _showBatchDownloadConfig() {
     final session = context.read<SessionProvider>();
-    final tier = session.userProfile?.subscriptionTier?.toLowerCase() ?? '';
+    final selectedResults = session.results
+        .where((r) => _selectedResultIds.contains(r.id))
+        .toList();
 
-    // Calculate differential price
-    String upgradePrice = "\$29";
-    bool isSocialQuick = tier.contains('socialquick');
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.softCharcoal,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => SafeArea(
+          child: Container(
+            height: MediaQuery.of(context).size.height * 0.85,
+            child: Column(
+              children: [
+                // Header
+                Container(
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: AppColors.softPlatinum.withValues(alpha: 0.1),
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.download_rounded, color: AppColors.matteGold),
+                      SizedBox(width: 12),
+                      Text(
+                        'BATCH DOWNLOAD CONFIGURATION',
+                        style: AppTypography.microBold(color: AppColors.matteGold),
+                      ),
+                      Spacer(),
+                      IconButton(
+                        icon: Icon(Icons.close, color: AppColors.softPlatinum),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                ),
 
-    if (isSocialQuick) {
-      upgradePrice = "\$24"; // $29 - $5
+                // Images List with Config
+                Expanded(
+                  child: ListView.builder(
+                    padding: EdgeInsets.all(16),
+                    itemCount: selectedResults.length,
+                    itemBuilder: (context, index) {
+                      final result = selectedResults[index];
+                      final config = _batchDownloadConfigs[result.id]!;
+                      
+                      return Container(
+                        margin: EdgeInsets.only(bottom: 16),
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.softPlatinum.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.softPlatinum.withValues(alpha: 0.1),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                // Thumbnail
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: result.imageUrl.startsWith('data:')
+                                      ? Image.memory(
+                                          base64Decode(result.imageUrl.split(',')[1]),
+                                          width: 60,
+                                          height: 60,
+                                          fit: BoxFit.cover,
+                                        )
+                                      : Image.network(
+                                          result.imageUrl,
+                                          width: 60,
+                                          height: 60,
+                                          fit: BoxFit.cover,
+                                        ),
+                                ),
+                                SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Image ${index + 1}',
+                                        style: AppTypography.smallSemiBold(
+                                          color: AppColors.softPlatinum,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        'Created ${_formatTimestamp(result.timestamp)}',
+                                        style: AppTypography.micro(
+                                          color: AppColors.mutedGray,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 12),
+                            Divider(
+                              color: AppColors.softPlatinum.withValues(alpha: 0.1),
+                              height: 1,
+                            ),
+                            SizedBox(height: 12),
+
+                            // Aspect Ratio Selection
+                            Text(
+                              'ASPECT RATIO',
+                              style: AppTypography.micro(color: AppColors.mutedGray)
+                                  .copyWith(letterSpacing: 1.2),
+                            ),
+                            SizedBox(height: 8),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: [
+                                _buildBatchAspectChip(
+                                  'Original',
+                                  'original',
+                                  result.id,
+                                  config,
+                                  setModalState,
+                                ),
+                                _buildBatchAspectChip(
+                                  '4×6',
+                                  'print_4x6',
+                                  result.id,
+                                  config,
+                                  setModalState,
+                                ),
+                                _buildBatchAspectChip(
+                                  '5×7',
+                                  'print_5x7',
+                                  result.id,
+                                  config,
+                                  setModalState,
+                                ),
+                                _buildBatchAspectChip(
+                                  '8×10',
+                                  'print_8x10',
+                                  result.id,
+                                  config,
+                                  setModalState,
+                                ),
+                                _buildBatchAspectChip(
+                                  '16:9',
+                                  'web_16x9',
+                                  result.id,
+                                  config,
+                                  setModalState,
+                                ),
+                                _buildBatchAspectChip(
+                                  '1:1',
+                                  'social_1x1',
+                                  result.id,
+                                  config,
+                                  setModalState,
+                                ),
+                                _buildBatchAspectChip(
+                                  '9:16',
+                                  'social_9x16',
+                                  result.id,
+                                  config,
+                                  setModalState,
+                                ),
+                              ],
+                            ),
+                            
+                            SizedBox(height: 12),
+
+                            // Format Selection
+                            Text(
+                              'FORMAT',
+                              style: AppTypography.micro(color: AppColors.mutedGray)
+                                  .copyWith(letterSpacing: 1.2),
+                            ),
+                            SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildBatchFormatChip(
+                                    'PNG',
+                                    'png',
+                                    'Lossless',
+                                    result.id,
+                                    config,
+                                    setModalState,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: _buildBatchFormatChip(
+                                    'JPG',
+                                    'jpg',
+                                    'Compressed',
+                                    result.id,
+                                    config,
+                                    setModalState,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                // Download Button
+                Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(
+                        color: AppColors.softPlatinum.withValues(alpha: 0.1),
+                      ),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        width: double.infinity,
+                        child: ValueListenableBuilder<bool>(
+                          valueListenable: _isSaving,
+                          builder: (context, isSaving, _) => GestureDetector(
+                            onTap: isSaving ? null : () {
+                              Navigator.pop(context);
+                              _executeBatchDownload(selectedResults);
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [AppColors.matteGold, Color(0xFFB8860B)],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.matteGold.withValues(alpha: 0.3),
+                                    blurRadius: 8,
+                                    offset: Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: isSaving
+                                  ? Center(
+                                      child: SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    )
+                                  : Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.download, color: Colors.black, size: 20),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'DOWNLOAD ALL (${selectedResults.length})',
+                                          style: AppTypography.microBold(color: Colors.black),
+                                        ),
+                                      ],
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Images will be saved with individual configurations',
+                        style: AppTypography.micro(color: AppColors.mutedGray)
+                            .copyWith(fontSize: 9),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBatchAspectChip(
+    String label,
+    String value,
+    String resultId,
+    Map<String, String> config,
+    StateSetter setModalState,
+  ) {
+    final isSelected = config['aspectRatio'] == value;
+    return GestureDetector(
+      onTap: () {
+        setModalState(() {
+          _batchDownloadConfigs[resultId]!['aspectRatio'] = value;
+        });
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.matteGold.withValues(alpha: 0.15)
+              : AppColors.softPlatinum.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.matteGold
+                : AppColors.softPlatinum.withValues(alpha: 0.1),
+          ),
+        ),
+        child: Text(
+          label,
+          style: AppTypography.micro(
+            color: isSelected ? AppColors.matteGold : AppColors.coolGray,
+          ).copyWith(fontSize: 10),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBatchFormatChip(
+    String label,
+    String value,
+    String subtitle,
+    String resultId,
+    Map<String, String> config,
+    StateSetter setModalState,
+  ) {
+    final isSelected = config['format'] == value;
+    return GestureDetector(
+      onTap: () {
+        setModalState(() {
+          _batchDownloadConfigs[resultId]!['format'] = value;
+        });
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.matteGold.withValues(alpha: 0.15)
+              : AppColors.softPlatinum.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.matteGold
+                : AppColors.softPlatinum.withValues(alpha: 0.1),
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(
+              label,
+              style: AppTypography.microBold(
+                color: isSelected ? AppColors.matteGold : AppColors.coolGray,
+              ),
+            ),
+            SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: AppTypography.micro(color: AppColors.mutedGray)
+                  .copyWith(fontSize: 9),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatTimestamp(int timestamp) {
+    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+    final now = DateTime.now();
+    final diff = now.difference(date);
+
+    if (diff.inMinutes < 1) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return '${date.month}/${date.day}/${date.year}';
+  }
+
+  Future<void> _executeBatchDownload(List<GenerationResult> results) async {
+    if (_isSaving.value) return;
+    _isSaving.value = true;
+
+    int successCount = 0;
+    int failCount = 0;
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Starting batch download of ${results.length} images...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
     }
 
+    for (var i = 0; i < results.length; i++) {
+      final result = results[i];
+      final config = _batchDownloadConfigs[result.id]!;
+
+      try {
+        await _downloadSingleImage(
+          result,
+          config['aspectRatio']!,
+          config['format']!,
+          i + 1,
+        );
+        successCount++;
+        
+        // Show progress
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Downloaded ${successCount}/${results.length}...'),
+              duration: Duration(milliseconds: 500),
+            ),
+          );
+        }
+        
+        // Small delay to avoid overwhelming the system
+        await Future.delayed(Duration(milliseconds: 300));
+      } catch (e) {
+        debugPrint('Failed to download image ${i + 1}: $e');
+        failCount++;
+      }
+    }
+
+    _isSaving.value = false;
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Batch download complete! Success: $successCount, Failed: $failCount',
+          ),
+          backgroundColor: failCount == 0 ? Colors.green : Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      
+      // Exit batch select mode
+      setState(() {
+        _isBatchSelectMode = false;
+        _selectedResultIds.clear();
+        _batchDownloadConfigs.clear();
+      });
+    }
+  }
+
+  Future<void> _downloadSingleImage(
+    GenerationResult result,
+    String aspectRatio,
+    String format,
+    int index,
+  ) async {
+    Uint8List? bytes;
+
+    if (result.imageUrl.startsWith('data:')) {
+      final base64String = result.imageUrl.split(',').last;
+      bytes = base64Decode(base64String);
+    }
+
+    if (bytes == null) return;
+
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final extension = format == 'png' ? 'png' : 'jpg';
+    final aspectSuffix = aspectRatio == 'original' ? '' : '_$aspectRatio';
+    final filename = 'luxe_portrait_$index$aspectSuffix\_$timestamp.$extension';
+
+    if (kIsWeb) {
+      WebHelper.downloadImage(bytes, filename);
+    } else {
+      bool hasPermission = false;
+      if (Platform.isAndroid) {
+        hasPermission =
+            await Permission.photos.request().isGranted ||
+            await Permission.storage.request().isGranted;
+      } else {
+        hasPermission = await Permission.photos.request().isGranted;
+      }
+
+      if (!hasPermission) {
+        throw Exception('Storage permission denied');
+      }
+
+      // Always save to gallery for batch downloads
+      await ImageGallerySaverPlus.saveImage(bytes, name: filename);
+    }
+  }
+
+  /// Determines the recommended upgrade package based on current tier and feature needed
+  Map<String, dynamic> _getUpgradeRecommendation(String feature) {
+    final session = context.read<SessionProvider>();
+    final tier = session.userProfile?.subscriptionTier?.toLowerCase() ?? '';
+    
+    // Package pricing
+    const packagePrices = {
+      'socialQuick': 5,
+      'creatorPack': 29,
+      'professionalShoot': 99,
+      'agencyMaster': 299,
+    };
+    
+    // Package details
+    const packageDetails = {
+      'socialQuick': {
+        'name': 'Social Quick',
+        'photos': 5,
+        'videos': 0,
+        'features': ['5 HD Photos', 'Basic Styles'],
+      },
+      'creatorPack': {
+        'name': 'Creator Pack',
+        'photos': 30,
+        'videos': 5,
+        'features': ['30 High-Res Photos', '5 Cinematic Videos', 'Stitch Mode', 'Commercial Rights'],
+      },
+      'professionalShoot': {
+        'name': 'Professional Shoot',
+        'photos': 80,
+        'videos': 10,
+        'features': ['80 Pro-Grade Photos', '10 Cinematic Videos', 'Stitch Mode', '4K Export', 'Priority Processing'],
+      },
+      'agencyMaster': {
+        'name': 'Agency Master',
+        'photos': 200,
+        'videos': 50,
+        'features': ['200 Master Assets', '50 Cinematic Videos', 'Identity Lock™', 'Group Mode', 'White-Label Rights'],
+      },
+    };
+    
+    // Determine current package
+    String currentPackage = 'none';
+    int currentPrice = 0;
+    
+    if (tier.contains('agency') || tier.contains('agencymaster')) {
+      currentPackage = 'agencyMaster';
+      currentPrice = 299;
+    } else if (tier.contains('professional')) {
+      currentPackage = 'professionalShoot';
+      currentPrice = 99;
+    } else if (tier.contains('creator')) {
+      currentPackage = 'creatorPack';
+      currentPrice = 29;
+    } else if (tier.contains('socialquick')) {
+      currentPackage = 'socialQuick';
+      currentPrice = 5;
+    }
+    
+    // Determine recommended upgrade based on feature needed
+    String recommendedPackage;
+    
+    if (feature == 'video' || feature == 'stitch' || feature == 'Cinematic Video' || feature == 'Stitch') {
+      // These features require at least Creator Pack
+      if (currentPackage == 'none' || currentPackage == 'socialQuick') {
+        recommendedPackage = 'creatorPack';
+      } else if (currentPackage == 'creatorPack') {
+        recommendedPackage = 'professionalShoot';
+      } else if (currentPackage == 'professionalShoot') {
+        recommendedPackage = 'agencyMaster';
+      } else {
+        recommendedPackage = 'agencyMaster'; // Already at max
+      }
+    } else if (feature == 'unlimited_styles' || feature == 'batch') {
+      // These require Agency
+      if (currentPackage != 'agencyMaster') {
+        recommendedPackage = 'agencyMaster';
+      } else {
+        recommendedPackage = 'agencyMaster';
+      }
+    } else {
+      // Default upgrade path
+      if (currentPackage == 'none') {
+        recommendedPackage = 'creatorPack';
+      } else if (currentPackage == 'socialQuick') {
+        recommendedPackage = 'creatorPack';
+      } else if (currentPackage == 'creatorPack') {
+        recommendedPackage = 'professionalShoot';
+      } else if (currentPackage == 'professionalShoot') {
+        recommendedPackage = 'agencyMaster';
+      } else {
+        recommendedPackage = 'agencyMaster';
+      }
+    }
+    
+    final recommendedPrice = packagePrices[recommendedPackage] ?? 29;
+    final priceDifference = recommendedPrice - currentPrice;
+    
+    // Calculate what's NEW in the upgrade
+    final currentDetails = packageDetails[currentPackage];
+    final upgradeDetails = packageDetails[recommendedPackage]!;
+    
+    int additionalPhotos = (upgradeDetails['photos'] as int) - (currentDetails?['photos'] as int? ?? 0);
+    int additionalVideos = (upgradeDetails['videos'] as int) - (currentDetails?['videos'] as int? ?? 0);
+    
+    return {
+      'currentPackage': currentPackage,
+      'currentPackageName': currentDetails?['name'] ?? 'Free',
+      'currentPrice': currentPrice,
+      'recommendedPackage': recommendedPackage,
+      'recommendedPackageName': upgradeDetails['name'],
+      'recommendedPrice': recommendedPrice,
+      'priceDifference': priceDifference,
+      'additionalPhotos': additionalPhotos,
+      'additionalVideos': additionalVideos,
+      'features': upgradeDetails['features'],
+    };
+  }
+
+  void _showUpgradeDialog(String feature) {
+    final upgrade = _getUpgradeRecommendation(feature);
+    final priceDiff = upgrade['priceDifference'] as int;
+    final hasCurrentPackage = upgrade['currentPackage'] != 'none';
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -5796,22 +6793,35 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             Icon(Icons.lock_open, color: AppColors.matteGold, size: 40),
             SizedBox(height: 12),
             Text(
-              'Unlock $feature',
+              'Unlock ${upgrade['recommendedPackageName']}',
               style: AppTypography.h3Display(color: AppColors.matteGold),
               textAlign: TextAlign.center,
             ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Upgrade to the Creator Pack to unlock Stitch, Cinematic Video, and 30 high-res photos.',
-              style: AppTypography.bodyRegular(),
-              textAlign: TextAlign.center,
-            ),
-            if (isSocialQuick) ...[
-              SizedBox(height: 16),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Feature requesting access
+              Center(
+                child: Text(
+                  'Upgrade to access $feature and more.',
+                  style: AppTypography.bodyRegular(),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              SizedBox(height: 20),
+              
+              // What you'll get section
+              Text(
+                'WHAT YOU\'LL GET',
+                style: AppTypography.microBold(color: AppColors.matteGold),
+              ),
+              SizedBox(height: 12),
+              
+              // Additional credits highlight
               Container(
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -5822,26 +6832,113 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   ),
                 ),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    Icon(
-                      Icons.celebration,
-                      color: AppColors.matteGold,
-                      size: 20,
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Loyalty Credit Applied: Pay only the difference!',
-                        style: AppTypography.microBold(
-                          color: AppColors.matteGold,
+                    Column(
+                      children: [
+                        Icon(Icons.photo_library, color: AppColors.matteGold, size: 24),
+                        SizedBox(height: 4),
+                        Text(
+                          '+${upgrade['additionalPhotos']}',
+                          style: AppTypography.h3Display(color: AppColors.softPlatinum),
                         ),
-                      ),
+                        Text(
+                          'PHOTOS',
+                          style: AppTypography.micro(color: AppColors.mutedGray),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      width: 1,
+                      height: 50,
+                      color: AppColors.softPlatinum.withValues(alpha: 0.2),
+                    ),
+                    Column(
+                      children: [
+                        Icon(Icons.videocam, color: AppColors.matteGold, size: 24),
+                        SizedBox(height: 4),
+                        Text(
+                          '+${upgrade['additionalVideos']}',
+                          style: AppTypography.h3Display(color: AppColors.softPlatinum),
+                        ),
+                        Text(
+                          'VIDEOS',
+                          style: AppTypography.micro(color: AppColors.mutedGray),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
+              SizedBox(height: 16),
+              
+              // Features list
+              ...((upgrade['features'] as List).map((f) => Padding(
+                padding: EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: AppColors.matteGold, size: 16),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        f as String,
+                        style: AppTypography.small(color: AppColors.coolGray),
+                      ),
+                    ),
+                  ],
+                ),
+              ))),
+              
+              // Loyalty credit if upgrading from paid tier
+              if (hasCurrentPackage && priceDiff < (upgrade['recommendedPrice'] as int)) ...[
+                SizedBox(height: 16),
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.green.withValues(alpha: 0.1),
+                        Colors.green.withValues(alpha: 0.05),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.green.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.celebration,
+                        color: Colors.green,
+                        size: 20,
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Loyalty Credit Applied!',
+                              style: AppTypography.microBold(
+                                color: Colors.green,
+                              ),
+                            ),
+                            Text(
+                              'Your ${upgrade['currentPackageName']} purchase of \$${upgrade['currentPrice']} is applied.',
+                              style: AppTypography.micro(
+                                color: AppColors.coolGray,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
         actionsPadding: EdgeInsets.fromLTRB(16, 0, 16, 24),
         actions: [
@@ -5863,11 +6960,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               SizedBox(width: 8),
               Expanded(
                 child: PremiumButton(
-                  onPressed: _handleQuickUpgrade,
+                  onPressed: () => _handleQuickUpgrade(upgrade['recommendedPackage'] as String, priceDiff),
                   backgroundColor: AppColors.matteGold,
                   foregroundColor: Colors.black,
                   borderRadius: 12,
-                  child: Text('UNLOCK FOR $upgradePrice'),
+                  child: Text('UNLOCK FOR \$$priceDiff'),
                 ),
               ),
             ],
