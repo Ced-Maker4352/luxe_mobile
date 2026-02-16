@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../providers/session_provider.dart';
 import '../shared/constants.dart';
+import '../widgets/app_drawer.dart';
 import 'studio_dashboard_screen.dart';
 
 class IdentityReferenceScreen extends StatefulWidget {
@@ -242,6 +243,22 @@ class _IdentityReferenceScreenState extends State<IdentityReferenceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.midnightNavy,
+      appBar: AppBar(
+        backgroundColor: AppColors.midnightNavy,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.menu, color: AppColors.matteGold),
+          onPressed: () => Scaffold.of(context).openDrawer(),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.arrow_back, color: AppColors.matteGold),
+            onPressed: () => Navigator.of(context).pop(),
+            tooltip: 'Go Back',
+          ),
+        ],
+      ),
+      drawer: const AppDrawer(),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),

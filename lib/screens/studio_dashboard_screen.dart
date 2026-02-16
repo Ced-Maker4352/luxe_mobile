@@ -599,16 +599,37 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       if (imageUrl.startsWith('data:')) {
         final base64String = imageUrl.split(',').last;
         bytes = base64Decode(base64String);
+      } else if (imageUrl.startsWith('http')) {
+        // Download image from URL
+        final response = await http.get(Uri.parse(imageUrl));
+        if (response.statusCode == 200) {
+          bytes = response.bodyBytes;
+        }
       }
 
       if (bytes != null) {
-        final tempDir = await getTemporaryDirectory();
-        final file = await File('${tempDir.path}/shared_image.png').create();
-        await file.writeAsBytes(bytes);
+        if (kIsWeb) {
+          // On web, share the URL directly or use the Share API
+          await Share.share(
+            'Check out my Luxe AI portrait! ✨\n\n$imageUrl',
+            subject: 'My Luxe AI Creation',
+          );
+        } else {
+          // On mobile, create temporary file and share
+          final tempDir = await getTemporaryDirectory();
+          final file = await File('${tempDir.path}/shared_image.png').create();
+          await file.writeAsBytes(bytes);
 
-        await Share.shareXFiles([
-          XFile(file.path),
-        ], text: 'Check out my Luxe AI portrait! ✨');
+          await Share.shareXFiles([
+            XFile(file.path),
+          ], text: 'Check out my Luxe AI portrait! ✨');
+        }
+      } else {
+        // Fallback to sharing URL
+        await Share.share(
+          'Check out my Luxe AI portrait! ✨\n\n$imageUrl',
+          subject: 'My Luxe AI Creation',
+        );
       }
     } catch (e) {
       debugPrint('Share error: $e');

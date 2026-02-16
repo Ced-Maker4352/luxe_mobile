@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../shared/constants.dart';
 import '../widgets/app_drawer.dart';
+import 'share_screen.dart';
 
 class GalleryScreen extends StatefulWidget {
   const GalleryScreen({super.key});
@@ -120,16 +121,48 @@ class _GalleryScreenState extends State<GalleryScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.softCharcoal,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              ),
-              child: Icon(
-                Icons.image,
-                size: 60,
-                color: AppColors.matteGold.withValues(alpha: 0.3),
-              ),
+            child: Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.softCharcoal,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.image,
+                      size: 60,
+                      color: AppColors.matteGold.withValues(alpha: 0.3),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.midnightNavy.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.share, size: 18),
+                      color: AppColors.matteGold,
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ShareScreen(
+                              imageUrl: 'https://example.com/creation_${index + 1}.jpg',
+                              title: 'Creation ${index + 1}',
+                              description: 'AI-generated luxury creation from Luxe Mobile',
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Padding(

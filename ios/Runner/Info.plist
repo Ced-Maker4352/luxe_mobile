@@ -49,5 +49,9 @@
 	<string>Luxe needs speech recognition for voice-to-prompt input.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Luxe needs microphone access for voice-to-prompt input.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Luxe needs permission to save your AI-generated images to the photo library.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Luxe needs permission to access your photo library for sharing images.</string>
 </dict>
 </plist>
