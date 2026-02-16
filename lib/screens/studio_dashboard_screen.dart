@@ -5632,6 +5632,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     if (image != null) {
       final bytes = await image.readAsBytes();
       session.uploadClothingReference(bytes, image.name);
+      // Clear any previously selected clothing style - uploaded clothing replaces selection
+      setState(() {
+        _selectedClothingStyle = '';
+      });
     }
   }
 

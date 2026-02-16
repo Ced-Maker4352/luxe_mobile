@@ -189,21 +189,44 @@ class AuthService {
         // Force use of specific key unless we are strictly in legacy mode
         String updateKey = key;
 
-        // If image, and we found data in generations_remaining but NOT in photo_generations, use legacy
+        // Fallback to legacy column if new columns don't exist
         if (type == 'image' &&
             !data.containsKey('photo_generations') &&
             data.containsKey('generations_remaining')) {
+          updateKey = 'generations_remaining';
+        } else if (type == 'video' &&
+            !data.containsKey('video_generations') &&
+            data.containsKey('generations_remaining')) {
+          // Video can also fallback to legacy column if needed
           updateKey = 'generations_remaining';
         }
 
         debugPrint('AuthService: Updating $updateKey to ${current - 1}...');
 
-        await _supabase
-            .from('profiles')
-            .update({updateKey: current - 1})
-            .eq('id', user.id);
+        try {
+          await _supabase
+              .from('profiles')
+              .update({updateKey: current - 1})
+              .eq('id', user.id);
 
-        debugPrint('AuthService: Update confirmed.');
+          debugPrint('AuthService: Update confirmed.');
+        } catch (e) {
+          // If update fails due to missing column, try fallback to generations_remaining
+          if (e.toString().contains('column') && updateKey != 'generations_remaining') {
+            debugPrint('AuthService: Column $updateKey not found, trying generations_remaining...');
+            try {
+              await _supabase
+                  .from('profiles')
+                  .update({'generations_remaining': current - 1})
+                  .eq('id', user.id);
+              debugPrint('AuthService: Fallback update confirmed.');
+            } catch (fallbackError) {
+              debugPrint('AuthService: Fallback also failed: $fallbackError');
+            }
+          } else {
+            rethrow;
+          }
+        }
       } else {
         debugPrint('AuthService: Balance is 0. Cannot decrement.');
       }

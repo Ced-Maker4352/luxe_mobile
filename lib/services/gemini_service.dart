@@ -400,15 +400,11 @@ User Idea: "$draftPrompt"''',
 
     if (result.isNotEmpty) return result;
 
-    // Last resort fallback to Imagen (using known stable model name)
-    // Imagen typically supports single reference image
-    return _generateImageWithImagen(
-      'imagen-4.0-generate-001',
-      promptBuffer.toString(),
-      referenceImageBase64: referenceImagesBase64.isNotEmpty
-          ? referenceImagesBase64.first
-          : null,
-    );
+    // Last resort fallback to Imagen
+    // NOTE: Imagen does NOT support reference images in the same way as Gemini
+    // So we skip reference images for Imagen fallback
+    debugPrint('GeminiService: All Gemini models failed. Imagen fallback disabled for identity-locked generations.');
+    return 'Error: Image generation failed. All available models returned no result.';
   }
 
   Future<String> generateStylingChange({
