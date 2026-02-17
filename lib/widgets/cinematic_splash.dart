@@ -254,7 +254,7 @@ class _CinematicSplashState extends State<CinematicSplash>
                       ),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.4),
+                          color: Colors.black.withValues(alpha: 0.4),
                           borderRadius: BorderRadius.circular(15),
                         ),
                         child: const Column(
@@ -347,7 +347,7 @@ class _CinematicSplashState extends State<CinematicSplash>
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: AppColors.matteGold.withOpacity(0.5),
+                        color: AppColors.matteGold.withValues(alpha: 0.5),
                       ),
                       image: const DecorationImage(
                         image: AssetImage(
@@ -357,7 +357,7 @@ class _CinematicSplashState extends State<CinematicSplash>
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.matteGold.withOpacity(0.1),
+                          color: AppColors.matteGold.withValues(alpha: 0.1),
                           blurRadius: 30,
                           spreadRadius: 5,
                         ),
@@ -414,7 +414,7 @@ class _CinematicSplashState extends State<CinematicSplash>
                 ),
                 const SizedBox(height: 24),
                 // Processing shimmer
-                Container(
+                SizedBox(
                   width: 200,
                   height: 2,
                   child: const LinearProgressIndicator(

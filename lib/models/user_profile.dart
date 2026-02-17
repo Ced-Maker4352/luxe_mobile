@@ -17,14 +17,15 @@ class UserProfile {
     // Default credits if missing in DB
     int defaultPhotos = 0;
     if (tier != null) {
-      if (tier.contains('creatorPack'))
+      if (tier.contains('creatorPack')) {
         defaultPhotos = 30;
-      else if (tier.contains('professionalShoot'))
+      } else if (tier.contains('professionalShoot')) {
         defaultPhotos = 80;
-      else if (tier.contains('agencyMaster'))
+      } else if (tier.contains('agencyMaster')) {
         defaultPhotos = 200;
-      else if (tier.contains('socialQuick'))
+      } else if (tier.contains('socialQuick')) {
         defaultPhotos = 5;
+      }
     }
 
     // Default video credits (e.g., 10 for Pro, 50 for Agency)

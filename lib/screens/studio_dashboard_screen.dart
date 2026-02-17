@@ -6,6 +6,7 @@ import '../models/types.dart';
 import '../shared/constants.dart';
 import '../services/gemini_service.dart';
 import '../services/campus_service.dart';
+import '../services/storage_service.dart';
 import '../widgets/comparison_slider.dart';
 import '../widgets/app_drawer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -15,7 +16,6 @@ import '../services/auth_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:typed_data';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
@@ -324,6 +324,20 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         timestamp: DateTime.now().millisecondsSinceEpoch,
       );
       session.addResult(newResult);
+
+      // Persist to Supabase Storage + generations table (fire-and-forget)
+      StorageService().saveGeneration(
+        imageBase64: imageUrl,
+        prompt: fullPrompt,
+        style: session.selectedStyle?.name,
+        type: 'image',
+        metadata: {
+          'rig': session.selectedRig?.name,
+          'package': session.selectedPackage!.id.name,
+          'framing': _framingMode,
+        },
+      );
+
       if (mounted) {
         // Do not focus result automatically to keep Results Viewer active
         // setState(() {
@@ -473,6 +487,20 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         timestamp: DateTime.now().millisecondsSinceEpoch,
       );
       session.addResult(newResult);
+
+      // Persist to Supabase Storage + generations table (fire-and-forget)
+      StorageService().saveGeneration(
+        imageBase64: imageUrl,
+        prompt: fullPrompt,
+        style: _selectedGroupStyle.isNotEmpty ? _selectedGroupStyle : null,
+        type: 'stitch',
+        metadata: {
+          'group_type': _selectedGroupType,
+          'subject_count': session.stitchImages.length,
+          'vibe': session.stitchVibe,
+        },
+      );
+
       if (mounted) {
         // Do not focus result automatically to keep Results Viewer active
         // setState(() {
@@ -818,7 +846,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                           ),
                           SizedBox(width: 6),
                           Text(
-                            _isBatchSelectMode ? 'SELECTING (${_selectedResultIds.length})' : 'SELECT',
+                            _isBatchSelectMode
+                                ? 'SELECTING (${_selectedResultIds.length})'
+                                : 'SELECT',
                             style: AppTypography.microBold(
                               color: _isBatchSelectMode
                                   ? Colors.black
@@ -831,7 +861,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   ),
                 ),
               ),
-              
+
               // BEFORE/AFTER Toggle
               if (session.hasUploadedImage && !_isBatchSelectMode)
                 Padding(
@@ -877,7 +907,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             ],
           ),
         ),
-        
+
         // Batch Download Action Button
         if (_isBatchSelectMode && _selectedResultIds.isNotEmpty)
           Positioned(
@@ -1024,7 +1054,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   Widget _buildEditorImageArea(GenerationResult result) {
     return Stack(
       children: [
-        Container(
+        SizedBox(
           width: double.infinity,
           height: double.infinity,
           child: AnimatedBuilder(
@@ -1099,21 +1129,18 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       tween: Tween(begin: 1.0, end: 1.0),
       duration: Duration(milliseconds: 300),
       builder: (context, scale, child) {
-        return Transform.scale(
-          scale: scale,
-          child: child,
-        );
+        return Transform.scale(scale: scale, child: child);
       },
       child: AnimatedContainer(
         duration: Duration(milliseconds: 300),
         padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: isLow 
+          color: isLow
               ? Colors.orange.withValues(alpha: 0.15)
               : AppColors.softPlatinum.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isLow 
+            color: isLow
                 ? Colors.orange.withValues(alpha: 0.5)
                 : AppColors.softPlatinum.withValues(alpha: 0.24),
           ),
@@ -1122,13 +1149,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              icon, 
-              size: 12, 
+              icon,
+              size: 12,
               color: isLow ? Colors.orange : AppColors.matteGold,
             ),
             SizedBox(width: 4),
             Text(
-              '$count', 
+              '$count',
               style: AppTypography.microBold(
                 color: isLow ? Colors.orange : AppColors.softPlatinum,
               ),
@@ -1171,15 +1198,25 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     SnackBar(
                       content: Text('Refreshing credits...'),
                       duration: Duration(seconds: 1),
-                      backgroundColor: AppColors.matteGold.withValues(alpha: 0.8),
+                      backgroundColor: AppColors.matteGold.withValues(
+                        alpha: 0.8,
+                      ),
                     ),
                   );
                 },
                 child: Row(
                   children: [
-                    _buildCreditBadge(Icons.camera_alt, p, isLow: p <= 3 && p > 0),
+                    _buildCreditBadge(
+                      Icons.camera_alt,
+                      p,
+                      isLow: p <= 3 && p > 0,
+                    ),
                     SizedBox(width: 8),
-                    _buildCreditBadge(Icons.videocam, v, isLow: v <= 1 && v > 0),
+                    _buildCreditBadge(
+                      Icons.videocam,
+                      v,
+                      isLow: v <= 1 && v > 0,
+                    ),
                   ],
                 ),
               );
@@ -1537,12 +1574,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 onTap: () {
                   final session = context.read<SessionProvider>();
                   setState(() {
-                    if (_gender == 'female')
+                    if (_gender == 'female') {
                       _gender = 'male';
-                    else if (_gender == 'male')
+                    } else if (_gender == 'male') {
                       _gender = 'unspecified';
-                    else
+                    } else {
                       _gender = 'female';
+                    }
                     session.setSoloGender(_gender);
                   });
                 },
@@ -1649,8 +1687,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                           width: 80,
                           margin: EdgeInsets.only(right: 12),
                           decoration: BoxDecoration(
-                            border: isSelected || _selectedResultIds.contains(result.id)
-                                ? Border.all(color: AppColors.matteGold, width: 2)
+                            border:
+                                isSelected ||
+                                    _selectedResultIds.contains(result.id)
+                                ? Border.all(
+                                    color: AppColors.matteGold,
+                                    width: 2,
+                                  )
                                 : null,
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -1903,9 +1946,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               ),
             ],
           ),
-          
+
           // Low credits warning
-          if ((profile?.photoGenerations ?? 0) <= 5 || (profile?.videoGenerations ?? 0) <= 2) ...[
+          if ((profile?.photoGenerations ?? 0) <= 5 ||
+              (profile?.videoGenerations ?? 0) <= 2) ...[
             const SizedBox(height: 16),
             GestureDetector(
               onTap: () => _showUpgradeDialog('general'),
@@ -1933,16 +1977,24 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                         children: [
                           Text(
                             'Running low on credits!',
-                            style: AppTypography.microBold(color: Colors.orange),
+                            style: AppTypography.microBold(
+                              color: Colors.orange,
+                            ),
                           ),
                           Text(
                             'Tap to upgrade and keep creating.',
-                            style: AppTypography.micro(color: AppColors.coolGray),
+                            style: AppTypography.micro(
+                              color: AppColors.coolGray,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    Icon(Icons.arrow_forward_ios, color: Colors.orange, size: 14),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      color: Colors.orange,
+                      size: 14,
+                    ),
                   ],
                 ),
               ),
@@ -2003,8 +2055,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       child: Column(
         children: [
           Icon(
-            icon, 
-            color: isLow ? Colors.orange : AppColors.matteGold, 
+            icon,
+            color: isLow ? Colors.orange : AppColors.matteGold,
             size: 24,
           ),
           const SizedBox(height: 12),
@@ -2029,7 +2081,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             const SizedBox(height: 8),
             Text(
               'TAP TO REFRESH',
-              style: AppTypography.micro(color: Colors.orange).copyWith(fontSize: 8),
+              style: AppTypography.micro(
+                color: Colors.orange,
+              ).copyWith(fontSize: 8),
             ),
           ],
         ],
@@ -3114,7 +3168,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Thin luxury loader
-          Container(
+          SizedBox(
             width: 200,
             height: 2,
             child: LinearProgressIndicator(
@@ -3312,24 +3366,32 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   Widget _buildAdjustmentsOverlay() {
     final session = context.read<SessionProvider>();
     final tags = <String>[];
-    if (_brightness.value != 100)
+    if (_brightness.value != 100) {
       tags.add('Brightness ${_brightness.value.toInt()}%');
-    if (_contrast.value != 100)
+    }
+    if (_contrast.value != 100) {
       tags.add('Contrast ${_contrast.value.toInt()}%');
-    if (_saturation.value != 100)
+    }
+    if (_saturation.value != 100) {
       tags.add('Saturation ${_saturation.value.toInt()}%');
+    }
     tags.add('Skin: ${_selectedSkinTexture.label}');
     tags.add('Framing: ${_framingMode.replaceAll('-', ' ').toUpperCase()}');
-    if (_customPrompt.isNotEmpty)
+    if (_customPrompt.isNotEmpty) {
       tags.add(
         'Prompt: ${_customPrompt.length > 20 ? '${_customPrompt.substring(0, 20)}...' : _customPrompt}',
       );
-    if (_selectedBackdrop != null) tags.add('BG: ${_selectedBackdrop!.name}');
+    }
+    if (_selectedBackdrop != null) {
+      tags.add('BG: ${_selectedBackdrop!.name}');
+    }
     tags.add('Gender: ${_gender.toUpperCase()}');
-    if (_styleTemperature != 'neutral')
+    if (_styleTemperature != 'neutral') {
       tags.add('Grade: ${_styleTemperature.toUpperCase()}');
-    if (_selectedClothingStyle.isNotEmpty)
+    }
+    if (_selectedClothingStyle.isNotEmpty) {
       tags.add('Style: $_selectedClothingStyle');
+    }
 
     if (session.hasBackgroundReference) tags.add('Custom BG Active');
     if (session.hasClothingReference) tags.add('Custom Wardrobe Active');
@@ -3441,7 +3503,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 Switch(
                   value: session.preserveAgeAndBody,
                   onChanged: (val) => session.setPreserveAgeAndBody(val),
-                  activeColor: AppColors.matteGold,
+                  activeThumbColor: AppColors.matteGold,
                   activeTrackColor: AppColors.matteGold.withValues(alpha: 0.3),
                   inactiveThumbColor: AppColors.softPlatinum.withValues(
                     alpha: 0.24,
@@ -3713,7 +3775,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   ],
                 ),
               );
-            }).toList()
+            })
           else if (clothingOptions is List<String>)
             Wrap(
               spacing: 8,
@@ -4690,9 +4752,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               final styleMap =
                   promptCategories['Styling & Vibe'] as Map<String, dynamic>;
               final List<String> allStyles = [];
-              styleMap.values.forEach((val) {
+              for (final val in styleMap.values) {
                 if (val is List) allStyles.addAll(val.cast<String>());
-              });
+              }
 
               return Container(
                 margin: EdgeInsets.only(bottom: 8),
@@ -4951,8 +5013,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 itemCount: session.results.length,
                 itemBuilder: (context, idx) {
                   final result = session.results[idx];
-                  if (result.mediaType != 'image')
+                  if (result.mediaType != 'image') {
                     return const SizedBox.shrink();
+                  }
 
                   return GestureDetector(
                     onTap: () {
@@ -5069,7 +5132,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   String _selectedAspectRatio = 'original';
   String _selectedSaveFormat = 'png';
   String _selectedSaveDestination = 'gallery';
-  
+
   // Batch download state
   bool _isBatchSelectMode = false;
   final Set<String> _selectedResultIds = {};
@@ -5118,7 +5181,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                             SizedBox(width: 8),
                             Text(
                               'QUICK SAVE TO GALLERY',
-                              style: AppTypography.microBold(color: Colors.black),
+                              style: AppTypography.microBold(
+                                color: Colors.black,
+                              ),
                             ),
                           ],
                         ),
@@ -5134,14 +5199,28 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           // Save Destination Section
           Text(
             'SAVE DESTINATION',
-            style: AppTypography.micro(color: AppColors.mutedGray).copyWith(letterSpacing: 1.2),
+            style: AppTypography.micro(
+              color: AppColors.mutedGray,
+            ).copyWith(letterSpacing: 1.2),
           ),
           SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: _buildDestinationOption('gallery', Icons.photo_library, 'Gallery')),
+              Expanded(
+                child: _buildDestinationOption(
+                  'gallery',
+                  Icons.photo_library,
+                  'Gallery',
+                ),
+              ),
               SizedBox(width: 8),
-              Expanded(child: _buildDestinationOption('downloads', Icons.folder, 'Downloads')),
+              Expanded(
+                child: _buildDestinationOption(
+                  'downloads',
+                  Icons.folder,
+                  'Downloads',
+                ),
+              ),
             ],
           ),
 
@@ -5150,7 +5229,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           // Aspect Ratio Section
           Text(
             'ASPECT RATIO',
-            style: AppTypography.micro(color: AppColors.mutedGray).copyWith(letterSpacing: 1.2),
+            style: AppTypography.micro(
+              color: AppColors.mutedGray,
+            ).copyWith(letterSpacing: 1.2),
           ),
           SizedBox(height: 10),
           SingleChildScrollView(
@@ -5179,14 +5260,28 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           // Format Section
           Text(
             'FORMAT & QUALITY',
-            style: AppTypography.micro(color: AppColors.mutedGray).copyWith(letterSpacing: 1.2),
+            style: AppTypography.micro(
+              color: AppColors.mutedGray,
+            ).copyWith(letterSpacing: 1.2),
           ),
           SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: _buildFormatOption('png', 'PNG', 'Lossless • Best Quality')),
+              Expanded(
+                child: _buildFormatOption(
+                  'png',
+                  'PNG',
+                  'Lossless • Best Quality',
+                ),
+              ),
               SizedBox(width: 8),
-              Expanded(child: _buildFormatOption('jpg', 'JPG', 'Compressed • Smaller Size')),
+              Expanded(
+                child: _buildFormatOption(
+                  'jpg',
+                  'JPG',
+                  'Compressed • Smaller Size',
+                ),
+              ),
             ],
           ),
 
@@ -5204,7 +5299,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   decoration: BoxDecoration(
                     color: Color(0xFF1A1A1A),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.matteGold.withValues(alpha: 0.5)),
+                    border: Border.all(
+                      color: AppColors.matteGold.withValues(alpha: 0.5),
+                    ),
                   ),
                   child: isSaving
                       ? Center(
@@ -5220,11 +5317,17 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                       : Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.download, color: AppColors.matteGold, size: 18),
+                            Icon(
+                              Icons.download,
+                              color: AppColors.matteGold,
+                              size: 18,
+                            ),
                             SizedBox(width: 8),
                             Text(
                               'DOWNLOAD WITH OPTIONS',
-                              style: AppTypography.microBold(color: AppColors.matteGold),
+                              style: AppTypography.microBold(
+                                color: AppColors.matteGold,
+                              ),
                             ),
                           ],
                         ),
@@ -5237,7 +5340,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           Center(
             child: Text(
               _getDownloadSummary(),
-              style: AppTypography.micro(color: AppColors.mutedGray).copyWith(fontSize: 9),
+              style: AppTypography.micro(
+                color: AppColors.mutedGray,
+              ).copyWith(fontSize: 9),
               textAlign: TextAlign.center,
             ),
           ),
@@ -5249,15 +5354,21 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   Widget _buildDividerWithLabel(String label) {
     return Row(
       children: [
-        Expanded(child: Divider(color: AppColors.mutedGray.withValues(alpha: 0.3))),
+        Expanded(
+          child: Divider(color: AppColors.mutedGray.withValues(alpha: 0.3)),
+        ),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 12),
           child: Text(
             label,
-            style: AppTypography.micro(color: AppColors.mutedGray).copyWith(fontSize: 9, letterSpacing: 1.5),
+            style: AppTypography.micro(
+              color: AppColors.mutedGray,
+            ).copyWith(fontSize: 9, letterSpacing: 1.5),
           ),
         ),
-        Expanded(child: Divider(color: AppColors.mutedGray.withValues(alpha: 0.3))),
+        Expanded(
+          child: Divider(color: AppColors.mutedGray.withValues(alpha: 0.3)),
+        ),
       ],
     );
   }
@@ -5269,19 +5380,29 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.matteGold.withValues(alpha: 0.15) : Color(0xFF1A1A1A),
+          color: isSelected
+              ? AppColors.matteGold.withValues(alpha: 0.15)
+              : Color(0xFF1A1A1A),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? AppColors.matteGold : AppColors.mutedGray.withValues(alpha: 0.3),
+            color: isSelected
+                ? AppColors.matteGold
+                : AppColors.mutedGray.withValues(alpha: 0.3),
           ),
         ),
         child: Column(
           children: [
-            Icon(icon, color: isSelected ? AppColors.matteGold : AppColors.mutedGray, size: 20),
+            Icon(
+              icon,
+              color: isSelected ? AppColors.matteGold : AppColors.mutedGray,
+              size: 20,
+            ),
             SizedBox(height: 6),
             Text(
               label,
-              style: AppTypography.micro(color: isSelected ? AppColors.matteGold : AppColors.coolGray),
+              style: AppTypography.micro(
+                color: isSelected ? AppColors.matteGold : AppColors.coolGray,
+              ),
             ),
           ],
         ),
@@ -5296,22 +5417,30 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.matteGold.withValues(alpha: 0.15) : Color(0xFF1A1A1A),
+          color: isSelected
+              ? AppColors.matteGold.withValues(alpha: 0.15)
+              : Color(0xFF1A1A1A),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? AppColors.matteGold : AppColors.mutedGray.withValues(alpha: 0.3),
+            color: isSelected
+                ? AppColors.matteGold
+                : AppColors.mutedGray.withValues(alpha: 0.3),
           ),
         ),
         child: Column(
           children: [
             Text(
               label,
-              style: AppTypography.micro(color: isSelected ? AppColors.matteGold : AppColors.coolGray),
+              style: AppTypography.micro(
+                color: isSelected ? AppColors.matteGold : AppColors.coolGray,
+              ),
             ),
             SizedBox(height: 2),
             Text(
               ratio,
-              style: AppTypography.micro(color: AppColors.mutedGray).copyWith(fontSize: 9),
+              style: AppTypography.micro(
+                color: AppColors.mutedGray,
+              ).copyWith(fontSize: 9),
             ),
           ],
         ),
@@ -5326,22 +5455,30 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.matteGold.withValues(alpha: 0.15) : Color(0xFF1A1A1A),
+          color: isSelected
+              ? AppColors.matteGold.withValues(alpha: 0.15)
+              : Color(0xFF1A1A1A),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? AppColors.matteGold : AppColors.mutedGray.withValues(alpha: 0.3),
+            color: isSelected
+                ? AppColors.matteGold
+                : AppColors.mutedGray.withValues(alpha: 0.3),
           ),
         ),
         child: Column(
           children: [
             Text(
               label,
-              style: AppTypography.microBold(color: isSelected ? AppColors.matteGold : AppColors.coolGray),
+              style: AppTypography.microBold(
+                color: isSelected ? AppColors.matteGold : AppColors.coolGray,
+              ),
             ),
             SizedBox(height: 4),
             Text(
               subtitle,
-              style: AppTypography.micro(color: AppColors.mutedGray).copyWith(fontSize: 8),
+              style: AppTypography.micro(
+                color: AppColors.mutedGray,
+              ).copyWith(fontSize: 8),
               textAlign: TextAlign.center,
             ),
           ],
@@ -5400,8 +5537,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final extension = _selectedSaveFormat == 'png' ? 'png' : 'jpg';
-      final aspectSuffix = _selectedAspectRatio == 'original' ? '' : '_${_selectedAspectRatio}';
-      final filename = 'luxe_portrait$aspectSuffix\_$timestamp.$extension';
+      final aspectSuffix = _selectedAspectRatio == 'original'
+          ? ''
+          : '_$_selectedAspectRatio';
+      final filename = 'luxe_portrait${aspectSuffix}_$timestamp.$extension';
 
       if (kIsWeb) {
         WebHelper.downloadImage(bytes, filename);
@@ -5430,15 +5569,24 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         }
 
         if (_selectedSaveDestination == 'gallery') {
-          final result = await ImageGallerySaverPlus.saveImage(bytes, name: filename);
+          final result = await ImageGallerySaverPlus.saveImage(
+            bytes,
+            name: filename,
+          );
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Saved to Gallery: ${result['isSuccess'] == true ? 'Success' : 'Failed'}')),
+              SnackBar(
+                content: Text(
+                  'Saved to Gallery: ${result['isSuccess'] == true ? 'Success' : 'Failed'}',
+                ),
+              ),
             );
           }
         } else {
           // Save to Downloads folder
-          final directory = await getDownloadsDirectory() ?? await getApplicationDocumentsDirectory();
+          final directory =
+              await getDownloadsDirectory() ??
+              await getApplicationDocumentsDirectory();
           final file = File('${directory.path}/$filename');
           await file.writeAsBytes(bytes);
           if (mounted) {
@@ -5455,15 +5603,16 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         if (errorMsg.contains('MissingPluginException')) {
           errorMsg = 'This feature is not supported on this platform.';
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save: $errorMsg')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to save: $errorMsg')));
       }
     } finally {
       _isSaving.value = false;
     }
   }
 
+  // ignore: unused_element
   Widget _buildDownloadOption(
     String label,
     String subtitle,
@@ -6036,7 +6185,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     }
   }
 
-  Future<void> _handleQuickUpgrade(String packageId, int priceDifference) async {
+  Future<void> _handleQuickUpgrade(
+    String packageId,
+    int priceDifference,
+  ) async {
     final session = context.read<SessionProvider>();
     final user = Supabase.instance.client.auth.currentUser;
 
@@ -6082,15 +6234,17 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           // Build success URL that returns to current session
           // Note: In production, add success_url and cancel_url query params
           final uri = Uri.parse(paymentLink);
-          
+
           if (await canLaunchUrl(uri)) {
             await launchUrl(uri, mode: LaunchMode.externalApplication);
-            
+
             // Show message about returning after payment
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Complete payment in the new tab. Your session will be ready when you return.'),
+                  content: Text(
+                    'Complete payment in the new tab. Your session will be ready when you return.',
+                  ),
                   duration: Duration(seconds: 5),
                   backgroundColor: AppColors.matteGold,
                   action: SnackBarAction(
@@ -6101,7 +6255,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Credits refreshed! Photos: ${session.userProfile?.photoGenerations ?? 0}, Videos: ${session.userProfile?.videoGenerations ?? 0}'),
+                            content: Text(
+                              'Credits refreshed! Photos: ${session.userProfile?.photoGenerations ?? 0}, Videos: ${session.userProfile?.videoGenerations ?? 0}',
+                            ),
                             backgroundColor: Colors.green,
                           ),
                         );
@@ -6111,7 +6267,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 ),
               );
             }
-            
+
             // Set up a listener to refresh profile when user returns (after delay)
             Future.delayed(Duration(seconds: 10), () async {
               if (mounted) {
@@ -6132,7 +6288,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         if (success) {
           // Refresh user profile to get updated credits
           await session.fetchUserProfile();
-          
+
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -6156,7 +6312,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Payment was cancelled or failed. Please try again.'),
+                content: Text(
+                  'Payment was cancelled or failed. Please try again.',
+                ),
                 backgroundColor: Colors.orange,
               ),
             );
@@ -6168,7 +6326,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Upgrade failed: ${e.toString().replaceAll('Exception: ', '')}'),
+            content: Text(
+              'Upgrade failed: ${e.toString().replaceAll('Exception: ', '')}',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -6191,7 +6351,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       ),
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => SafeArea(
-          child: Container(
+          child: SizedBox(
             height: MediaQuery.of(context).size.height * 0.85,
             child: Column(
               children: [
@@ -6211,7 +6371,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                       SizedBox(width: 12),
                       Text(
                         'BATCH DOWNLOAD CONFIGURATION',
-                        style: AppTypography.microBold(color: AppColors.matteGold),
+                        style: AppTypography.microBold(
+                          color: AppColors.matteGold,
+                        ),
                       ),
                       Spacer(),
                       IconButton(
@@ -6230,7 +6392,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     itemBuilder: (context, index) {
                       final result = selectedResults[index];
                       final config = _batchDownloadConfigs[result.id]!;
-                      
+
                       return Container(
                         margin: EdgeInsets.only(bottom: 16),
                         padding: EdgeInsets.all(12),
@@ -6238,7 +6400,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                           color: AppColors.softPlatinum.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: AppColors.softPlatinum.withValues(alpha: 0.1),
+                            color: AppColors.softPlatinum.withValues(
+                              alpha: 0.1,
+                            ),
                           ),
                         ),
                         child: Column(
@@ -6251,7 +6415,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                                   borderRadius: BorderRadius.circular(8),
                                   child: result.imageUrl.startsWith('data:')
                                       ? Image.memory(
-                                          base64Decode(result.imageUrl.split(',')[1]),
+                                          base64Decode(
+                                            result.imageUrl.split(',')[1],
+                                          ),
                                           width: 60,
                                           height: 60,
                                           fit: BoxFit.cover,
@@ -6266,7 +6432,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                                 SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'Image ${index + 1}',
@@ -6288,7 +6455,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                             ),
                             SizedBox(height: 12),
                             Divider(
-                              color: AppColors.softPlatinum.withValues(alpha: 0.1),
+                              color: AppColors.softPlatinum.withValues(
+                                alpha: 0.1,
+                              ),
                               height: 1,
                             ),
                             SizedBox(height: 12),
@@ -6296,8 +6465,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                             // Aspect Ratio Selection
                             Text(
                               'ASPECT RATIO',
-                              style: AppTypography.micro(color: AppColors.mutedGray)
-                                  .copyWith(letterSpacing: 1.2),
+                              style: AppTypography.micro(
+                                color: AppColors.mutedGray,
+                              ).copyWith(letterSpacing: 1.2),
                             ),
                             SizedBox(height: 8),
                             Wrap(
@@ -6355,14 +6525,15 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                                 ),
                               ],
                             ),
-                            
+
                             SizedBox(height: 12),
 
                             // Format Selection
                             Text(
                               'FORMAT',
-                              style: AppTypography.micro(color: AppColors.mutedGray)
-                                  .copyWith(letterSpacing: 1.2),
+                              style: AppTypography.micro(
+                                color: AppColors.mutedGray,
+                              ).copyWith(letterSpacing: 1.2),
                             ),
                             SizedBox(height: 8),
                             Row(
@@ -6414,20 +6585,27 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                         child: ValueListenableBuilder<bool>(
                           valueListenable: _isSaving,
                           builder: (context, isSaving, _) => GestureDetector(
-                            onTap: isSaving ? null : () {
-                              Navigator.pop(context);
-                              _executeBatchDownload(selectedResults);
-                            },
+                            onTap: isSaving
+                                ? null
+                                : () {
+                                    Navigator.pop(context);
+                                    _executeBatchDownload(selectedResults);
+                                  },
                             child: Container(
                               padding: EdgeInsets.symmetric(vertical: 16),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
-                                  colors: [AppColors.matteGold, Color(0xFFB8860B)],
+                                  colors: [
+                                    AppColors.matteGold,
+                                    Color(0xFFB8860B),
+                                  ],
                                 ),
                                 borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColors.matteGold.withValues(alpha: 0.3),
+                                    color: AppColors.matteGold.withValues(
+                                      alpha: 0.3,
+                                    ),
                                     blurRadius: 8,
                                     offset: Offset(0, 4),
                                   ),
@@ -6445,13 +6623,20 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                                       ),
                                     )
                                   : Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.download, color: Colors.black, size: 20),
+                                        Icon(
+                                          Icons.download,
+                                          color: Colors.black,
+                                          size: 20,
+                                        ),
                                         SizedBox(width: 8),
                                         Text(
                                           'DOWNLOAD ALL (${selectedResults.length})',
-                                          style: AppTypography.microBold(color: Colors.black),
+                                          style: AppTypography.microBold(
+                                            color: Colors.black,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -6462,8 +6647,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                       SizedBox(height: 8),
                       Text(
                         'Images will be saved with individual configurations',
-                        style: AppTypography.micro(color: AppColors.mutedGray)
-                            .copyWith(fontSize: 9),
+                        style: AppTypography.micro(
+                          color: AppColors.mutedGray,
+                        ).copyWith(fontSize: 9),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -6553,8 +6739,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             SizedBox(height: 2),
             Text(
               subtitle,
-              style: AppTypography.micro(color: AppColors.mutedGray)
-                  .copyWith(fontSize: 9),
+              style: AppTypography.micro(
+                color: AppColors.mutedGray,
+              ).copyWith(fontSize: 9),
             ),
           ],
         ),
@@ -6584,7 +6771,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Starting batch download of ${results.length} images...'),
+          content: Text(
+            'Starting batch download of ${results.length} images...',
+          ),
           duration: Duration(seconds: 2),
         ),
       );
@@ -6602,17 +6791,17 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           i + 1,
         );
         successCount++;
-        
+
         // Show progress
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Downloaded ${successCount}/${results.length}...'),
+              content: Text('Downloaded $successCount/${results.length}...'),
               duration: Duration(milliseconds: 500),
             ),
           );
         }
-        
+
         // Small delay to avoid overwhelming the system
         await Future.delayed(Duration(milliseconds: 300));
       } catch (e) {
@@ -6633,7 +6822,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           duration: Duration(seconds: 3),
         ),
       );
-      
+
       // Exit batch select mode
       setState(() {
         _isBatchSelectMode = false;
@@ -6661,7 +6850,8 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final extension = format == 'png' ? 'png' : 'jpg';
     final aspectSuffix = aspectRatio == 'original' ? '' : '_$aspectRatio';
-    final filename = 'luxe_portrait_$index$aspectSuffix\_$timestamp.$extension';
+    final filename =
+        'luxe_portrait_$index${aspectSuffix}_$timestamp.$extension';
 
     if (kIsWeb) {
       WebHelper.downloadImage(bytes, filename);
@@ -6688,7 +6878,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   Map<String, dynamic> _getUpgradeRecommendation(String feature) {
     final session = context.read<SessionProvider>();
     final tier = session.userProfile?.subscriptionTier?.toLowerCase() ?? '';
-    
+
     // Package pricing
     const packagePrices = {
       'socialQuick': 5,
@@ -6696,7 +6886,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       'professionalShoot': 99,
       'agencyMaster': 299,
     };
-    
+
     // Package details
     const packageDetails = {
       'socialQuick': {
@@ -6709,26 +6899,43 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         'name': 'Creator Pack',
         'photos': 30,
         'videos': 5,
-        'features': ['30 High-Res Photos', '5 Cinematic Videos', 'Stitch Mode', 'Commercial Rights'],
+        'features': [
+          '30 High-Res Photos',
+          '5 Cinematic Videos',
+          'Stitch Mode',
+          'Commercial Rights',
+        ],
       },
       'professionalShoot': {
         'name': 'Professional Shoot',
         'photos': 80,
         'videos': 10,
-        'features': ['80 Pro-Grade Photos', '10 Cinematic Videos', 'Stitch Mode', '4K Export', 'Priority Processing'],
+        'features': [
+          '80 Pro-Grade Photos',
+          '10 Cinematic Videos',
+          'Stitch Mode',
+          '4K Export',
+          'Priority Processing',
+        ],
       },
       'agencyMaster': {
         'name': 'Agency Master',
         'photos': 200,
         'videos': 50,
-        'features': ['200 Master Assets', '50 Cinematic Videos', 'Identity Lock™', 'Group Mode', 'White-Label Rights'],
+        'features': [
+          '200 Master Assets',
+          '50 Cinematic Videos',
+          'Identity Lock™',
+          'Group Mode',
+          'White-Label Rights',
+        ],
       },
     };
-    
+
     // Determine current package
     String currentPackage = 'none';
     int currentPrice = 0;
-    
+
     if (tier.contains('agency') || tier.contains('agencymaster')) {
       currentPackage = 'agencyMaster';
       currentPrice = 299;
@@ -6742,11 +6949,14 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       currentPackage = 'socialQuick';
       currentPrice = 5;
     }
-    
+
     // Determine recommended upgrade based on feature needed
     String recommendedPackage;
-    
-    if (feature == 'video' || feature == 'stitch' || feature == 'Cinematic Video' || feature == 'Stitch') {
+
+    if (feature == 'video' ||
+        feature == 'stitch' ||
+        feature == 'Cinematic Video' ||
+        feature == 'Stitch') {
       // These features require at least Creator Pack
       if (currentPackage == 'none' || currentPackage == 'socialQuick') {
         recommendedPackage = 'creatorPack';
@@ -6778,17 +6988,21 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         recommendedPackage = 'agencyMaster';
       }
     }
-    
+
     final recommendedPrice = packagePrices[recommendedPackage] ?? 29;
     final priceDifference = recommendedPrice - currentPrice;
-    
+
     // Calculate what's NEW in the upgrade
     final currentDetails = packageDetails[currentPackage];
     final upgradeDetails = packageDetails[recommendedPackage]!;
-    
-    int additionalPhotos = (upgradeDetails['photos'] as int) - (currentDetails?['photos'] as int? ?? 0);
-    int additionalVideos = (upgradeDetails['videos'] as int) - (currentDetails?['videos'] as int? ?? 0);
-    
+
+    int additionalPhotos =
+        (upgradeDetails['photos'] as int) -
+        (currentDetails?['photos'] as int? ?? 0);
+    int additionalVideos =
+        (upgradeDetails['videos'] as int) -
+        (currentDetails?['videos'] as int? ?? 0);
+
     return {
       'currentPackage': currentPackage,
       'currentPackageName': currentDetails?['name'] ?? 'Free',
@@ -6807,7 +7021,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     final upgrade = _getUpgradeRecommendation(feature);
     final priceDiff = upgrade['priceDifference'] as int;
     final hasCurrentPackage = upgrade['currentPackage'] != 'none';
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -6838,14 +7052,14 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 ),
               ),
               SizedBox(height: 20),
-              
+
               // What you'll get section
               Text(
                 'WHAT YOU\'LL GET',
                 style: AppTypography.microBold(color: AppColors.matteGold),
               ),
               SizedBox(height: 12),
-              
+
               // Additional credits highlight
               Container(
                 padding: EdgeInsets.all(12),
@@ -6861,15 +7075,23 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   children: [
                     Column(
                       children: [
-                        Icon(Icons.photo_library, color: AppColors.matteGold, size: 24),
+                        Icon(
+                          Icons.photo_library,
+                          color: AppColors.matteGold,
+                          size: 24,
+                        ),
                         SizedBox(height: 4),
                         Text(
                           '+${upgrade['additionalPhotos']}',
-                          style: AppTypography.h3Display(color: AppColors.softPlatinum),
+                          style: AppTypography.h3Display(
+                            color: AppColors.softPlatinum,
+                          ),
                         ),
                         Text(
                           'PHOTOS',
-                          style: AppTypography.micro(color: AppColors.mutedGray),
+                          style: AppTypography.micro(
+                            color: AppColors.mutedGray,
+                          ),
                         ),
                       ],
                     ),
@@ -6880,15 +7102,23 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                     ),
                     Column(
                       children: [
-                        Icon(Icons.videocam, color: AppColors.matteGold, size: 24),
+                        Icon(
+                          Icons.videocam,
+                          color: AppColors.matteGold,
+                          size: 24,
+                        ),
                         SizedBox(height: 4),
                         Text(
                           '+${upgrade['additionalVideos']}',
-                          style: AppTypography.h3Display(color: AppColors.softPlatinum),
+                          style: AppTypography.h3Display(
+                            color: AppColors.softPlatinum,
+                          ),
                         ),
                         Text(
                           'VIDEOS',
-                          style: AppTypography.micro(color: AppColors.mutedGray),
+                          style: AppTypography.micro(
+                            color: AppColors.mutedGray,
+                          ),
                         ),
                       ],
                     ),
@@ -6896,26 +7126,33 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 ),
               ),
               SizedBox(height: 16),
-              
+
               // Features list
-              ...((upgrade['features'] as List).map((f) => Padding(
-                padding: EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    Icon(Icons.check_circle, color: AppColors.matteGold, size: 16),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        f as String,
-                        style: AppTypography.small(color: AppColors.coolGray),
+              ...((upgrade['features'] as List).map(
+                (f) => Padding(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        color: AppColors.matteGold,
+                        size: 16,
                       ),
-                    ),
-                  ],
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          f as String,
+                          style: AppTypography.small(color: AppColors.coolGray),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ))),
-              
+              )),
+
               // Loyalty credit if upgrading from paid tier
-              if (hasCurrentPackage && priceDiff < (upgrade['recommendedPrice'] as int)) ...[
+              if (hasCurrentPackage &&
+                  priceDiff < (upgrade['recommendedPrice'] as int)) ...[
                 SizedBox(height: 16),
                 Container(
                   padding: EdgeInsets.all(12),
@@ -6933,11 +7170,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.celebration,
-                        color: Colors.green,
-                        size: 20,
-                      ),
+                      Icon(Icons.celebration, color: Colors.green, size: 20),
                       SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -6985,7 +7218,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               SizedBox(width: 8),
               Expanded(
                 child: PremiumButton(
-                  onPressed: () => _handleQuickUpgrade(upgrade['recommendedPackage'] as String, priceDiff),
+                  onPressed: () => _handleQuickUpgrade(
+                    upgrade['recommendedPackage'] as String,
+                    priceDiff,
+                  ),
                   backgroundColor: AppColors.matteGold,
                   foregroundColor: Colors.black,
                   borderRadius: 12,

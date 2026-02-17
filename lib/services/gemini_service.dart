@@ -61,6 +61,7 @@ class GeminiService {
   }
 
   /// Helper for IMAGEN generation (predict endpoint)
+  // ignore: unused_element
   Future<String> _generateImageWithImagen(
     String model,
     String prompt, {
@@ -403,7 +404,9 @@ User Idea: "$draftPrompt"''',
     // Last resort fallback to Imagen
     // NOTE: Imagen does NOT support reference images in the same way as Gemini
     // So we skip reference images for Imagen fallback
-    debugPrint('GeminiService: All Gemini models failed. Imagen fallback disabled for identity-locked generations.');
+    debugPrint(
+      'GeminiService: All Gemini models failed. Imagen fallback disabled for identity-locked generations.',
+    );
     return 'Error: Image generation failed. All available models returned no result.';
   }
 
@@ -748,7 +751,7 @@ DETAILS:
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
           debugPrint('GeminiService Video Response Body: ${jsonEncode(data)}');
-          
+
           if (data is Map && data.containsKey('candidates')) {
             final candidates = data['candidates'];
             if (candidates is List && candidates.isNotEmpty) {
@@ -762,22 +765,31 @@ DETAILS:
                       // Check for video data in various possible formats
                       if (part.containsKey('fileData')) {
                         final fileUri = part['fileData']['fileUri'];
-                        debugPrint('GeminiService: Video generated - fileUri: $fileUri');
+                        debugPrint(
+                          'GeminiService: Video generated - fileUri: $fileUri',
+                        );
                         return fileUri;
                       }
                       if (part.containsKey('inlineData')) {
                         final mimeType = part['inlineData']['mimeType'];
                         // Only accept video mime types
-                        if (mimeType != null && mimeType.toString().startsWith('video/')) {
-                          final videoData = 'data:$mimeType;base64,${part['inlineData']['data']}';
-                          debugPrint('GeminiService: Video generated - inline data');
+                        if (mimeType != null &&
+                            mimeType.toString().startsWith('video/')) {
+                          final videoData =
+                              'data:$mimeType;base64,${part['inlineData']['data']}';
+                          debugPrint(
+                            'GeminiService: Video generated - inline data',
+                          );
                           return videoData;
                         }
                       }
                       if (part.containsKey('videoMetadata')) {
                         final videoUri = part['videoMetadata']['videoUri'];
-                        if (videoUri != null && videoUri.toString().isNotEmpty) {
-                          debugPrint('GeminiService: Video generated - videoUri: $videoUri');
+                        if (videoUri != null &&
+                            videoUri.toString().isNotEmpty) {
+                          debugPrint(
+                            'GeminiService: Video generated - videoUri: $videoUri',
+                          );
                           return videoUri;
                         }
                       }
@@ -797,7 +809,7 @@ DETAILS:
         debugPrint('Gemini Video Error with $model: $e');
       }
     }
-    
+
     return 'Error: Video generation is not currently available. The Gemini API video models (Veo) may not be accessible with your API key. Please check your Gemini API access in Google AI Studio.';
   }
 

@@ -9,6 +9,7 @@ import '../shared/web_helper.dart'
     if (dart.library.html) '../shared/web_helper_web.dart';
 import '../providers/session_provider.dart';
 import '../services/gemini_service.dart';
+import '../services/storage_service.dart';
 import '../shared/constants.dart';
 
 class BrandStudioScreen extends StatefulWidget {
@@ -112,6 +113,15 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
         _logoHistory.insert(0, logo);
         _tabController.animateTo(2); // Go to Assets/Result
       });
+
+      // Persist to Supabase Storage + generations table (fire-and-forget)
+      StorageService().saveGeneration(
+        imageBase64: logo,
+        prompt: _logoStyleController.text,
+        style: null,
+        type: 'logo',
+        metadata: {'brand_name': _brandNameController.text},
+      );
 
       // Auto-generate Clearback version
       _generateClearback(logo);

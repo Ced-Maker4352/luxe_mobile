@@ -160,23 +160,25 @@ class AuthService {
         debugPrint('AuthService: Value is null. Inferring from tier: $tier');
         if (tier != null) {
           if (type == 'image') {
-            if (tier.contains('creatorPack'))
+            if (tier.contains('creatorPack')) {
               current = 30;
-            else if (tier.contains('professionalShoot'))
+            } else if (tier.contains('professionalShoot')) {
               current = 80;
-            else if (tier.contains('agencyMaster'))
+            } else if (tier.contains('agencyMaster')) {
               current = 200;
-            else if (tier.contains('socialQuick'))
+            } else if (tier.contains('socialQuick')) {
               current = 5;
+            }
           } else if (type == 'video') {
-            if (tier.contains('agency') || tier.contains('sub_monthly_99'))
+            if (tier.contains('agency') || tier.contains('sub_monthly_99')) {
               current = 50;
-            else if (tier.contains('pro') ||
+            } else if (tier.contains('pro') ||
                 tier.contains('professional') ||
-                tier.contains('sub_monthly_49'))
+                tier.contains('sub_monthly_49')) {
               current = 10;
-            else if (tier.contains('creator'))
+            } else if (tier.contains('creator')) {
               current = 5;
+            }
           }
         }
         debugPrint('AuthService: Inferred starting balance: $current');
@@ -212,8 +214,11 @@ class AuthService {
           debugPrint('AuthService: Update confirmed.');
         } catch (e) {
           // If update fails due to missing column, try fallback to generations_remaining
-          if (e.toString().contains('column') && updateKey != 'generations_remaining') {
-            debugPrint('AuthService: Column $updateKey not found, trying generations_remaining...');
+          if (e.toString().contains('column') &&
+              updateKey != 'generations_remaining') {
+            debugPrint(
+              'AuthService: Column $updateKey not found, trying generations_remaining...',
+            );
             try {
               await _supabase
                   .from('profiles')

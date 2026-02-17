@@ -6,11 +6,11 @@ class ComparisonSlider extends StatefulWidget {
   final double height;
 
   const ComparisonSlider({
-    Key? key,
+    super.key,
     required this.beforeImage,
     required this.afterImage,
     this.height = 400,
-  }) : super(key: key);
+  });
 
   @override
   State<ComparisonSlider> createState() => _ComparisonSliderState();

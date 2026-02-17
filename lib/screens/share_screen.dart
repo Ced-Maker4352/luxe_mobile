@@ -5,7 +5,6 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:http/http.dart' as http;
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import '../shared/constants.dart';
 import '../widgets/app_drawer.dart';
@@ -15,12 +14,7 @@ class ShareScreen extends StatelessWidget {
   final String? title;
   final String? description;
 
-  const ShareScreen({
-    super.key,
-    this.imageUrl,
-    this.title,
-    this.description,
-  });
+  const ShareScreen({super.key, this.imageUrl, this.title, this.description});
 
   @override
   Widget build(BuildContext context) {
@@ -60,10 +54,7 @@ class ShareScreen extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 'Export and share your AI-generated content across platforms',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: Colors.grey[400],
-                ),
+                style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[400]),
               ),
               const SizedBox(height: 40),
               _buildShareOption(
@@ -153,7 +144,10 @@ class ShareScreen extends StatelessWidget {
         ),
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 12,
+        ),
         leading: CircleAvatar(
           backgroundColor: color.withValues(alpha: 0.2),
           child: Icon(icon, color: color, size: 24),
@@ -168,10 +162,7 @@ class ShareScreen extends StatelessWidget {
         ),
         subtitle: Text(
           description,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            color: Colors.grey[400],
-          ),
+          style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[400]),
         ),
         trailing: Icon(
           Icons.arrow_forward_ios,
@@ -185,9 +176,10 @@ class ShareScreen extends StatelessWidget {
 
   // Share to Facebook
   Future<void> _shareToFacebook(BuildContext context) async {
-    final content = _getShareContent();
-    final url = Uri.parse('https://www.facebook.com/sharer/sharer.php?u=${Uri.encodeComponent(imageUrl ?? 'https://yourapp.com')}');
-    
+    final url = Uri.parse(
+      'https://www.facebook.com/sharer/sharer.php?u=${Uri.encodeComponent(imageUrl ?? 'https://yourapp.com')}',
+    );
+
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
@@ -199,9 +191,12 @@ class ShareScreen extends StatelessWidget {
 
   // Share to Instagram
   Future<void> _shareToInstagram(BuildContext context) async {
-    _showMessage(context, 'Opening Instagram...\nNote: Instagram sharing requires their official API integration');
+    _showMessage(
+      context,
+      'Opening Instagram...\nNote: Instagram sharing requires their official API integration',
+    );
     final url = Uri.parse('https://www.instagram.com/');
-    
+
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     }
@@ -210,8 +205,10 @@ class ShareScreen extends StatelessWidget {
   // Share to Twitter/X
   Future<void> _shareToTwitter(BuildContext context) async {
     final content = _getShareContent();
-    final url = Uri.parse('https://twitter.com/intent/tweet?text=${Uri.encodeComponent(content)}&url=${Uri.encodeComponent(imageUrl ?? '')}');
-    
+    final url = Uri.parse(
+      'https://twitter.com/intent/tweet?text=${Uri.encodeComponent(content)}&url=${Uri.encodeComponent(imageUrl ?? '')}',
+    );
+
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
@@ -239,19 +236,19 @@ class ShareScreen extends StatelessWidget {
 
     try {
       _showMessage(context, 'Downloading image...');
-      
+
       // Download image data
       final response = await http.get(Uri.parse(imageUrl!));
       if (response.statusCode == 200) {
         final Uint8List bytes = response.bodyBytes;
-        
+
         // Save to gallery
         final result = await ImageGallerySaverPlus.saveImage(
           bytes,
           quality: 100,
           name: 'luxe_creation_${DateTime.now().millisecondsSinceEpoch}',
         );
-        
+
         if (context.mounted) {
           if (result['isSuccess'] == true) {
             _showMessage(context, 'Image saved to gallery!');
@@ -278,7 +275,7 @@ class ShareScreen extends StatelessWidget {
     final emailUrl = Uri.parse(
       'mailto:?subject=${Uri.encodeComponent(title ?? 'Check out my creation')}&body=${Uri.encodeComponent('$content\n\n${imageUrl ?? ''}')}',
     );
-    
+
     if (await canLaunchUrl(emailUrl)) {
       await launchUrl(emailUrl);
     } else {
@@ -291,7 +288,7 @@ class ShareScreen extends StatelessWidget {
   // Generic share using share_plus
   Future<void> _shareGeneric(BuildContext context) async {
     final content = _getShareContent();
-    
+
     try {
       if (imageUrl != null && imageUrl!.isNotEmpty) {
         await Share.share(
@@ -299,10 +296,7 @@ class ShareScreen extends StatelessWidget {
           subject: title ?? 'Check out my creation',
         );
       } else {
-        await Share.share(
-          content,
-          subject: title ?? 'Check out my creation',
-        );
+        await Share.share(content, subject: title ?? 'Check out my creation');
       }
     } catch (e) {
       debugPrint('Error sharing: $e');

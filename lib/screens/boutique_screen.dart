@@ -222,6 +222,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
               }
 
               // 2. Grant Access
+              if (!mounted) return;
               final session = Provider.of<SessionProvider>(
                 context,
                 listen: false,
@@ -239,16 +240,20 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
             }
           }
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not launch payment link')),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Could not launch payment link')),
+            );
+          }
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Payment link not configured for this package'),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Payment link not configured for this package'),
+            ),
+          );
+        }
       }
       setState(() => _isProcessing = false);
       return;
@@ -287,6 +292,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
         }
 
         // 2. Grant Access
+        if (!mounted) return;
         final session = Provider.of<SessionProvider>(context, listen: false);
         session.setSelectedPackage(pkg);
         await session.fetchUserProfile(); // Sync profile
