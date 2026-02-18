@@ -292,10 +292,13 @@ class SessionProvider extends ChangeNotifier {
     switch (feature) {
       case 'video':
       case 'stitch':
-        return isProOrAbove;
       case 'retouch':
-        return true;
+      case 'virtual_tryon':
+      case 'custom_backdrop':
+      case 'body_type':
+        return isProOrAbove;
       case 'unlimited_styles':
+      case 'campus_studio':
         return isUnlimitedOrAbove;
       default:
         return true;

@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:convert';
 import '../shared/constants.dart';
 
@@ -88,14 +89,17 @@ class StripeService {
     }
   }
 
+  /// Returns a Stripe Payment Link URL with user identification metadata.
+  ///
+  /// Appends `client_reference_id` (Supabase auth UID) so the webhook
+  /// can identify which user completed the payment, and passes the
+  /// `package_id` via URL so Stripe includes it in the session metadata.
   static String? getPaymentLink(String packageId, {String? promoCode}) {
-    // These match the test links in your web app's paymentLinks.ts
     const links = {
       'socialQuick': 'https://buy.stripe.com/14A4gr11S25B6m89LqfEk00',
       'creatorPack': 'https://buy.stripe.com/3cI00bdOEdOjfWI6zefEk01',
       'professionalShoot': 'https://buy.stripe.com/00w28j7qg39FfWI6zefEk02',
-      'agencyMaster':
-          'https://buy.stripe.com/test_fZubIT0Y2eavaJrecM7N604', // Keeping test link for high-ticket item primarily for now? Or should I create one? User didn't ask for this one, but I should probably keep it as is or ask. User only asked for $5, $29, $99. Agency is $299. I'll leave it as test for now since I didn't create a real one.
+      'agencyMaster': 'https://buy.stripe.com/aFa7sD3a0fWr11O1eUfEk06',
       // Subscriptions
       'sub_monthly_19': 'https://buy.stripe.com/dRm28jeSIdOj39Wf5KfEk03',
       'sub_monthly_49': 'https://buy.stripe.com/bJe3cndOEaC7fWI4r6fEk04',
@@ -106,10 +110,31 @@ class StripeService {
     };
 
     String? baseUrl = links[packageId];
-    if (baseUrl != null && promoCode != null && promoCode.isNotEmpty) {
-      // In a real app, you'd apply the promo code to the link or backend
+    if (baseUrl == null) return null;
+
+    // Append user identification for webhook processing.
+    // We encode both userId and packageId into client_reference_id (format: "userId:packageId")
+    // because Stripe Payment Links don't allow passing custom metadata via URL parameters,
+    // but they do carry the client_reference_id through to the webhook.
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    final uri = Uri.parse(baseUrl);
+    final params = Map<String, String>.from(uri.queryParameters);
+
+    if (userId != null) {
+      params['client_reference_id'] = '$userId:$packageId';
+    }
+
+    // Note: For Payment Links, metadata must be configured in Stripe Dashboard.
+    // The client_reference_id is passed via URL and available in the webhook event.
+
+    if (promoCode != null && promoCode.isNotEmpty) {
+      params['prefilled_promo_code'] = promoCode;
       debugPrint('Stripe: Applying promo code $promoCode to $packageId');
     }
-    return baseUrl;
+
+    final updatedUri = uri.replace(
+      queryParameters: params.isEmpty ? null : params,
+    );
+    return updatedUri.toString();
   }
 }

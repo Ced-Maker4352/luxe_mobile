@@ -17,6 +17,7 @@ import 'screens/brand_studio_screen.dart';
 import 'screens/profile_grand_screen.dart';
 import 'screens/share_screen.dart';
 import 'screens/gallery_screen.dart';
+import 'screens/identity_vault_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -62,6 +63,7 @@ class MainApp extends StatelessWidget {
         '/profile': (context) => const ProfileGrandScreen(),
         '/share': (context) => const ShareScreen(),
         '/gallery': (context) => const GalleryScreen(),
+        '/vault': (context) => const IdentityVaultScreen(),
       },
     );
   }

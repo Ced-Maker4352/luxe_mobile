@@ -80,6 +80,12 @@ class AppDrawer extends StatelessWidget {
                   title: 'GALLERY',
                   route: '/gallery',
                 ),
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.shield_outlined,
+                  title: 'IDENTITY VAULT',
+                  route: '/vault',
+                ),
                 Divider(color: AppColors.softPlatinum.withValues(alpha: 0.1)),
                 _buildDrawerItem(
                   context,

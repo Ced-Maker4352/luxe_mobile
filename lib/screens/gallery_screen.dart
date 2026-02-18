@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../shared/constants.dart';
 import '../widgets/app_drawer.dart';
 import '../services/storage_service.dart';
+import '../widgets/video_result_viewer.dart';
 import 'share_screen.dart';
 
 class GalleryScreen extends StatefulWidget {
@@ -331,6 +332,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
   Widget _buildGalleryItem(Map<String, dynamic> generation, int index) {
     final imageUrl = generation['image_url'] as String?;
+    final videoUrl = generation['video_url'] as String?;
     final prompt = generation['prompt'] as String? ?? '';
     final type = generation['type'] as String? ?? 'image';
     final createdAt = generation['created_at'] as String?;
@@ -446,6 +448,22 @@ class _GalleryScreenState extends State<GalleryScreen> {
                       _buildActionButton(
                         icon: Icons.share,
                         onTap: () {
+                          if (type == 'video' && videoUrl != null) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => VideoResultViewer(
+                                  videoUrl: videoUrl,
+                                  title: prompt.isNotEmpty
+                                      ? (prompt.length > 20
+                                            ? '${prompt.substring(0, 20)}...'
+                                            : prompt)
+                                      : 'Video Result',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
                           Navigator.push(
                             context,
                             MaterialPageRoute(

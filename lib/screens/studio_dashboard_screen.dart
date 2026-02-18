@@ -1,27 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../providers/session_provider.dart';
-import '../models/types.dart';
-import '../shared/constants.dart';
-import '../services/gemini_service.dart';
-import '../services/campus_service.dart';
-import '../services/storage_service.dart';
-import '../widgets/comparison_slider.dart';
-import '../widgets/app_drawer.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../services/stripe_service.dart';
-import '../services/auth_service.dart';
-
 import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
+import 'dart:convert';
+import 'dart:math' as math;
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../widgets/video_result_viewer.dart';
+import '../services/campus_service.dart';
+import '../services/stripe_service.dart';
+
+import '../shared/constants.dart';
+import '../models/types.dart';
+import '../services/gemini_service.dart';
+import '../services/auth_service.dart';
+import '../services/storage_service.dart';
+import '../providers/session_provider.dart';
+import '../widgets/app_drawer.dart';
+import '../widgets/identity_lab_drawer.dart';
+import '../widgets/logo_lab_drawer.dart';
+import 'boutique_screen.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../shared/web_helper.dart'
@@ -95,6 +102,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
   Future<void> _decodeFocusedImage() async {
     if (_focusedResult == null) return;
+
     if (_focusedResult!.imageUrl.startsWith('data:')) {
       try {
         final base64String = _focusedResult!.imageUrl.split(',')[1];
@@ -102,7 +110,18 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           _decodedImageBytes = base64Decode(base64String);
         });
       } catch (e) {
-        debugPrint("Error decoding image: $e");
+        debugPrint("Error decoding base64 image: $e");
+      }
+    } else if (_focusedResult!.imageUrl.startsWith('http')) {
+      try {
+        final response = await http.get(Uri.parse(_focusedResult!.imageUrl));
+        if (response.statusCode == 200) {
+          setState(() {
+            _decodedImageBytes = response.bodyBytes;
+          });
+        }
+      } catch (e) {
+        debugPrint("Error fetching remote image for decoding: $e");
       }
     }
   }
@@ -790,16 +809,91 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     return Stack(
       children: [
         // Main Image Area
-        Container(
-          width: double.infinity,
-          height: double.infinity,
-          color: Colors.black,
-          child: _isComparing && session.hasUploadedImage
-              ? ComparisonSlider(
-                  beforeImage: MemoryImage(session.uploadedImageBytes!),
-                  afterImage: imageProvider,
-                )
-              : Image(image: imageProvider, fit: BoxFit.contain),
+        GestureDetector(
+          onTap: () {
+            if (result.mediaType == 'video' && result.videoUrl != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => VideoResultViewer(
+                    videoUrl: result.videoUrl!,
+                    title: 'Luxe Motion Result',
+                  ),
+                ),
+              );
+            }
+          },
+          child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            color: Colors.black,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                _isComparing && session.hasUploadedImage
+                    ? Stack(
+                        children: [
+                          Positioned.fill(
+                            child: Image(
+                              image: MemoryImage(session.uploadedImageBytes!),
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                          Positioned.fill(
+                            child: Opacity(
+                              opacity: 0.5,
+                              child: Image(
+                                image: imageProvider,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 8,
+                            left: 0,
+                            right: 0,
+                            child: Center(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  'BEFORE / AFTER',
+                                  style: AppTypography.micro(
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : Image(image: imageProvider, fit: BoxFit.contain),
+
+                // Video Play Button Overlay
+                if (result.mediaType == 'video')
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: Colors.black45,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.matteGold, width: 2),
+                    ),
+                    child: const Icon(
+                      Icons.play_arrow,
+                      color: AppColors.matteGold,
+                      size: 40,
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
 
         // Top Toolbar (Motion, Compare, Select)
@@ -897,13 +991,27 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 ),
 
               // Motion / Video Generation
-              if (!_isBatchSelectMode)
-                FloatingActionButton.small(
-                  heroTag: 'motion_btn',
-                  backgroundColor: Colors.black54,
-                  child: Icon(Icons.videocam, color: AppColors.softPlatinum),
+              if (!_isBatchSelectMode && result.mediaType != 'video')
+                _buildCircularPostTool(
+                  icon: Icons.videocam,
                   onPressed: () => _generateCinematicVideo(session, result),
+                  heroTag: 'motion_btn',
                 ),
+
+              if (!_isBatchSelectMode && result.mediaType == 'image') ...[
+                const SizedBox(width: 8),
+                _buildCircularPostTool(
+                  icon: Icons.hd,
+                  onPressed: () => _upscaleResult(session, result),
+                  heroTag: 'uhd_btn',
+                ),
+                const SizedBox(width: 8),
+                _buildCircularPostTool(
+                  icon: Icons.layers_clear,
+                  onPressed: () => _removeBackground(session, result),
+                  heroTag: 'bg_remove_btn',
+                ),
+              ],
             ],
           ),
         ),
@@ -1235,6 +1343,110 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
     });
   }
 
+  Widget _buildIdentityLabPromptDrawer() {
+    return _buildToolPromptDrawer(
+      icon: Icons.palette_outlined,
+      title: 'IDENTITY EXTRACTION',
+      description:
+          'Extract brand colors, fonts, and slogans directly from your generated portrait.',
+      buttonLabel: 'RUN IDENTITY LAB',
+      onPressed: () {
+        if (_focusedResult == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please select a portrait to analyze'),
+            ),
+          );
+          return;
+        }
+        if (_decodedImageBytes == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Loading image data...')),
+          );
+          return;
+        }
+
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => DraggableScrollableSheet(
+            initialChildSize: 0.9,
+            maxChildSize: 0.95,
+            minChildSize: 0.5,
+            expand: false,
+            builder: (_, controller) => SingleChildScrollView(
+              controller: controller,
+              child: IdentityLabDrawer(imageBytes: _decodedImageBytes!),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLogoLabDrawer() {
+    return _buildToolPromptDrawer(
+      icon: Icons.diamond_outlined,
+      title: 'LOGO LABORATORY',
+      description:
+          'Generate luxury vector monograms and wordmarks designed for your unique brand.',
+      buttonLabel: 'LAUNCH LOGO LAB',
+      onPressed: () {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => DraggableScrollableSheet(
+            initialChildSize: 0.9,
+            maxChildSize: 0.95,
+            minChildSize: 0.5,
+            expand: false,
+            builder: (_, controller) => SingleChildScrollView(
+              controller: controller,
+              child: const LogoLabDrawer(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildToolPromptDrawer({
+    required IconData icon,
+    required String title,
+    required String description,
+    required String buttonLabel,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: 64,
+            color: AppColors.matteGold.withValues(alpha: 0.2),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            title,
+            style: AppTypography.microBold(color: AppColors.matteGold),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            description,
+            textAlign: TextAlign.center,
+            style: AppTypography.small(color: Colors.white70),
+          ),
+          const SizedBox(height: 32),
+          PremiumButton(onPressed: onPressed, child: Text(buttonLabel)),
+        ],
+      ),
+    );
+  }
+
   Widget _buildControlCenter(bool isEnterprise) {
     switch (_activeControl) {
       case 'camera':
@@ -1249,6 +1461,16 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         return _buildDrawerWithHeader(
           isEnterprise ? 'BRAND MATCHING' : 'STYLE STUDIO',
           _buildStyleDrawer(),
+        );
+      case 'identity_lab':
+        return _buildDrawerWithHeader(
+          'IDENTITY LAB™',
+          _buildIdentityLabPromptDrawer(),
+        );
+      case 'logo_lab':
+        return _buildDrawerWithHeader(
+          'LOGO LABORATORY™',
+          _buildLogoLabDrawer(),
         );
       case 'stitch':
         return _buildDrawerWithHeader(
@@ -1489,7 +1711,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 final type = bodyTypes[index];
                 final isSelected = session.selectedBodyType == type['label'];
                 return GestureDetector(
-                  onTap: () => session.setSelectedBodyType(type['label']),
+                  onTap: () {
+                    if (session.canAccessFeature('body_type')) {
+                      session.setSelectedBodyType(type['label']);
+                    } else {
+                      _showUpgradeDialog('Body Type Select');
+                    }
+                  },
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -1613,7 +1841,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   _buildToolIcon(
                     Icons.palette_outlined,
                     'Brand Match',
-                    'style',
+                    'identity_lab',
                   ),
                   _buildToolIcon(Icons.layers_outlined, 'Batch', 'batch'),
                   _buildToolIcon(Icons.auto_fix_high, 'Retouch', 'retouch'),
@@ -1747,6 +1975,111 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
           ),
       ],
     );
+  }
+
+  Widget _buildCircularPostTool({
+    required IconData icon,
+    required VoidCallback onPressed,
+    required String heroTag,
+  }) {
+    return FloatingActionButton.small(
+      heroTag: heroTag,
+      backgroundColor: Colors.black54,
+      onPressed: onPressed,
+      child: Icon(icon, color: AppColors.softPlatinum, size: 20),
+    );
+  }
+
+  Future<void> _upscaleResult(
+    SessionProvider session,
+    GenerationResult result,
+  ) async {
+    if (!session.canAccessFeature('uhd')) {
+      _showUpgradeDialog('UHD 4K Upscale');
+      return;
+    }
+
+    try {
+      session.setGenerating(true);
+
+      // Ensure we have identity reference for consistency
+      if (!session.hasUploadedImage) {
+        throw Exception("Identity reference required for UHD Upscale.");
+      }
+
+      final upscaledImage = await GeminiService().upscaleTo4K(
+        result.imageUrl,
+        base64Encode(session.uploadedImageBytes!),
+      );
+
+      final newResult = GenerationResult(
+        id: 'uhd_${DateTime.now().millisecondsSinceEpoch}',
+        imageUrl: upscaledImage,
+        mediaType: 'image',
+        packageType: result.packageType,
+        styleName: '${result.styleName ?? 'Style'} (UHD)',
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        isUHD: true,
+      );
+
+      session.addResult(newResult);
+      setState(() => _focusedResult = newResult);
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('UHD Upscale Complete')));
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Upscale failed: $e')));
+    } finally {
+      session.setGenerating(false);
+    }
+  }
+
+  Future<void> _removeBackground(
+    SessionProvider session,
+    GenerationResult result,
+  ) async {
+    if (!session.canAccessFeature('bg_remove')) {
+      _showUpgradeDialog('Background Removal');
+      return;
+    }
+
+    try {
+      session.setGenerating(true);
+
+      if (!session.hasUploadedImage) {
+        throw Exception("Identity reference required for consistency.");
+      }
+
+      final isolatedImage = await GeminiService().removeBackground(
+        result.imageUrl,
+        base64Encode(session.uploadedImageBytes!),
+      );
+
+      final newResult = GenerationResult(
+        id: 'bg_${DateTime.now().millisecondsSinceEpoch}',
+        imageUrl: isolatedImage,
+        mediaType: 'image',
+        packageType: result.packageType,
+        styleName: '${result.styleName ?? 'Style'} (Isolated)',
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+      );
+
+      session.addResult(newResult);
+      setState(() => _focusedResult = newResult);
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Background Isolated')));
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Isolation failed: $e')));
+    } finally {
+      session.setGenerating(false);
+    }
   }
 
   Widget _buildToolIcon(IconData icon, String label, String controlKey) {
@@ -2231,7 +2564,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 ),
                 SizedBox(height: 8),
                 GestureDetector(
-                  onTap: _pickBackgroundReference,
+                  onTap: () {
+                    if (session.canAccessFeature('custom_backdrop')) {
+                      _pickBackgroundReference();
+                    } else {
+                      _showUpgradeDialog('Custom Backdrop');
+                    }
+                  },
                   child: Container(
                     height: 100,
                     width: double.infinity,
@@ -3914,7 +4253,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                   )
                 else
                   GestureDetector(
-                    onTap: _pickClothingReference,
+                    onTap: () {
+                      if (session.canAccessFeature('virtual_tryon')) {
+                        _pickClothingReference();
+                      } else {
+                        _showUpgradeDialog('Virtual Try-On');
+                      }
+                    },
                     child: Container(
                       height: 60,
                       width: double.infinity,
@@ -5826,6 +6171,12 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   // === CAMPUS STUDIO METHODS ===
 
   Future<void> _searchSchools(String zip) async {
+    final session = context.read<SessionProvider>();
+    if (!session.canAccessFeature('campus_studio')) {
+      _showUpgradeDialog('Campus Studio™');
+      return;
+    }
+
     if (zip.length < 5) return;
     setState(() => _isSearchingCampus = true);
     try {
@@ -5871,6 +6222,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
 
   Future<void> _pickManualCampusLogo() async {
     final session = context.read<SessionProvider>();
+    if (!session.canAccessFeature('campus_studio')) {
+      _showUpgradeDialog('Campus Studio™');
+      return;
+    }
+
     final picker = ImagePicker();
     final image = await picker.pickImage(source: ImageSource.gallery);
     if (image != null) {

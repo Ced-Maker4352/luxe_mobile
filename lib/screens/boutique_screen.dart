@@ -30,6 +30,7 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
     'CCDN_APPS',
     'LUXE_ADMIN_FREE',
     'LUXE100',
+    'TESTBYPASS',
   ];
 
   @override
@@ -106,35 +107,72 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
 
     setState(() => _isProcessing = true);
 
-    // --- PROMO BYPASS LOGIC ---
+    // --- PROMO BYPASS LOGIC (For Testing/Admin) ---
     if (_bypassCodes.contains(promoCode)) {
-      debugPrint('Stripe: Bypass code detected: \$promoCode. Granting access.');
-      // 1. Update Supabase Profile (Bypass)
+      debugPrint('Stripe: Bypass code detected: $promoCode. Granting access.');
+
+      final isSubscription = paymentTargetId.startsWith('sub_');
+      final videoCredits =
+          (paymentTargetId.contains('agency') ||
+              paymentTargetId.contains('sub_monthly_99'))
+          ? 50
+          : (paymentTargetId.contains('pro') ||
+                paymentTargetId.contains('professional') ||
+                paymentTargetId.contains('sub_monthly_49'))
+          ? 10
+          : (paymentTargetId.contains('creator') ||
+                paymentTargetId.contains('sub_monthly_19'))
+          ? 5
+          : 0;
+
       try {
-        await Supabase.instance.client.from('profiles').upsert({
-          'id': user.id,
-          'email': user.email,
-          'is_subscribed': true,
-          'subscription_tier': paymentTargetId,
-          'photo_generations': pkg.assetCount,
-          'video_generations':
-              (paymentTargetId.contains('pro') ||
-                  paymentTargetId.contains('unlimited') ||
-                  paymentTargetId.contains('agency') ||
-                  paymentTargetId.contains('49') ||
-                  paymentTargetId.contains('99'))
-              ? 10
-              : 0,
-          'updated_at': DateTime.now().toIso8601String(),
+        // Use RPC for atomic grant (consistency with Stripe webhook)
+        await Supabase.instance.client.rpc(
+          'grant_credits',
+          params: {
+            'p_user_id': user.id,
+            'p_photo_credits': pkg.assetCount,
+            'p_video_credits': videoCredits,
+            'p_subscription_tier': pkg.name,
+            'p_is_subscribed': isSubscription,
+          },
+        );
+
+        // Log payment record as "completed" with promo code
+        await Supabase.instance.client.from('payments').insert({
+          'user_id': user.id,
+          'amount_cents': 0,
+          'status': 'completed',
+          'package_id': paymentTargetId,
+          'credits_granted': pkg.assetCount,
+          'video_credits_granted': videoCredits,
+          'promo_code': promoCode,
         });
-      } catch (dbError) {
-        debugPrint('Error updating profile: \$dbError');
+      } catch (e) {
+        debugPrint('BoutiqueScreen: Bypass DB Error: $e');
+        // Fallback for local testing if RPC missing (less likely now)
+        try {
+          await Supabase.instance.client
+              .from('profiles')
+              .update({
+                'photo_generations': pkg.assetCount,
+                'video_generations': videoCredits,
+                'subscription_tier': pkg.name,
+                'is_subscribed': true,
+                'updated_at': DateTime.now().toIso8601String(),
+              })
+              .eq('id', user.id);
+        } catch (innerE) {
+          debugPrint('BoutiqueScreen: Fallback Bypass also failed: $innerE');
+        }
       }
 
-      // 2. Grant Access Directly
+      // 2. Grant Access Directly in UI
       if (mounted) {
         final session = Provider.of<SessionProvider>(context, listen: false);
+        await session.fetchUserProfile(); // Refresh local state
         session.setSelectedPackage(pkg);
+
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -155,89 +193,25 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
       if (link != null) {
         final uri = Uri.parse(link);
         if (await canLaunchUrl(uri)) {
+          // Snapshot current credits before payment
+          final beforeSnapshot = await Supabase.instance.client
+              .from('profiles')
+              .select('photo_generations')
+              .eq('id', user.id)
+              .maybeSingle();
+          final creditsBefore =
+              (beforeSnapshot?['photo_generations'] as int?) ?? 0;
+
+          // Open Stripe in new tab
           await launchUrl(uri, mode: LaunchMode.externalApplication);
 
-          // Show confirmation dialog for web flow
+          // Show polling dialog
           if (mounted) {
-            final confirmed = await showDialog<bool>(
-              context: context,
-              barrierDismissible: false,
-              builder: (context) => AlertDialog(
-                backgroundColor: AppColors.softCharcoal,
-                title: const Text(
-                  'Complete Payment',
-                  style: TextStyle(color: AppColors.matteGold),
-                ),
-                content: const Text(
-                  'Please complete the payment in the new tab.\n\nOnce done, click "I Have Paid" to continue.',
-                  style: TextStyle(color: Colors.white70),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context, false), // Cancel
-                    child: const Text(
-                      'Cancel',
-                      style: TextStyle(color: Colors.white54),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(context, true), // Confirm
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.matteGold,
-                    ),
-                    child: const Text(
-                      'I Have Paid',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            await _showPaymentPollingDialog(
+              userId: user.id,
+              pkg: pkg,
+              creditsBefore: creditsBefore,
             );
-
-            if (confirmed == true) {
-              // Proceed as if payment succeeded
-              // 1. Update Supabase Profile
-              try {
-                await Supabase.instance.client.from('profiles').upsert({
-                  'id': user.id,
-                  'email': user.email,
-                  'is_subscribed': true,
-                  'subscription_tier': paymentTargetId,
-                  'photo_generations': pkg.assetCount,
-                  'video_generations':
-                      (paymentTargetId.contains('pro') ||
-                          paymentTargetId.contains('unlimited') ||
-                          paymentTargetId.contains('agency') ||
-                          paymentTargetId.contains('49') ||
-                          paymentTargetId.contains('99'))
-                      ? 10
-                      : 0,
-                  'updated_at': DateTime.now().toIso8601String(),
-                });
-              } catch (dbError) {
-                debugPrint('Error updating profile: \$dbError');
-              }
-
-              // 2. Grant Access
-              if (!mounted) return;
-              final session = Provider.of<SessionProvider>(
-                context,
-                listen: false,
-              );
-              session.setSelectedPackage(pkg);
-              await session.fetchUserProfile(); // Sync profile
-              if (!mounted) return;
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      AccessGrantedScreen(package: pkg, isPromoCode: false),
-                ),
-              );
-            }
           }
         } else {
           if (mounted) {
@@ -318,6 +292,163 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
       if (mounted) {
         setState(() => _isProcessing = false);
       }
+    }
+  }
+
+  /// Polls Supabase every 2.5 seconds (up to 3 minutes) waiting for the
+  /// Stripe webhook to increase the user's photo_generations credit count.
+  /// Shows a live status dialog and auto-navigates on success.
+  Future<void> _showPaymentPollingDialog({
+    required String userId,
+    required PackageDetails pkg,
+    required int creditsBefore,
+  }) async {
+    bool paymentDetected = false;
+    bool dialogOpen = true;
+
+    // Show the waiting dialog
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: AppColors.softCharcoal,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: AppColors.matteGold.withValues(alpha: 0.3),
+                ),
+              ),
+              title: const Text(
+                'Verifying Payment',
+                style: TextStyle(color: AppColors.matteGold),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: CircularProgressIndicator(
+                      color: AppColors.matteGold,
+                      strokeWidth: 2.5,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Complete your payment in the browser tab.\n\nYour credits will be added automatically once confirmed.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    dialogOpen = false;
+                    Navigator.pop(dialogCtx);
+                  },
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: Colors.white38),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    // Manual check
+                    final result = await Supabase.instance.client
+                        .from('profiles')
+                        .select('photo_generations')
+                        .eq('id', userId)
+                        .maybeSingle();
+                    final creditsNow =
+                        (result?['photo_generations'] as int?) ?? 0;
+                    if (creditsNow > creditsBefore) {
+                      paymentDetected = true;
+                      dialogOpen = false;
+                      if (context.mounted) Navigator.pop(dialogCtx);
+                    } else {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Payment not confirmed yet. Please wait a moment.',
+                            ),
+                            backgroundColor: Colors.orange,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.matteGold,
+                  ),
+                  child: const Text(
+                    'Check Now',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    // Poll in background: every 2.5 seconds for up to 3 minutes
+    const maxAttempts = 72; // 72 × 2.5s = 3 minutes
+    for (int i = 0; i < maxAttempts && dialogOpen; i++) {
+      await Future.delayed(const Duration(milliseconds: 2500));
+      if (!dialogOpen) break;
+
+      try {
+        final result = await Supabase.instance.client
+            .from('profiles')
+            .select('photo_generations')
+            .eq('id', userId)
+            .maybeSingle();
+        final creditsNow = (result?['photo_generations'] as int?) ?? 0;
+
+        if (creditsNow > creditsBefore) {
+          paymentDetected = true;
+          dialogOpen = false;
+          if (mounted) Navigator.of(context, rootNavigator: true).pop();
+          break;
+        }
+      } catch (e) {
+        debugPrint('Polling error: $e');
+      }
+    }
+
+    // If payment was detected, navigate to success screen
+    if (paymentDetected && mounted) {
+      final session = Provider.of<SessionProvider>(context, listen: false);
+      session.setSelectedPackage(pkg);
+      await session.fetchUserProfile();
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              AccessGrantedScreen(package: pkg, isPromoCode: false),
+        ),
+      );
+    } else if (!dialogOpen && !paymentDetected && mounted) {
+      // User cancelled — show a helpful message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Payment not detected. Return here after completing payment.',
+          ),
+          duration: Duration(seconds: 5),
+        ),
+      );
     }
   }
 
@@ -909,6 +1040,50 @@ class _BoutiqueScreenState extends State<BoutiqueScreen> {
                           ],
 
                           const SizedBox(height: 24),
+                          // Promo Code Input
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            child: TextField(
+                              controller: _promoController,
+                              style: AppTypography.small(color: Colors.white),
+                              textCapitalization: TextCapitalization.characters,
+                              decoration: InputDecoration(
+                                hintText: "PROMO CODE",
+                                hintStyle: AppTypography.micro(
+                                  color: Colors.white24,
+                                ),
+                                labelText: "HAVE A COUPON?",
+                                labelStyle: AppTypography.microBold(
+                                  color: AppColors.matteGold,
+                                ),
+                                filled: true,
+                                fillColor: Colors.white.withValues(alpha: 0.05),
+                                prefixIcon: const Icon(
+                                  Icons.confirmation_num_outlined,
+                                  color: AppColors.matteGold,
+                                  size: 18,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                    color: AppColors.matteGold.withValues(
+                                      alpha: 0.2,
+                                    ),
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: AppColors.matteGold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
 
                           // Action Button
                           SizedBox(
