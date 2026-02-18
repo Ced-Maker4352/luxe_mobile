@@ -83,7 +83,14 @@ class StorageService {
       return imageUrl;
     } catch (e) {
       // Storage errors should never block the user from seeing their result
-      debugPrint('StorageService: Error saving generation: $e');
+      String errorMsg = e.toString();
+      if (errorMsg.contains('Bucket not found')) {
+        debugPrint(
+          'StorageService ERROR: Bucket "$_bucketName" not found in Supabase! Please create it in the Supabase console.',
+        );
+      } else {
+        debugPrint('StorageService: Error saving generation: $e');
+      }
       return null;
     }
   }

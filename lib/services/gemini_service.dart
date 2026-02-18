@@ -731,10 +731,7 @@ DETAILS:
         'contents': [
           {'parts': parts},
         ],
-        'generationConfig': {
-          'temperature': 0.4,
-          'videoLength': 5, // 5 seconds
-        },
+        'generationConfig': {'temperature': 0.4},
       };
 
       try {

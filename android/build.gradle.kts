@@ -12,29 +12,14 @@ val newBuildDir: Directory =
 rootProject.layout.buildDirectory.value(newBuildDir)
 
 subprojects {
-    afterEvaluate { project ->
-        if (project.hasProperty("android")) {
-            val android = project.extensions.findByName("android")
-            if (android != null) {
-                try {
-                    val namespaceMethod = android.javaClass.getMethod("setNamespace", String::class.java)
-                    val getNamespaceMethod = android.javaClass.getMethod("getNamespace")
-                    
-                    var namespace = getNamespaceMethod.invoke(android) as String?
-                    
-                    // Fix for image_gallery_saver
-                    if (project.name == "image_gallery_saver") {
-                        namespaceMethod.invoke(android, "com.example.image_gallery_saver")
-                        println("Force-set namespace for ${project.name}")
-                    } else if (namespace == null || namespace.isEmpty()) {
-                        val defaultNamespace = "com.luxe.studio.${project.name.replace("-", "_")}"
-                        namespaceMethod.invoke(android, defaultNamespace)
-                        println("Auto-set namespace for ${project.name} to $defaultNamespace")
-                    }
-                } catch (e: Exception) {
-                    println("Namespace fix failed for ${project.name}: ${e.message}")
-                }
-            }
+    // Hook into plugin application (fires BEFORE evaluation completes,
+    // so the namespace is set before AGP creates variant builders).
+    project.pluginManager.withPlugin("com.android.library") {
+        val android = project.extensions.getByName("android")
+                as com.android.build.gradle.LibraryExtension
+        if (android.namespace.isNullOrEmpty()) {
+            android.namespace = "com.luxe.studio.${project.name.replace("-", "_")}"
+            println("Auto-set namespace for ${project.name}")
         }
     }
 }
