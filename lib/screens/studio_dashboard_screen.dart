@@ -3842,14 +3842,18 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 Switch(
                   value: session.preserveAgeAndBody,
                   onChanged: (val) => session.setPreserveAgeAndBody(val),
-                  activeThumbColor: AppColors.matteGold,
-                  activeTrackColor: AppColors.matteGold.withValues(alpha: 0.3),
-                  inactiveThumbColor: AppColors.softPlatinum.withValues(
-                    alpha: 0.24,
-                  ),
-                  inactiveTrackColor: AppColors.softPlatinum.withValues(
-                    alpha: 0.1,
-                  ),
+                  thumbColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return AppColors.matteGold;
+                    }
+                    return AppColors.softPlatinum.withValues(alpha: 0.24);
+                  }),
+                  trackColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return AppColors.matteGold.withValues(alpha: 0.3);
+                    }
+                    return AppColors.softPlatinum.withValues(alpha: 0.1);
+                  }),
                 ),
               ],
             ),
