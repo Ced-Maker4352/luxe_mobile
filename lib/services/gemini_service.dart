@@ -746,10 +746,7 @@ DETAILS:
                 },
               },
             ],
-            'parameters': {
-              'aspectRatio': '9:16',
-              'outputOptions': {'mimeType': 'video/mp4'},
-            },
+            'parameters': {'aspectRatio': '9:16'},
           };
         } else {
           // Text-to-video fallback
@@ -757,10 +754,7 @@ DETAILS:
             'instances': [
               {'prompt': finalVideoPrompt},
             ],
-            'parameters': {
-              'aspectRatio': '9:16',
-              'outputOptions': {'mimeType': 'video/mp4'},
-            },
+            'parameters': {'aspectRatio': '9:16'},
           };
         }
 
