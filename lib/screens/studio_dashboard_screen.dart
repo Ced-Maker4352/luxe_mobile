@@ -4,9 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
-import 'dart:io';
 import 'dart:ui' as ui;
 import 'dart:convert';
 import 'dart:math' as math;
@@ -160,6 +158,10 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   }
 
   Future<void> _listen() async {
+    if (kIsWeb) {
+      debugPrint('STT: Skipped on web platform.');
+      return;
+    }
     if (!_isListening) {
       bool available = await _speech.initialize(
         onStatus: (val) => debugPrint('STT Status: $val'),
@@ -586,7 +588,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         }
       } else {
         bool hasPermission = false;
-        if (Platform.isAndroid) {
+        if (defaultTargetPlatform == TargetPlatform.android) {
           hasPermission =
               await Permission.photos.request().isGranted ||
               await Permission.storage.request().isGranted;
@@ -662,13 +664,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             subject: 'My Luxe AI Creation',
           );
         } else {
-          // On mobile, create temporary file and share
-          final tempDir = await getTemporaryDirectory();
-          final file = await File('${tempDir.path}/shared_image.png').create();
-          await file.writeAsBytes(bytes);
-
+          // On mobile, share image from memory using XFile.fromData (no dart:io needed)
           await Share.shareXFiles([
-            XFile(file.path),
+            XFile.fromData(
+              bytes,
+              name: 'luxe_portrait.png',
+              mimeType: 'image/png',
+            ),
           ], text: 'Check out my Luxe AI portrait! ✨');
         }
       } else {
@@ -5900,7 +5902,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         }
       } else {
         bool hasPermission = false;
-        if (Platform.isAndroid) {
+        if (defaultTargetPlatform == TargetPlatform.android) {
           hasPermission =
               await Permission.photos.request().isGranted ||
               await Permission.storage.request().isGranted;
@@ -5932,16 +5934,12 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             );
           }
         } else {
-          // Save to Downloads folder
-          final directory =
-              await getDownloadsDirectory() ??
-              await getApplicationDocumentsDirectory();
-          final file = File('${directory.path}/$filename');
-          await file.writeAsBytes(bytes);
+          // Save to gallery on mobile using ImageGallerySaverPlus
+          await ImageGallerySaverPlus.saveImage(bytes, name: filename);
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Saved to Downloads: $filename')),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('Saved: $filename')));
           }
         }
       }

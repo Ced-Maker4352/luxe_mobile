@@ -7,9 +7,11 @@ class WebHelper {
   static void downloadImage(Uint8List bytes, String fileName) {
     final blob = html.Blob([bytes]);
     final url = html.Url.createObjectUrlFromBlob(blob);
-    html.AnchorElement(href: url)
+    final anchor = html.AnchorElement(href: url)
       ..setAttribute("download", fileName)
       ..click();
+    // ignore: unused_local_variable
+    final _ = anchor; // prevent premature GC
     html.Url.revokeObjectUrl(url);
   }
 }

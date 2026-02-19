@@ -1,8 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import '../shared/web_helper.dart'
@@ -163,7 +162,7 @@ class _BrandStudioScreenState extends State<BrandStudioScreen>
         );
       } else {
         bool hasPermission = false;
-        if (Platform.isAndroid) {
+        if (defaultTargetPlatform == TargetPlatform.android) {
           hasPermission =
               await Permission.photos.request().isGranted ||
               await Permission.storage.request().isGranted;
