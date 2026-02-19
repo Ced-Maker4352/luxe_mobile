@@ -748,7 +748,6 @@ DETAILS:
             ],
             'parameters': {
               'aspectRatio': '9:16',
-              'durationSeconds': 5,
               'outputOptions': {'mimeType': 'video/mp4'},
             },
           };
@@ -760,7 +759,6 @@ DETAILS:
             ],
             'parameters': {
               'aspectRatio': '9:16',
-              'durationSeconds': 5,
               'outputOptions': {'mimeType': 'video/mp4'},
             },
           };
