@@ -24,7 +24,7 @@ import '../widgets/app_drawer.dart';
 import '../widgets/identity_lab_drawer.dart';
 import '../widgets/logo_lab_drawer.dart';
 import 'boutique_screen.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform;
 import 'package:image_picker/image_picker.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -7215,7 +7215,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       WebHelper.downloadImage(bytes, filename);
     } else {
       bool hasPermission = false;
-      if (Platform.isAndroid) {
+      if (defaultTargetPlatform == TargetPlatform.android) {
         hasPermission =
             await Permission.photos.request().isGranted ||
             await Permission.storage.request().isGranted;
