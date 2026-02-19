@@ -716,7 +716,11 @@ DETAILS:
     const baseUrl = 'https://generativelanguage.googleapis.com';
 
     // Try models in priority order — latest first, then stable fallback
-    final models = ['veo-3.1-generate-preview', 'veo-2.0-generate-001'];
+    final models = [
+      'veo-3.1-fast-generate-preview',
+      'veo-3.1-generate-preview',
+      'veo-2.0-generate-001',
+    ];
 
     final finalVideoPrompt =
         '$prompt. Style reference: $opticProtocol. '
@@ -735,18 +739,24 @@ DETAILS:
         // Veo request uses 'instances' (Vertex AI format) even on generativelanguage.googleapis.com
         final Map<String, dynamic> body;
         if (imageBase64.isNotEmpty) {
+          // STRIP HEADER: bytesBase64Encoded MUST be raw data only
+          String base64Data = imageBase64;
+          if (imageBase64.contains(',')) {
+            base64Data = imageBase64.split(',').last;
+          }
+
           // Image-to-video
           body = {
             'instances': [
               {
                 'prompt': finalVideoPrompt,
                 'image': {
-                  'bytesBase64Encoded': imageBase64,
+                  'bytesBase64Encoded': base64Data,
                   'mimeType': 'image/jpeg',
                 },
               },
             ],
-            'parameters': {'aspectRatio': '9:16'},
+            'parameters': {'aspectRatio': '9:16', 'resolution': '1080p'},
           };
         } else {
           // Text-to-video fallback
