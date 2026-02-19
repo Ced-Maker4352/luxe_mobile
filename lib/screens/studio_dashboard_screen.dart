@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/foundation.dart'
+    show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
-import 'dart:io';
-import 'dart:ui' as ui;
 import 'dart:convert';
-import 'dart:math' as math;
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/video_result_viewer.dart';
 import '../services/campus_service.dart';
@@ -25,8 +21,6 @@ import '../providers/session_provider.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/identity_lab_drawer.dart';
 import '../widgets/logo_lab_drawer.dart';
-import 'boutique_screen.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -160,6 +154,11 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   }
 
   Future<void> _listen() async {
+    if (kIsWeb) {
+      // Speech-to-text microphone not supported on web
+      debugPrint('STT: Skipped on web platform.');
+      return;
+    }
     if (!_isListening) {
       bool available = await _speech.initialize(
         onStatus: (val) => debugPrint('STT Status: $val'),
@@ -172,7 +171,6 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             setState(() {
               _promptController.text = val.recognizedWords;
               _customPrompt = val.recognizedWords;
-              // Removed voice confidence tracking
             });
           },
         );
@@ -586,7 +584,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         }
       } else {
         bool hasPermission = false;
-        if (Platform.isAndroid) {
+        if (defaultTargetPlatform == TargetPlatform.android) {
           hasPermission =
               await Permission.photos.request().isGranted ||
               await Permission.storage.request().isGranted;
@@ -662,13 +660,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             subject: 'My Luxe AI Creation',
           );
         } else {
-          // On mobile, create temporary file and share
-          final tempDir = await getTemporaryDirectory();
-          final file = await File('${tempDir.path}/shared_image.png').create();
-          await file.writeAsBytes(bytes);
-
+          // On mobile, share image from memory using XFile.fromData (no dart:io needed)
           await Share.shareXFiles([
-            XFile(file.path),
+            XFile.fromData(
+              bytes,
+              name: 'luxe_portrait.png',
+              mimeType: 'image/png',
+            ),
           ], text: 'Check out my Luxe AI portrait! ✨');
         }
       } else {
@@ -5900,7 +5898,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         }
       } else {
         bool hasPermission = false;
-        if (Platform.isAndroid) {
+        if (defaultTargetPlatform == TargetPlatform.android) {
           hasPermission =
               await Permission.photos.request().isGranted ||
               await Permission.storage.request().isGranted;
@@ -5932,16 +5930,12 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             );
           }
         } else {
-          // Save to Downloads folder
-          final directory =
-              await getDownloadsDirectory() ??
-              await getApplicationDocumentsDirectory();
-          final file = File('${directory.path}/$filename');
-          await file.writeAsBytes(bytes);
+          // Save to gallery on mobile using ImageGallerySaverPlus
+          await ImageGallerySaverPlus.saveImage(bytes, name: filename);
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Saved to Downloads: $filename')),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('Saved: $filename')));
           }
         }
       }
@@ -7217,7 +7211,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       WebHelper.downloadImage(bytes, filename);
     } else {
       bool hasPermission = false;
-      if (Platform.isAndroid) {
+      if (defaultTargetPlatform == TargetPlatform.android) {
         hasPermission =
             await Permission.photos.request().isGranted ||
             await Permission.storage.request().isGranted;
