@@ -691,8 +691,20 @@ DETAILS:
     return _callGeminiWithFallback(models, parts);
   }
   // ═══════════════════════════════════════════════════════════
-  // VIDEO GENERATION (Veo Protocol)
+  // VIDEO GENERATION (Veo — Long Running Operation Protocol)
   // ═══════════════════════════════════════════════════════════
+  //
+  // Veo uses a 2-step async pattern:
+  //   1. POST  /v1beta/models/{model}:predictLongRunning  → returns {name: "operations/xxx"}
+  //   2. GET   /v1beta/operations/{operationId}           → poll until done=true
+  //
+  // The correct models are:
+  //   veo-2.0-generate-001         – stable, production
+  //   veo-3.1-generate-preview     – latest, best quality
+  //
+  // IMPORTANT: image-to-video requires the image to be provided as a
+  // base64 inlineData part inside the `instances[0].prompt.video.referenceImages`
+  // block. Text-to-video uses `instances[0].prompt.text` only.
 
   Future<String> generateCinematicVideo(
     String imageBase64,
@@ -701,113 +713,170 @@ DETAILS:
   ) async {
     if (_apiKey.isEmpty) return 'Error: API Key missing';
 
-    // Veo 2 models for video generation - trying different API versions
-    final candidates = [
-      {'model': 'veo-2', 'version': 'v1alpha'},
-      {'model': 'veo-001', 'version': 'v1alpha'},
-      {'model': 'imagen-video-001', 'version': 'v1'},
-    ];
+    const baseUrl = 'https://generativelanguage.googleapis.com';
+
+    // Try models in priority order — latest first, then stable fallback
+    final models = ['veo-3.1-generate-preview', 'veo-2.0-generate-001'];
 
     final finalVideoPrompt =
-        "$prompt. Maintain the look of: $opticProtocol. Motion: subtle, elegant cinematic dolly-in. Ultra-realistic skin rendering, 1080p.";
+        '$prompt. Style reference: $opticProtocol. '
+        'Motion: subtle elegant cinematic dolly-in. '
+        'Ultra-realistic skin, 1080p, 24fps.';
 
-    for (final candidate in candidates) {
-      final model = candidate['model']!;
-      final version = candidate['version']!;
-
-      final url = Uri.parse(
-        'https://generativelanguage.googleapis.com/$version/models/$model:generateContent?key=$_apiKey',
-      );
-
-      debugPrint(
-        'GeminiService: Requesting Cinematic Video from $model ($version)...',
-      );
-
-      final parts = <Map<String, dynamic>>[];
-      parts.add(_getDataPart(imageBase64));
-      parts.add({'text': finalVideoPrompt});
-
-      final body = {
-        'contents': [
-          {'parts': parts},
-        ],
-        'generationConfig': {'temperature': 0.4},
-      };
-
+    for (final model in models) {
       try {
-        final response = await http.post(
-          url,
+        debugPrint('GeminiService: Attempting Veo video — $model');
+
+        // ── Step 1: Submit the generation request ──────────────────────
+        final submitUrl = Uri.parse(
+          '$baseUrl/v1beta/models/$model:predictLongRunning?key=$_apiKey',
+        );
+
+        // Veo request uses 'instances' (Vertex AI format) even on generativelanguage.googleapis.com
+        final Map<String, dynamic> body;
+        if (imageBase64.isNotEmpty) {
+          // Image-to-video
+          body = {
+            'instances': [
+              {
+                'prompt': finalVideoPrompt,
+                'image': {
+                  'bytesBase64Encoded': imageBase64,
+                  'mimeType': 'image/jpeg',
+                },
+              },
+            ],
+            'parameters': {
+              'aspectRatio': '9:16',
+              'durationSeconds': 5,
+              'outputOptions': {'mimeType': 'video/mp4'},
+            },
+          };
+        } else {
+          // Text-to-video fallback
+          body = {
+            'instances': [
+              {'prompt': finalVideoPrompt},
+            ],
+            'parameters': {
+              'aspectRatio': '9:16',
+              'durationSeconds': 5,
+              'outputOptions': {'mimeType': 'video/mp4'},
+            },
+          };
+        }
+
+        final submitResponse = await http.post(
+          submitUrl,
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode(body),
         );
 
-        debugPrint(
-          'GeminiService Video Response ($model): ${response.statusCode}',
+        debugPrint('Veo submit ($model): ${submitResponse.statusCode}');
+
+        if (submitResponse.statusCode != 200) {
+          debugPrint('Veo submit error body: ${submitResponse.body}');
+          continue; // try next model
+        }
+
+        final submitData =
+            jsonDecode(submitResponse.body) as Map<String, dynamic>;
+        final operationName = submitData['name'] as String?;
+
+        if (operationName == null || operationName.isEmpty) {
+          debugPrint('Veo: No operation name returned for $model');
+          continue;
+        }
+
+        debugPrint('Veo: Operation started — $operationName');
+
+        // ── Step 2: Poll until done ────────────────────────────────────
+        // Extract just the operation ID from the full name
+        // e.g. "operations/abc123" or just "abc123"
+        final opId = operationName.startsWith('operations/')
+            ? operationName.substring('operations/'.length)
+            : operationName;
+
+        final pollUrl = Uri.parse(
+          '$baseUrl/v1beta/operations/$opId?key=$_apiKey',
         );
 
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          debugPrint('GeminiService Video Response Body: ${jsonEncode(data)}');
+        const maxAttempts = 30; // 30 × 10s = 5 min max
+        for (int attempt = 0; attempt < maxAttempts; attempt++) {
+          await Future.delayed(const Duration(seconds: 10));
 
-          if (data is Map && data.containsKey('candidates')) {
-            final candidates = data['candidates'];
-            if (candidates is List && candidates.isNotEmpty) {
-              final candidate = candidates[0];
-              if (candidate is Map && candidate.containsKey('content')) {
-                final content = candidate['content'];
-                if (content is Map && content.containsKey('parts')) {
-                  final parts = content['parts'];
-                  if (parts is List) {
-                    for (final part in parts) {
-                      // Check for video data in various possible formats
-                      if (part.containsKey('fileData')) {
-                        final fileUri = part['fileData']['fileUri'];
-                        debugPrint(
-                          'GeminiService: Video generated - fileUri: $fileUri',
-                        );
-                        return fileUri;
-                      }
-                      if (part.containsKey('inlineData')) {
-                        final mimeType = part['inlineData']['mimeType'];
-                        // Only accept video mime types
-                        if (mimeType != null &&
-                            mimeType.toString().startsWith('video/')) {
-                          final videoData =
-                              'data:$mimeType;base64,${part['inlineData']['data']}';
-                          debugPrint(
-                            'GeminiService: Video generated - inline data',
-                          );
-                          return videoData;
-                        }
-                      }
-                      if (part.containsKey('videoMetadata')) {
-                        final videoUri = part['videoMetadata']['videoUri'];
-                        if (videoUri != null &&
-                            videoUri.toString().isNotEmpty) {
-                          debugPrint(
-                            'GeminiService: Video generated - videoUri: $videoUri',
-                          );
-                          return videoUri;
-                        }
-                      }
-                    }
-                  }
+          final pollResponse = await http.get(pollUrl);
+          debugPrint('Veo poll attempt $attempt: ${pollResponse.statusCode}');
+
+          if (pollResponse.statusCode != 200) {
+            debugPrint('Veo poll error: ${pollResponse.body}');
+            break;
+          }
+
+          final pollData =
+              jsonDecode(pollResponse.body) as Map<String, dynamic>;
+          final isDone = pollData['done'] as bool? ?? false;
+
+          if (!isDone) {
+            final meta = pollData['metadata'];
+            final state = (meta is Map)
+                ? meta['state'] ?? 'PENDING'
+                : 'PENDING';
+            debugPrint('Veo: still running — state: $state');
+            continue;
+          }
+
+          // Operation is done — extract video URI
+          debugPrint('Veo: Operation complete — extracting video...');
+          debugPrint('Veo: Full result: ${jsonEncode(pollData)}');
+
+          final result = pollData['response'];
+          if (result is Map) {
+            // Check for videos array
+            final videos = result['videos'];
+            if (videos is List && videos.isNotEmpty) {
+              final video = videos.first;
+              if (video is Map) {
+                final uri =
+                    video['uri'] as String? ?? video['videoUri'] as String?;
+                if (uri != null && uri.isNotEmpty) {
+                  debugPrint('Veo: Got video URI — $uri');
+                  return uri;
+                }
+                // Inline base64 video
+                final b64 = video['bytesBase64Encoded'] as String?;
+                if (b64 != null && b64.isNotEmpty) {
+                  return 'data:video/mp4;base64,$b64';
+                }
+              }
+            }
+            // Alternative: check for generatedSamples
+            final samples = result['generatedSamples'];
+            if (samples is List && samples.isNotEmpty) {
+              final sample = samples.first;
+              if (sample is Map) {
+                final uri =
+                    sample['videoMetadata']?['videoUri'] as String? ??
+                    sample['uri'] as String?;
+                if (uri != null && uri.isNotEmpty) {
+                  return uri;
                 }
               }
             }
           }
-          debugPrint(
-            'GeminiService: $model returned 200 but no video data in expected format',
-          );
-        } else {
-          debugPrint('Gemini API Error (Video) for $model: ${response.body}');
+
+          debugPrint('Veo: Done but could not extract video URI from result');
+          debugPrint('Veo: Full poll data: ${jsonEncode(pollData)}');
+          break;
         }
       } catch (e) {
-        debugPrint('Gemini Video Error with $model: $e');
+        debugPrint('Veo error with $model: $e');
       }
     }
 
-    return 'Error: Video generation is not currently available. The Gemini API video models (Veo) may not be accessible with your API key. Please check your Gemini API access in Google AI Studio.';
+    return 'Error: Veo video generation failed. '
+        'Ensure your API key has access to Veo models at '
+        'https://aistudio.google.com — Veo requires a paid or preview-access key.';
   }
 
   // ═══════════════════════════════════════════════════════════
