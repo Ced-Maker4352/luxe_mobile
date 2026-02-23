@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:luxe_mobile/screens/video_player_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -6544,26 +6545,13 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       );
 
       if (!videoUri.startsWith('Error')) {
-        if (await canLaunchUrl(Uri.parse(videoUri))) {
-          await launchUrl(Uri.parse(videoUri));
-        } else {
-          debugPrint("Video URI: $videoUri");
-          // Attempt to launch anyway or show dialog
-          if (mounted) {
-            showDialog(
-              context: context,
-              builder: (c) => AlertDialog(
-                title: Text("Video Generated"),
-                content: SelectableText(videoUri),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(c),
-                    child: Text("OK"),
-                  ),
-                ],
-              ),
-            );
-          }
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => VideoPlayerScreen(videoUrl: videoUri),
+            ),
+          );
         }
       } else {
         throw Exception(videoUri);
