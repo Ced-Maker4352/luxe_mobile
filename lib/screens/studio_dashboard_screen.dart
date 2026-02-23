@@ -6581,6 +6581,9 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
               'aspectRatio': _videoAspectRatio,
             },
           );
+
+          // Step 5: Save to native phone gallery
+          _saveVideoToNativeGallery(videoBytes);
         }
 
         if (mounted) {
@@ -6606,6 +6609,53 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       }
     } finally {
       session.setGenerating(false);
+    }
+  }
+
+  Future<void> _saveVideoToNativeGallery(Uint8List bytes) async {
+    try {
+      bool hasPermission = false;
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        hasPermission =
+            await Permission.photos.request().isGranted ||
+            await Permission.storage.request().isGranted;
+      } else {
+        hasPermission = await Permission.photos.request().isGranted;
+      }
+
+      if (!hasPermission) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Storage permission denied. Video not saved to phone gallery.',
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
+      final filename = "luxe_motion_${DateTime.now().millisecondsSinceEpoch}";
+      final result = await ImageGallerySaverPlus.saveImage(
+        bytes,
+        name: filename,
+      );
+
+      if (mounted) {
+        final success = result['isSuccess'] ?? false;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success
+                  ? 'Saved to Gallery: $filename'
+                  : 'Failed to save to gallery',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Native gallery save error: $e');
     }
   }
 
