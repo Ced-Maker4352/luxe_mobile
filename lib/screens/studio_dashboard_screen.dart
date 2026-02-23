@@ -1985,7 +1985,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
   }
 
   Widget _buildAspectRatioSelector() {
-    final options = ['9:16', '16:9', '1:1'];
+    final options = ['9:16', '16:9'];
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: options.map((ratio) {
