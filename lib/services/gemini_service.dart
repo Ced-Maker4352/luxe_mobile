@@ -836,8 +836,8 @@ DETAILS:
                   genVideoRes.containsKey('raiMediaFilteredReasons')) {
                 final reasons = genVideoRes['raiMediaFilteredReasons'] as List;
                 if (reasons.isNotEmpty) {
-                  debugPrint('Veo RAI Filter Triggered: \${reasons.first}');
-                  return 'Error: Safety Filter - \${reasons.first}';
+                  debugPrint('Veo RAI Filter Triggered: ${reasons.first}');
+                  return 'Error: Safety Filter - ${reasons.first}';
                 }
               }
 
