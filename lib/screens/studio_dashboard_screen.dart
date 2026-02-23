@@ -96,6 +96,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       'main'; // 'main', 'camera', 'backdrop', 'prompt', 'style', 'retouch', 'stitch', 'print', 'download', 'share'
   GenerationResult? _focusedResult;
   Uint8List? _decodedImageBytes;
+  String _videoAspectRatio = '9:16';
   final ValueNotifier<bool> _isSaving = ValueNotifier<bool>(false);
 
   Future<void> _decodeFocusedImage() async {
@@ -993,12 +994,16 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
                 ),
 
               // Motion / Video Generation
-              if (!_isBatchSelectMode && result.mediaType != 'video')
+              if (!_isBatchSelectMode && result.mediaType != 'video') ...[
+                // Aspect Ratio Selector for Video
+                _buildAspectRatioSelector(),
+                const SizedBox(width: 8),
                 _buildCircularPostTool(
                   icon: Icons.videocam,
                   onPressed: () => _generateCinematicVideo(session, result),
                   heroTag: 'motion_btn',
                 ),
+              ],
 
               if (!_isBatchSelectMode && result.mediaType == 'image') ...[
                 const SizedBox(width: 8),
@@ -1976,6 +1981,40 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildAspectRatioSelector() {
+    final options = ['9:16', '16:9', '1:1'];
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: options.map((ratio) {
+        final isSelected = _videoAspectRatio == ratio;
+        return GestureDetector(
+          onTap: () => setState(() => _videoAspectRatio = ratio),
+          child: Container(
+            margin: const EdgeInsets.only(right: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? AppColors.matteGold.withValues(alpha: 0.2)
+                  : Colors.black54,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected
+                    ? AppColors.matteGold
+                    : AppColors.softPlatinum.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Text(
+              ratio,
+              style: AppTypography.microBold(
+                color: isSelected ? AppColors.matteGold : Colors.white70,
+              ).copyWith(fontSize: 10),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -6501,6 +6540,7 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
         rawImage,
         prompt,
         optic,
+        aspectRatio: _videoAspectRatio,
       );
 
       if (!videoUri.startsWith('Error')) {
