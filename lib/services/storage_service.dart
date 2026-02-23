@@ -57,7 +57,6 @@ class StorageService {
             bytes,
             fileOptions: FileOptions(
               contentType: type == 'video' ? 'video/mp4' : 'image/jpeg',
-              upsert: true,
             ),
           );
 

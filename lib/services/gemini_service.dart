@@ -709,8 +709,9 @@ DETAILS:
   Future<String> generateCinematicVideo(
     String imageBase64,
     String prompt,
-    String opticProtocol,
-  ) async {
+    String opticProtocol, {
+    String aspectRatio = '9:16',
+  }) async {
     if (_apiKey.isEmpty) return 'Error: API Key missing';
 
     const baseUrl = 'https://generativelanguage.googleapis.com';
@@ -719,7 +720,6 @@ DETAILS:
     final models = [
       'veo-3.1-fast-generate-preview',
       'veo-3.1-generate-preview',
-      'veo-2.0-generate-001',
     ];
 
     final finalVideoPrompt =
@@ -756,7 +756,7 @@ DETAILS:
                 },
               },
             ],
-            'parameters': {'aspectRatio': '9:16', 'resolution': '1080p'},
+            'parameters': {'aspectRatio': aspectRatio, 'resolution': '1080p'},
           };
         } else {
           // Text-to-video fallback
@@ -764,7 +764,7 @@ DETAILS:
             'instances': [
               {'prompt': finalVideoPrompt},
             ],
-            'parameters': {'aspectRatio': '9:16'},
+            'parameters': {'aspectRatio': aspectRatio},
           };
         }
 
@@ -793,14 +793,10 @@ DETAILS:
         debugPrint('Veo: Operation started — $operationName');
 
         // ── Step 2: Poll until done ────────────────────────────────────
-        // Extract just the operation ID from the full name
-        // e.g. "operations/abc123" or just "abc123"
-        final opId = operationName.startsWith('operations/')
-            ? operationName.substring('operations/'.length)
-            : operationName;
-
+        // The API returns the full relative path, e.g.,
+        // "models/veo-3.1-fast-generate-preview/operations/abc" or "operations/abc"
         final pollUrl = Uri.parse(
-          '$baseUrl/v1beta/operations/$opId?key=$_apiKey',
+          '$baseUrl/v1beta/$operationName?key=$_apiKey',
         );
 
         const maxAttempts = 30; // 30 × 10s = 5 min max
