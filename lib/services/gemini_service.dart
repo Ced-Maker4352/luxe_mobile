@@ -830,7 +830,6 @@ DETAILS:
 
           final result = pollData['response'];
           if (result is Map) {
-            // 1. Check for RAI Media Filters (Content Safety / Celebrity Likeness)
             if (result.containsKey('generateVideoResponse')) {
               final genVideoRes = result['generateVideoResponse'];
               if (genVideoRes is Map &&
@@ -841,9 +840,30 @@ DETAILS:
                   return 'Error: Safety Filter - \${reasons.first}';
                 }
               }
+
+              // 3. Check for generatedSamples inside generateVideoResponse
+              if (genVideoRes is Map &&
+                  genVideoRes.containsKey('generatedSamples')) {
+                final samples = genVideoRes['generatedSamples'];
+                if (samples is List && samples.isNotEmpty) {
+                  final sample = samples.first;
+                  if (sample is Map && sample.containsKey('video')) {
+                    final video = sample['video'];
+                    if (video is Map) {
+                      final uri = video['uri'] as String?;
+                      if (uri != null && uri.isNotEmpty) {
+                        debugPrint(
+                          'Veo: Got video URI from generatedSamples — $uri',
+                        );
+                        return uri;
+                      }
+                    }
+                  }
+                }
+              }
             }
 
-            // 2. Check for videos array
+            // Fallbacks for older or alternative API shapes
             final videos = result['videos'];
             if (videos is List && videos.isNotEmpty) {
               final video = videos.first;
@@ -851,7 +871,7 @@ DETAILS:
                 final uri =
                     video['uri'] as String? ?? video['videoUri'] as String?;
                 if (uri != null && uri.isNotEmpty) {
-                  debugPrint('Veo: Got video URI — $uri');
+                  debugPrint('Veo: Got video URI from videos array — $uri');
                   return uri;
                 }
                 // Inline base64 video
@@ -861,7 +881,7 @@ DETAILS:
                 }
               }
             }
-            // Alternative: check for generatedSamples
+            // Alternative: check for generatedSamples at root level
             final samples = result['generatedSamples'];
             if (samples is List && samples.isNotEmpty) {
               final sample = samples.first;
