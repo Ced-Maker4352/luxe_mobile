@@ -830,7 +830,20 @@ DETAILS:
 
           final result = pollData['response'];
           if (result is Map) {
-            // Check for videos array
+            // 1. Check for RAI Media Filters (Content Safety / Celebrity Likeness)
+            if (result.containsKey('generateVideoResponse')) {
+              final genVideoRes = result['generateVideoResponse'];
+              if (genVideoRes is Map &&
+                  genVideoRes.containsKey('raiMediaFilteredReasons')) {
+                final reasons = genVideoRes['raiMediaFilteredReasons'] as List;
+                if (reasons.isNotEmpty) {
+                  debugPrint('Veo RAI Filter Triggered: \${reasons.first}');
+                  return 'Error: Safety Filter - \${reasons.first}';
+                }
+              }
+            }
+
+            // 2. Check for videos array
             final videos = result['videos'];
             if (videos is List && videos.isNotEmpty) {
               final video = videos.first;
