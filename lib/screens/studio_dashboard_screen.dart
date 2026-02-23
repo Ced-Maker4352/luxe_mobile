@@ -6545,6 +6545,44 @@ class _StudioDashboardScreenState extends State<StudioDashboardScreen>
       );
 
       if (!videoUri.startsWith('Error')) {
+        // Step 1: Fetch bytes for saving (if we want to persist it)
+        Uint8List? videoBytes;
+        try {
+          final res = await http.get(Uri.parse(videoUri));
+          if (res.statusCode == 200) {
+            videoBytes = res.bodyBytes;
+          }
+        } catch (e) {
+          debugPrint("Failed to fetch video bytes for saving: $e");
+        }
+
+        // Step 2: Create Result Object
+        final newResult = GenerationResult(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          imageUrl: sourceResult.imageUrl, // Use source as thumbnail
+          videoUrl: videoUri,
+          mediaType: 'video',
+          packageType: session.selectedPackage?.id ?? PortraitPackage.motion,
+          timestamp: DateTime.now().millisecondsSinceEpoch,
+        );
+
+        // Step 3: Add to session (Gallery)
+        session.addResult(newResult);
+
+        // Step 4: Persist to Supabase (Background)
+        if (videoBytes != null) {
+          StorageService().saveGeneration(
+            imageBase64: base64Encode(videoBytes),
+            prompt: prompt,
+            type: 'video',
+            metadata: {
+              'rig': optic,
+              'package': 'motion',
+              'aspectRatio': _videoAspectRatio,
+            },
+          );
+        }
+
         if (mounted) {
           Navigator.push(
             context,
