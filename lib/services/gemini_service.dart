@@ -855,7 +855,11 @@ DETAILS:
                         debugPrint(
                           'Veo: Got video URI from generatedSamples — $uri',
                         );
-                        return uri;
+                        // Append API key to authorize the download
+                        final authUri = uri.contains('?')
+                            ? '$uri&key=$_apiKey'
+                            : '$uri?key=$_apiKey';
+                        return authUri;
                       }
                     }
                   }
@@ -872,7 +876,10 @@ DETAILS:
                     video['uri'] as String? ?? video['videoUri'] as String?;
                 if (uri != null && uri.isNotEmpty) {
                   debugPrint('Veo: Got video URI from videos array — $uri');
-                  return uri;
+                  final authUri = uri.contains('?')
+                      ? '$uri&key=$_apiKey'
+                      : '$uri?key=$_apiKey';
+                  return authUri;
                 }
                 // Inline base64 video
                 final b64 = video['bytesBase64Encoded'] as String?;
@@ -890,7 +897,10 @@ DETAILS:
                     sample['videoMetadata']?['videoUri'] as String? ??
                     sample['uri'] as String?;
                 if (uri != null && uri.isNotEmpty) {
-                  return uri;
+                  final authUri = uri.contains('?')
+                      ? '$uri&key=$_apiKey'
+                      : '$uri?key=$_apiKey';
+                  return authUri;
                 }
               }
             }
